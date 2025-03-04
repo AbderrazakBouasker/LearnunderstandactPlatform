@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev 
+    volumes:
+      - .:/app  # Mounts code for hot-reloading
+      - /app/node_modules  # Prevents code from being overwritten
+    command: npm run dev 
+    environment:
+      NODE_ENV: development
+    ports:
+      - "5000:5000"
