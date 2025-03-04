@@ -1,5 +1,6 @@
 services:
   app:
+    container_name: backend
     build:
       context: .
       dockerfile: Dockerfile  # Uses Dockerfile.prod for production
@@ -7,10 +8,13 @@ services:
       - "5000:5000" 
     env_file:
       - .env
+    networks:
+      - backend-network
     depends_on:
       - db
 
   db:
+    container_name: mongo
     image: mongo:latest
     ports:
       - "27017:27017"
@@ -21,6 +25,11 @@ services:
       MONGO_PASSWORD: ${MONGO_PASSWORD}
     volumes:
       - mongo_data:/data/db
+    networks:
+      - backend-network
 
 volumes:
   mongo_data:
+
+networks:
+  backend-network:
