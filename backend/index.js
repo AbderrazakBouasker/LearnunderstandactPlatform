@@ -43,7 +43,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ROUTES WITH FILES
-app.post("/feedback/:id", verifyToken, (req, res, next) => {
+app.post("/feedback/:id", (req, res, next) => {
   upload.array("pictures", 5)(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       return res.status(400).json({ error: err.message });
