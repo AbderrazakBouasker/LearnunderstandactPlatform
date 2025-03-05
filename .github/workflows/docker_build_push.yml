@@ -1,9 +1,14 @@
 name: ci
 
+# on:
+#   workflow_run:
+#     workflows: [CodeQL Advanced]
+#     types: [completed]
 on:
-  workflow_run:
-    workflows: [CodeQL Advanced]
-    types: [completed]
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   docker:
