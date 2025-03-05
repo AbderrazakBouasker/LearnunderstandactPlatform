@@ -31,4 +31,4 @@ jobs:
           push: true
           tags: abderrazakbouasker/learnunderstandactplatform:latest
           file: backend/Dockerfile.prod
-          context: backend
+          context: .
