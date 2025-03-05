@@ -1,39 +1,42 @@
 import mongoose from "mongoose";
 
+const fieldSchema = new mongoose.Schema({
+  label: {
+    type: String,
+    required: [true, 'Label is required'],
+  },
+  type: {
+    type: String,
+    enum: ["text", "number", "date", "email", "textarea"],
+    required: [true, 'Type is required'],
+  },
+  value: {
+    type: mongoose.Schema.Types.Mixed,
+    required: false,
+  },
+});
+
 const formSchema = mongoose.Schema(
   {
-    title: String,
+    title: {
+      type: String,
+      required: true,
+    },
     description: {
       type: String,
       required: true,
     },
     opinion: {
-      type: String,
-      enum: ["unhappy", "neutral", "happy"],
+      type: [String],
       required: true,
+      default: ["unhappy", "neutral", "happy"],
     },
     picturePath: [
       {
         type: String,
       },
     ],
-    fields: [
-      {
-        label: {
-          type: String,
-          required: true,
-        },
-        type: {
-          type: String,
-          enum: ["text", "number", "date", "email", "textarea"],
-          required: true,
-        },
-        value: {
-          type: mongoose.Schema.Types.Mixed,
-          required: false,
-        },
-      },
-    ],
+    fields: [fieldSchema],
   },
   { timestamps: true }
 );
