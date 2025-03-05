@@ -30,4 +30,4 @@ jobs:
         with:
           push: true
           tags: abderrazakbouasker/learnunderstandactplatform:latest
-          file: backend/Dockerfile.prod
+          file: backend/Dockerfile.hub
