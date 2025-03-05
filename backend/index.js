@@ -11,10 +11,10 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import formRoutes from "./routes/form.js";
-// import feedbackRoutes from "./routes/feedback.js";
+import feedbackRoutes from "./routes/feedback.js";
 
 import { register } from "./controllers/auth.js";
-// import { createFeedback } from "./controllers/feedback.js";
+import { createFeedback } from "./controllers/feedbacks.js";
 import { verifyToken } from "./middleware/auth.js";
 
 // CONFIGURATION
@@ -42,24 +42,24 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-//ROUTES WITH FILES
-// app.post("/feedback", verifyToken, (req, res, next) => {
-//   upload.array("pictures", 5)(req, res, (err) => {
-//     if (err instanceof multer.MulterError) {
-//       return res.status(400).json({ error: err.message });
-//     } else if (err) {
-//       return res.status(500).json({ error: "An unknown error occurred during file upload." });
-//     }
-//     next();
-//   });
-// }, createFeedback);
+// ROUTES WITH FILES
+app.post("/feedback/:id", verifyToken, (req, res, next) => {
+  upload.array("pictures", 5)(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      return res.status(500).json({ error: "An unknown error occurred during file upload." });
+    }
+    next();
+  });
+}, createFeedback);
 
 //ROUTES
 app.post("/auth/register", register);
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/form", formRoutes);
-// app.use("/feedback", feedbackRoutes);
+app.use("/feedback", feedbackRoutes);
 
 //MONGOOSE SETUP
 const PORT = process.env.PORT || 6001;

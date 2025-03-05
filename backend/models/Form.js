@@ -7,7 +7,7 @@ const fieldSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["text", "number", "date", "email", "textarea"],
+    enum: ["text", "number", "date", "email", "textarea", "file"],
     required: [true, 'Type is required'],
   },
   value: {
@@ -31,11 +31,6 @@ const formSchema = mongoose.Schema(
       required: true,
       default: ["unhappy", "neutral", "happy"],
     },
-    picturePath: [
-      {
-        type: String,
-      },
-    ],
     fields: [fieldSchema],
   },
   { timestamps: true }

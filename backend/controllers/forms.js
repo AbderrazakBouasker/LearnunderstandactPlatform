@@ -3,12 +3,11 @@ import Form from "../models/Form.js";
 //CREATE
 export const createForm = async (req, res) => {
   try {
-    const { title, description, opinion, picturePath, fields } = req.body;
+    const { title, description, opinion, fields } = req.body;
     const newForm = new Form({
       title,
       description,
       opinion,
-      picturePath,
       fields,
     });
     await newForm.save(); 
@@ -44,7 +43,7 @@ export const getForm = async (req, res) => {
 export const editForm = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, opinion, picturePath, fields } = req.body;
+    const { title, description, opinion, fields } = req.body;
     const form = await Form.findById(id);
 
     if (!form) {
@@ -57,7 +56,6 @@ export const editForm = async (req, res) => {
       form.description = description;
     if (opinion !== undefined)
       form.opinion = opinion;
-    form.picturePath = picturePath;
     form.fields = fields;
 
     await form.save();
