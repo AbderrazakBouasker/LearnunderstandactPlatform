@@ -82,9 +82,6 @@ export const getFeedbackByFormId = async (req, res) => {
     try {
         const { id } = req.params;
         const feedback = await Feedback.find({ formId: id });
-        if (feedback.length === 0) {
-            return res.status(404).json({ error: "No feedbacks found for this form" });
-        }
         res.status(200).json(feedback);
     } catch (error) {
         res.status(500).json({ error: error.message });
