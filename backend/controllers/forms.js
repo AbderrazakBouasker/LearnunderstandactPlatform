@@ -78,7 +78,7 @@ export const deleteForm = async (req, res) => {
     if (!deletedForm) {
       return res.status(404).json({ error: "Form not found" });
     }
-    res.status(200).json(deletedForm);
+    res.status(200).json({deletedForm});
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

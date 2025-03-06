@@ -59,6 +59,39 @@ components:
         updatedAt:
           type: string
           format: date-time
+    Feedback:
+      type: object
+      properties:
+        opinion:
+          type: string
+        fields:
+          type: array
+          items:
+            type: object
+            properties:
+              label:
+                type: string
+              value:
+                type: string
+    FeedbackOutput:
+      allOf:
+        - $ref: '#/components/schemas/Feedback'
+        - type: object
+          properties:
+            _id:
+              type: string
+            formId:
+              type: string
+            formTitle:
+              type: string
+            formDescription:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
 
 securitySchemes:
   bearerAuth:
@@ -272,5 +305,149 @@ paths:
           description: Invalid credentials
         404:
           description: User not found
+        500:
+          description: Internal server error
+
+  /feedbacks/create:
+    post:
+      summary: Create a new feedback
+      tags: [Feedbacks]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The form ID
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                opinion:
+                  type: string
+                fields:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      label:
+                        type: string
+                      value:
+                        type: string
+                file:
+                  type: string
+                  format: binary
+                  nullable: true
+      responses:
+        201:
+          description: Feedback created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackOutput'
+        404:
+          description: Form not found
+        400:
+          description: Missing field or Invalid type for field value (expected type) (received type)
+        500:
+          description: Internal server error
+
+  /feedbacks:
+    get:
+      summary: Get all feedbacks
+      tags: [Feedbacks]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Successfully retrieved feedbacks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeedbackOutput'
+        204:
+          description: No content
+        500:
+          description: Internal server error
+
+  /feedbacks/{id}:
+    get:
+      summary: Get feedback by ID
+      tags: [Feedbacks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Feedback ID
+      responses:
+        200:
+          description: Successfully retrieved feedback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackOutput'
+        404:
+          description: Feedback not found
+        500:
+          description: Internal server error
+
+  /feedbacks/form/{id}:
+    get:
+      summary: Get feedback by Form ID
+      tags: [Feedbacks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Form ID
+      responses:
+        200:
+          description: Successfully retrieved feedback
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeedbackOutput'
+        204:
+          description: No content
+        500:
+          description: Internal server error
+
+  /feedbacks/{id}/delete:
+    delete:
+      summary: Delete feedback by ID
+      tags: [Feedbacks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Feedback ID
+      responses:
+        200:
+          description: Feedback deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackOutput'
+        404:
+          description: Feedback not found
         500:
           description: Internal server error

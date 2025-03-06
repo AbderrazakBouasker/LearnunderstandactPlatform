@@ -103,7 +103,7 @@ export const deleteFeedback = async (req, res) => {
         if (!feedback) {
             return res.status(404).json({ error: "Feedback not found" });
         }
-        res.status(200).json({ message: "Feedback deleted successfully" });
+        res.status(200).json({feedback});
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
