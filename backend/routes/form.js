@@ -7,12 +7,18 @@ const router = express.Router();
 //CREATE
 router.post("/create", verifyToken, createForm);
 
+
 //READ
 router.get("/", verifyToken, getForms);
+
+
+//READ BY ID
 router.get("/:id", verifyToken, getForm);
+
 
 //UPDATE
 router.patch("/:id/edit", verifyToken, editForm);
+
 
 //DELETE
 router.delete("/:id/delete", verifyToken, deleteForm);

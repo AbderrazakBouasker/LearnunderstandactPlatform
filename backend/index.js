@@ -1,4 +1,5 @@
 import express from "express";
+import { swaggerUi, specs } from "./swagger.js";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -61,15 +62,17 @@ app.use("/user", userRoutes);
 app.use("/form", formRoutes);
 app.use("/feedback", feedbackRoutes);
 
+// Swagger UI route
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 //MONGOOSE SETUP
 const PORT = process.env.PORT || 6001;
 console.log(process.env.MONGO_URL);
 mongoose
-  .connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(process.env.MONGO_URL)
   .then(() => {
-    app.listen(PORT, () => console.log(`Server Port: ${PORT}`));
+    app.listen(PORT, () => {
+      console.log(`Server Port: ${PORT}`);
+      console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
+    });
   })
   .catch((error) => console.log(`${error} did not connect`));

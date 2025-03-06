@@ -11,10 +11,9 @@ export const createForm = async (req, res) => {
       fields,
     });
     await newForm.save(); 
-    const form = await Form.find();
-    res.status(201).json(form);
+    res.status(201).json(newForm);
   } catch (error) {
-    res.status(409).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -22,9 +21,12 @@ export const createForm = async (req, res) => {
 export const getForms = async (req, res) => {
   try {
     const form = await Form.find();
-    res.status(201).json(form);
+    if (form.length === 0) {
+      return res.status(204).json();
+    }
+    res.status(200).json(form);
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -33,9 +35,12 @@ export const getForm = async (req, res) => {
   try {
     const { id } = req.params;
     const form = await Form.findById( id );
-    res.status(201).json(form);
+    if (!form) {
+      return res.status(404).json({ error: "Form not found" });
+    }
+    res.status(200).json(form);
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -59,7 +64,7 @@ export const editForm = async (req, res) => {
     form.fields = fields;
 
     await form.save();
-    res.status(201).json(form);
+    res.status(200).json(form);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -70,7 +75,10 @@ export const deleteForm = async (req, res) => {
   try {
     const { id } = req.params;
     const deletedForm = await Form.findByIdAndDelete(id);
-    res.status(201).json(deletedForm);
+    if (!deletedForm) {
+      return res.status(404).json({ error: "Form not found" });
+    }
+    res.status(200).json(deletedForm);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
