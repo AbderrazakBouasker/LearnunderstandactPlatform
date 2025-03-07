@@ -271,6 +271,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        409:
+          description: User already exists
         500:
           description: Internal server error
 

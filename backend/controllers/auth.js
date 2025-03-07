@@ -12,6 +12,8 @@ export const register = async (req, res) => {
       password,
       role,
     } = req.body;
+    const user = await User.find({ email: email });
+    if (user.length !== 0) return res.status(409).json({error: "User already exists" });
     const salt = await bcrypt.genSalt();
     const passwordHash = await bcrypt.hash(password, salt);
 

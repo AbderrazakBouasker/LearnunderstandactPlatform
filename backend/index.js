@@ -56,7 +56,6 @@ app.post("/feedback/:id", (req, res, next) => {
 }, createFeedback);
 
 //ROUTES
-app.post("/auth/register", register);
 app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/form", formRoutes);
@@ -64,15 +63,22 @@ app.use("/feedback", feedbackRoutes);
 
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
-//MONGOOSE SETUP
-const PORT = process.env.PORT || 6001;
-console.log(process.env.MONGO_URL);
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Server Port: ${PORT}`);
-      console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
-    });
-  })
-  .catch((error) => console.log(`${error} did not connect`));
+
+// Only connect to MongoDB and start server if this file is run directly, not when imported
+if (import.meta.url === `file://${process.argv[1]}`) {
+  //MONGOOSE SETUP
+  const PORT = process.env.PORT || 6001;
+  console.log(process.env.MONGO_URL);
+  mongoose
+    .connect(process.env.MONGO_URL)
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Server Port: ${PORT}`);
+        console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
+      });
+    })
+    .catch((error) => console.log(`${error} did not connect`));
+}
+
+// Export the app for testing
+export default app;
