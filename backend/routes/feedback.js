@@ -5,7 +5,7 @@ import { verifyToken } from '../middleware/auth.js';
 const router = express.Router();
 
 //CREATE
-// router.post("/:id", verifyToken, createFeedback);
+//route is handled directly in index.js with file upload middleware
 //READ
 router.get("/", verifyToken, getFeedbacks);
 router.get("/:id", verifyToken, getFeedback);
