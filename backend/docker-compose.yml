@@ -27,6 +27,14 @@ services:
       - mongo_data:/data/db
     networks:
       - backend-network
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    networks:
+      - backend-network
 
 volumes:
   mongo_data:

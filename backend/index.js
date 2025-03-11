@@ -17,6 +17,7 @@ import feedbackRoutes from "./routes/feedback.js";
 import { register } from "./controllers/auth.js";
 import { createFeedback } from "./controllers/feedbacks.js";
 import { verifyToken } from "./middleware/auth.js";
+import { rateLimiter } from "./middleware/ratelimiter.js";
 
 // CONFIGURATION
 const __filename = fileURLToPath(import.meta.url);
@@ -44,7 +45,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ROUTES WITH FILES
-app.post("/feedback/:id", (req, res, next) => {
+app.post("/feedback/:id", rateLimiter(1,5), (req, res, next) => {
   upload.array("pictures", 5)(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       return res.status(400).json({ error: err.message });
