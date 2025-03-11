@@ -1,7 +1,7 @@
 import { Redis } from 'ioredis';
 
 // Create Redis client with connection timeout and retry strategy
-const redisClient = new Redis({
+export const redisClient = new Redis({
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT,
   password: process.env.REDIS_PASSWORD,
@@ -37,9 +37,10 @@ export const rateLimiter = (windowsize = 1, maxrequests = 5) => {
         const maxRequests = maxrequests;
         
         // Use Promise.race with timeout to prevent hanging
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Redis operation timed out')), 3000)
-        );
+        const timeoutPromise = new Promise((_, reject) => {
+            const timer = setTimeout(() => reject(new Error('Redis operation timed out')), 3000);
+            timer.unref();
+        });
 
         // Fetch request history with timeout
         const requests = await Promise.race([
