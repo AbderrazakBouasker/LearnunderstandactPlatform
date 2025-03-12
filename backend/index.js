@@ -45,7 +45,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ROUTES WITH FILES
-app.post("/feedback/:id", rateLimiter(1,5), (req, res, next) => {
+app.post("/api/feedback/:id", rateLimiter(1,5), (req, res, next) => {
   upload.array("pictures", 5)(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       return res.status(400).json({ error: err.message });
@@ -57,10 +57,10 @@ app.post("/feedback/:id", rateLimiter(1,5), (req, res, next) => {
 }, createFeedback);
 
 //ROUTES
-app.use("/auth", authRoutes);
-app.use("/user", userRoutes);
-app.use("/form", formRoutes);
-app.use("/feedback", feedbackRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/form", formRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));

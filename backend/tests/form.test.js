@@ -41,10 +41,10 @@ describe('Form API', () => {
     userId = loginRes.body.user._id;
   });
   
-  describe('POST /form/create', () => {
+  describe('POST /api/form/create', () => {
     it('should create a new form with valid token', async () => {
       const res = await request(testApp)
-        .post('/form/create')
+        .post('/api/form/create')
         .set('Authorization', `Bearer ${token}`)
         .send(testForm);
       
@@ -57,7 +57,7 @@ describe('Form API', () => {
     
     it('should fail without token', async () => {
       const res = await request(testApp)
-        .post('/form/create')
+        .post('/api/form/create')
         .send(testForm);
       
       expect(res.statusCode).toBe(403);
@@ -71,7 +71,7 @@ describe('Form API', () => {
       };
       
       const res = await request(testApp)
-        .post('/form/create')
+        .post('/api/form/create')
         .set('Authorization', `Bearer ${token}`)
         .send(invalidForm);
       
@@ -79,16 +79,16 @@ describe('Form API', () => {
     });
   });
   
-  describe('GET /form', () => {
+  describe('GET /api/form', () => {
     it('should get all forms with valid token', async () => {
       // First create a form
       await request(testApp)
-        .post('/form/create')
+        .post('/api/form/create')
         .set('Authorization', `Bearer ${token}`)
         .send(testForm);
       
       const res = await request(testApp)
-        .get('/form')
+        .get('/api/form')
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(200);
@@ -99,7 +99,7 @@ describe('Form API', () => {
     it('should return 204 if no forms exist', async () => {
       // Assuming no forms exist yet
       const res = await request(testApp)
-        .get('/form')
+        .get('/api/form')
         .set('Authorization', `Bearer ${token}`);
       
       // Should return 204 No Content or 200 with empty array
@@ -107,23 +107,23 @@ describe('Form API', () => {
     });
     
     it('should fail without token', async () => {
-      const res = await request(testApp).get('/form');
+      const res = await request(testApp).get('/api/form');
       expect(res.statusCode).toBe(403);
     });
   });
   
-  describe('GET /form/:id', () => {
+  describe('GET /api/form/:id', () => {
     it('should get form by ID with valid token', async () => {
       // First create a form
       const createRes = await request(testApp)
-        .post('/form/create')
+        .post('/api/form/create')
         .set('Authorization', `Bearer ${token}`)
         .send(testForm);
       
       const formId = createRes.body._id;
       
       const res = await request(testApp)
-        .get(`/form/${formId}`)
+        .get(`/api/form/${formId}`)
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(200);
@@ -134,7 +134,7 @@ describe('Form API', () => {
     
     it('should fail with invalid form ID', async () => {
       const res = await request(testApp)
-        .get('/form/invalidformid')
+        .get('/api/form/invalidformid')
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(500);
@@ -142,7 +142,7 @@ describe('Form API', () => {
     
     it('should fail when form does not exist', async () => {
       const res = await request(testApp)
-        .get('/form/123456789012345678901234') // Valid ObjectId format but doesn't exist
+        .get('/api/form/123456789012345678901234') // Valid ObjectId format but doesn't exist
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(404);
@@ -150,11 +150,11 @@ describe('Form API', () => {
     });
   });
   
-  describe('PATCH /form/:id/edit', () => {
+  describe('PATCH /api/form/:id/edit', () => {
     it('should update form with valid token and data', async () => {
       // First create a form
       const createRes = await request(testApp)
-        .post('/form/create')
+        .post('/api/form/create')
         .set('Authorization', `Bearer ${token}`)
         .send(testForm);
       
@@ -170,7 +170,7 @@ describe('Form API', () => {
       };
       
       const res = await request(testApp)
-        .patch(`/form/${formId}/edit`)
+        .patch(`/api/form/${formId}/edit`)
         .set('Authorization', `Bearer ${token}`)
         .send(updatedData);
       
@@ -182,7 +182,7 @@ describe('Form API', () => {
     
     it('should fail when form does not exist', async () => {
       const res = await request(testApp)
-        .patch('/form/123456789012345678901234/edit')
+        .patch('/api/form/123456789012345678901234/edit')
         .set('Authorization', `Bearer ${token}`)
         .send({ title: "New Title" });
       
@@ -191,18 +191,18 @@ describe('Form API', () => {
     });
   });
   
-  describe('DELETE /form/:id/delete', () => {
+  describe('DELETE /api/form/:id/delete', () => {
     it('should delete form with valid token and ID', async () => {
       // First create a form
       const createRes = await request(testApp)
-        .post('/form/create')
+        .post('/api/form/create')
         .set('Authorization', `Bearer ${token}`)
         .send(testForm);
       
       const formId = createRes.body._id;
       
       const res = await request(testApp)
-        .delete(`/form/${formId}/delete`)
+        .delete(`/api/form/${formId}/delete`)
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(200);
@@ -211,7 +211,7 @@ describe('Form API', () => {
       
       // Verify the form no longer exists
       const checkRes = await request(testApp)
-        .get(`/form/${formId}`)
+        .get(`/api/form/${formId}`)
         .set('Authorization', `Bearer ${token}`);
       
       expect(checkRes.statusCode).toBe(404);
@@ -219,7 +219,7 @@ describe('Form API', () => {
     
     it('should fail when form does not exist', async () => {
       const res = await request(testApp)
-        .delete('/form/123456789012345678901234/delete')
+        .delete('/api/form/123456789012345678901234/delete')
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(404);

@@ -17,7 +17,7 @@ describe('User API', () => {
     userId = loginRes.body.user._id;
   });
   
-  describe('GET /user/:id', () => {
+  describe('GET /api/user/:id', () => {
     it('should get user by ID with valid token', async () => {
       const res = await getUser(userId, token);
       
@@ -27,14 +27,14 @@ describe('User API', () => {
     });
     
     it('should fail without token', async () => {
-      const res = await request(testApp).get(`/user/${userId}`);
+      const res = await request(testApp).get(`/api/user/${userId}`);
       
       expect(res.statusCode).toBe(403);
     });
     
     it('should fail with invalid token', async () => {
       const res = await request(testApp)
-        .get(`/user/${userId}`)
+        .get(`/api/user/${userId}`)
         .set('Authorization', 'Bearer invalidtoken');
       
       expect(res.statusCode).toBe(500);

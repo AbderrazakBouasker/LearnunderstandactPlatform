@@ -7,7 +7,7 @@ jest.setTimeout(10000);
 
 describe('Auth API', () => {
   
-  describe('POST /auth/register', () => {
+  describe('POST /api/auth/register', () => {
     it('should register a new user', async () => {
       const res = await registerUser(testUser);
       
@@ -68,7 +68,7 @@ describe('Auth API', () => {
     // });
   });
 
-  describe('POST /auth/login', () => {
+  describe('POST /api/auth/login', () => {
     beforeEach(async () => {
       // Register a user before each login test
       await registerUser(testUser);

@@ -7,21 +7,21 @@ const testApp = app;
 // Helper for login requests
 export const loginUser = async (credentials) => {
   return await request(testApp)
-    .post('/auth/login')
+    .post('/api/auth/login')
     .send(credentials);
 };
 
 // Helper for register requests
 export const registerUser = async (userData) => {
   return await request(testApp)
-    .post('/auth/register')
+    .post('/api/auth/register')
     .send(userData);
 };
 
 // Helper for getting user data
 export const getUser = async (userId, token) => {
   return await request(testApp)
-    .get(`/user/${userId}`)
+    .get(`/api/user/${userId}`)
     .set('Authorization', `Bearer ${token}`);
 };
 

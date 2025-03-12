@@ -100,7 +100,7 @@ securitySchemes:
     bearerFormat: JWT
 
 paths:
-  /forms/create:
+  /api/forms/create:
     post:
       summary: Create a new form
       tags: [Forms]
@@ -128,7 +128,7 @@ paths:
         500:
           description: Internal server error
 
-  /forms:
+  /api/forms:
     get:
       summary: Get all forms
       tags: [Forms]
@@ -154,7 +154,7 @@ paths:
         500:
           description: Internal server error
 
-  /forms/{id}:
+  /api/forms/{id}:
     get:
       summary: Get a form by ID
       tags: [Forms]
@@ -185,7 +185,7 @@ paths:
         500:
           description: Internal server error
 
-  /forms/{id}/edit:
+  /api/forms/{id}/edit:
     patch:
       summary: Update a form by ID
       tags: [Forms]
@@ -222,7 +222,7 @@ paths:
         500:
           description: Internal server error
 
-  /forms/{id}/delete:
+  /api/forms/{id}/delete:
     delete:
       summary: Delete a form by ID
       tags: [Forms]
@@ -253,7 +253,7 @@ paths:
         500:
           description: Internal server error
 
-  /user/{id}:
+  /api/user/{id}:
     get:
       summary: Get a user by ID
       tags: [User]
@@ -284,7 +284,7 @@ paths:
         500:
           description: Server error
 
-  /auth/register:
+  /api/auth/register:
     post:
       summary: Register a new user
       tags: [Auth]
@@ -318,7 +318,7 @@ paths:
         500:
           description: Internal server error
 
-  /auth/login:
+  /api/auth/login:
     post:
       summary: Log in a user
       tags: [Auth]
@@ -358,7 +358,7 @@ paths:
         500:
           description: Internal server error
 
-  /feedbacks/create:
+  /api/feedbacks/create:
     post:
       summary: Create a new feedback
       tags: [Feedbacks]
@@ -411,7 +411,7 @@ paths:
         500:
           description: Internal server error
 
-  /feedbacks:
+  /api/feedbacks:
     get:
       summary: Get all feedbacks
       tags: [Feedbacks]
@@ -437,7 +437,7 @@ paths:
         500:
           description: Internal server error
 
-  /feedbacks/{id}:
+  /api/feedbacks/{id}:
     get:
       summary: Get feedback by ID
       tags: [Feedbacks]
@@ -468,7 +468,7 @@ paths:
         500:
           description: Internal server error
 
-  /feedbacks/form/{id}:
+  /api/feedbacks/form/{id}:
     get:
       summary: Get feedback by Form ID
       tags: [Feedbacks]
@@ -501,7 +501,7 @@ paths:
         500:
           description: Internal server error
 
-  /feedbacks/{id}/delete:
+  /api/feedbacks/{id}/delete:
     delete:
       summary: Delete feedback by ID
       tags: [Feedbacks]

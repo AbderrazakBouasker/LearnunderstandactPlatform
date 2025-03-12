@@ -61,18 +61,18 @@ describe('Feedback API', () => {
     
     // Create a form to use for feedback tests
     const formRes = await request(testApp)
-      .post('/form/create')
+      .post('/api/form/create')
       .set('Authorization', `Bearer ${token}`)
       .send(testForm);
       
     formId = formRes.body._id;
   });
   
-  describe('POST /feedback/:id', () => {
+  describe('POST /api/feedback/:id', () => {
     it('should create a new feedback with valid token and data', async () => {
       // Note: This test assumes the route is enabled
       const res = await request(testApp)
-        .post(`/feedback/${formId}`)
+        .post(`/api/feedback/${formId}`)
         .set('Authorization', `Bearer ${token}`)
         .send(testFeedback);
       
@@ -86,7 +86,7 @@ describe('Feedback API', () => {
     
     it('should fail if form does not exist', async () => {
       const res = await request(testApp)
-        .post('/feedback/123456789012345678901234')
+        .post('/api/feedback/123456789012345678901234')
         .set('Authorization', `Bearer ${token}`)
         .send(testFeedback);
       
@@ -108,7 +108,7 @@ describe('Feedback API', () => {
       };
       
       const res = await request(testApp)
-        .post(`/feedback/${formId}`)
+        .post(`/api/feedback/${formId}`)
         .set('Authorization', `Bearer ${token}`)
         .send(invalidFeedback);
       
@@ -137,7 +137,7 @@ describe('Feedback API', () => {
       };
       
       const res = await request(testApp)
-        .post(`/feedback/${formId}`)
+        .post(`/api/feedback/${formId}`)
         .set('Authorization', `Bearer ${token}`)
         .send(invalidTypeFeedback);
       
@@ -147,18 +147,18 @@ describe('Feedback API', () => {
     });
   });
   
-  describe('GET /feedback', () => {
+  describe('GET /api/feedback', () => {
     beforeEach(async () => {
       // Create a feedback for testing
       await request(testApp)
-        .post(`/feedback/${formId}`)
+        .post(`/api/feedback/${formId}`)
         .set('Authorization', `Bearer ${token}`)
         .send(testFeedback);
     });
     
     it('should get all feedbacks with valid token', async () => {
       const res = await request(testApp)
-        .get('/feedback')
+        .get('/api/feedback')
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(200);
@@ -169,19 +169,19 @@ describe('Feedback API', () => {
     it('should return 204 if no feedbacks exist', async () => {
       // Delete all feedbacks first
       const allFeedbacks = await request(testApp)
-        .get('/feedback')
+        .get('/api/feedback')
         .set('Authorization', `Bearer ${token}`);
         
       if (allFeedbacks.body && Array.isArray(allFeedbacks.body)) {
         for (const feedback of allFeedbacks.body) {
           await request(testApp)
-            .delete(`/feedback/${feedback._id}/delete`)
+            .delete(`/api/feedback/${feedback._id}/delete`)
             .set('Authorization', `Bearer ${token}`);
         }
       }
       
       const res = await request(testApp)
-        .get('/feedback')
+        .get('/api/feedback')
         .set('Authorization', `Bearer ${token}`);
       
       // Should return 204 No Content
@@ -189,18 +189,18 @@ describe('Feedback API', () => {
     });
     
     it('should fail without token', async () => {
-      const res = await request(testApp).get('/feedback');
+      const res = await request(testApp).get('/api/feedback');
       expect(res.statusCode).toBe(403);
     });
   });
   
-  describe('GET /feedback/:id', () => {
+  describe('GET /api/feedback/:id', () => {
     let feedbackId;
     
     beforeEach(async () => {
       // Create a feedback for testing
       const feedbackRes = await request(testApp)
-        .post(`/feedback/${formId}`)
+        .post(`/api/feedback/${formId}`)
         .set('Authorization', `Bearer ${token}`)
         .send(testFeedback);
         
@@ -209,7 +209,7 @@ describe('Feedback API', () => {
     
     it('should get feedback by ID with valid token', async () => {
       const res = await request(testApp)
-        .get(`/feedback/${feedbackId}`)
+        .get(`/api/feedback/${feedbackId}`)
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(200);
@@ -220,7 +220,7 @@ describe('Feedback API', () => {
     
     it('should fail with invalid feedback ID', async () => {
       const res = await request(testApp)
-        .get('/feedback/invalidfeedbackid')
+        .get('/api/feedback/invalidfeedbackid')
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(500);
@@ -228,7 +228,7 @@ describe('Feedback API', () => {
     
     it('should fail when feedback does not exist', async () => {
       const res = await request(testApp)
-        .get('/feedback/123456789012345678901234')
+        .get('/api/feedback/123456789012345678901234')
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(404);
@@ -236,16 +236,16 @@ describe('Feedback API', () => {
     });
   });
   
-  describe('GET /feedback/form/:id', () => {
+  describe('GET /api/feedback/form/:id', () => {
     beforeEach(async () => {
       // Create multiple feedbacks for the same form
       await request(testApp)
-        .post(`/feedback/${formId}`)
+        .post(`/api/feedback/${formId}`)
         .set('Authorization', `Bearer ${token}`)
         .send(testFeedback);
         
       await request(testApp)
-        .post(`/feedback/${formId}`)
+        .post(`/api/feedback/${formId}`)
         .set('Authorization', `Bearer ${token}`)
         .send({
           ...testFeedback,
@@ -255,7 +255,7 @@ describe('Feedback API', () => {
     
     it('should get all feedbacks for a form with valid token', async () => {
       const res = await request(testApp)
-        .get(`/feedback/form/${formId}`)
+        .get(`/api/feedback/form/${formId}`)
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(200);
@@ -267,7 +267,7 @@ describe('Feedback API', () => {
     it('should return 204 when form has no feedback', async () => {
       // Create a new form without feedback
       const newFormRes = await request(testApp)
-        .post('/form/create')
+        .post('/api/form/create')
         .set('Authorization', `Bearer ${token}`)
         .send({
           ...testForm,
@@ -277,20 +277,20 @@ describe('Feedback API', () => {
       const newFormId = newFormRes.body._id;
       
       const res = await request(testApp)
-        .get(`/feedback/form/${newFormId}`)
+        .get(`/api/feedback/form/${newFormId}`)
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(204);
     });
   });
   
-  describe('DELETE /feedback/:id/delete', () => {
+  describe('DELETE /api/feedback/:id/delete', () => {
     let feedbackId;
     
     beforeEach(async () => {
       // Create a feedback for testing
       const feedbackRes = await request(testApp)
-        .post(`/feedback/${formId}`)
+        .post(`/api/feedback/${formId}`)
         .set('Authorization', `Bearer ${token}`)
         .send(testFeedback);
         
@@ -299,7 +299,7 @@ describe('Feedback API', () => {
     
     it('should delete feedback with valid token and ID', async () => {
       const res = await request(testApp)
-        .delete(`/feedback/${feedbackId}/delete`)
+        .delete(`/api/feedback/${feedbackId}/delete`)
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(200);
@@ -308,7 +308,7 @@ describe('Feedback API', () => {
       
       // Verify the feedback no longer exists
       const checkRes = await request(testApp)
-        .get(`/feedback/${feedbackId}`)
+        .get(`/api/feedback/${feedbackId}`)
         .set('Authorization', `Bearer ${token}`);
       
       expect(checkRes.statusCode).toBe(404);
@@ -316,7 +316,7 @@ describe('Feedback API', () => {
     
     it('should fail when feedback does not exist', async () => {
       const res = await request(testApp)
-        .delete('/feedback/123456789012345678901234/delete')
+        .delete('/api/feedback/123456789012345678901234/delete')
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(404);
