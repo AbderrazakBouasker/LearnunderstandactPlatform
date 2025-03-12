@@ -47,6 +47,34 @@ services:
       - backend-network
     depends_on:
       - app
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - backend-network
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - backend-network
+    depends_on:
+      - prometheus
+  k6:
+    container_name: k6
+    image: grafana/k6
+    volumes:
+      - ./k6:/k6
+    command: run /k6/load-test.js
+    networks:
+      - backend-network
+    depends_on:
+      - backend
 
 volumes:
   mongo_data:
