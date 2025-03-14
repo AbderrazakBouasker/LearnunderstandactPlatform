@@ -1,0 +1,66 @@
+# mimir.yml - simplified configuration
+
+# Server configuration
+server:
+  http_listen_port: 9009
+
+multitenancy_enabled: false
+no_auth_tenant: "anonymous"
+
+# Distributor configuration
+distributor:
+  ring:
+    kvstore:
+      store: inmemory
+
+# Ingester configuration - using basic fields only
+ingester:
+  ring:
+    kvstore:
+      store: inmemory
+    replication_factor: 1
+
+# Querier configuration - improved to connect to frontend
+querier:
+  max_concurrent: 20
+  timeout: 2m
+  max_samples: 50000000
+  default_evaluation_interval: 1m
+  
+
+# Store gateway configuration - minimal
+store_gateway: {}
+
+# Compactor configuration - minimal
+compactor:
+  data_dir: /data/compactor
+
+# Block storage configuration
+blocks_storage:
+  tsdb:
+    dir: /data/tsdb
+  bucket_store:
+    sync_dir: /data/sync
+  filesystem:
+    dir: /data/blocks
+
+# Ruler configuration - adding storage
+ruler:
+  alertmanager_url: "http://alertmanager:9093"
+  enable_api: true
+  rule_path: /data/rules
+
+# Frontend configuration
+frontend:
+  log_queries_longer_than: 10s
+
+# Frontend worker configuration
+frontend_worker:
+  frontend_address: "mimir:9095"  # Removed http:// prefix
+
+# Common configuration for all microservices - corrected structure
+common:
+  storage:
+    backend: filesystem
+    filesystem:
+      dir: /data/common

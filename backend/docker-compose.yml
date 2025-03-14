@@ -13,6 +13,7 @@ services:
     depends_on:
       - db
       - redis
+      - otel-collector
 
   db:
     container_name: mongo
@@ -33,6 +34,8 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+    environment:
+      - vm.overcommit_memory = 1
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     networks:
       - backend-network
@@ -56,15 +59,20 @@ services:
   #     - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
   #   networks:
   #     - backend-network
-  # grafana:
-  #   container_name: grafana
-  #   image: grafana/grafana
-  #   ports:
-  #     - "3000:3000"
-  #   networks:
-  #     - backend-network
-  #   depends_on:
-  #     - prometheus
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # Grafana UI
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - backend-network
+    depends_on:
+      - loki
+      - tempo
+      - mimir
   k6:
     container_name: k6
     image: grafana/k6
@@ -75,9 +83,63 @@ services:
       - backend-network
     depends_on:
       - app
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./otel/otel-collector-config.yml:/etc/otel-collector-config.yml
+    command: ["--config=/etc/otel-collector-config.yml"]
+    ports:
+      - "4317:4317" # Keep original port mapping
+      - "4318:4318" # Keep original port mapping
+    networks:
+      - backend-network
+    depends_on:
+      - loki
+      - tempo
+      - mimir
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100" 
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yml
+      - loki_data:/data
+    networks:
+      - backend-network
+  mimir:
+    container_name: mimir
+    image: grafana/mimir
+    ports:
+      - "9009:9009" # Mimir UI
+    command: ["-config.file=/etc/mimir.yml"]
+    volumes:
+      - ./mimir/mimir-config.yml:/etc/mimir.yml
+      - mimir_data:/data  # Mount a volume to persist data
+    networks:
+      - backend-network
+  tempo:
+    container_name: tempo
+    image: grafana/tempo
+    user: root  # Run as root to ensure write permissions
+    command: [ "-config.file=/etc/tempo.yml" ]
+    ports:
+      - "3200:3200"  # Tempo UI
+      - "14317:4317"  # OTLP gRPC - Changed host port to 14317
+      - "14318:4318"  # OTLP HTTP - Changed host port to 14318
+    networks:
+      - backend-network
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo.yml
+      - tempo_data:/tmp/tempo  # Mount volume to /tmp/tempo instead of /data
 
 volumes:
   mongo_data:
+  grafana-storage:
+  mimir_data:
+  tempo_data:
+  loki_data:
 
 networks:
   backend-network:

@@ -1,7 +1,7 @@
 import { check } from 'k6';
 import http from 'k6/http';
 import headers from './header.js';
-
+//stages not being used i think
 export const options = {
 	stages: [
 		{ duration: '1m', target: 10 }, // 10 VUs for 1 minute
