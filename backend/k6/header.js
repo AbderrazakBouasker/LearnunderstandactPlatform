@@ -1,7 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config({path: '.env'});
-
 export default {
   headers: { 'Content-Type': 'application/json' },
-  Authorization: process.env.ACCESS_TOKEN,
+  Authorization: __ENV.ACCESS_TOKEN,
 };

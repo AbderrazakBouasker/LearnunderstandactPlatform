@@ -1,0 +1,8 @@
+{
+  "label": "APIs",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Documentation for the APIs provided by the backend server and how to use them."
+  }
+}

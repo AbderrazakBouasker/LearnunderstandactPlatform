@@ -64,7 +64,7 @@ services:
     image: grafana/grafana
     restart: unless-stopped
     ports:
-      - "3000:3000" # Grafana UI
+      - "3001:3000" # Grafana UI TODO: Change to 3000
     volumes:
       - grafana-storage:/var/lib/grafana
     networks:
@@ -78,7 +78,9 @@ services:
     image: grafana/k6
     volumes:
       - ./k6:/k6
-    command: run /k6/loadtest.js
+    environment:
+      - ACCESS_TOKEN=${ACCESS_TOKEN}
+    # command: run /k6/loadtest.js
     networks:
       - backend-network
     depends_on:

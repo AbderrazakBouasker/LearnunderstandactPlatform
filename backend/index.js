@@ -69,9 +69,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 if (import.meta.url === `file://${process.argv[1]}`) {
   //MONGOOSE SETUP
   const PORT = process.env.PORT || 6001;
-  console.log(process.env.MONGO_URL);
+  console.log(process.env.MONGO_URL+process.env.MONGO_DB_NAME);
   mongoose
-    .connect(process.env.MONGO_URL)
+    .connect(process.env.MONGO_URL+process.env.MONGO_DB_NAME)
     .then(() => {
       app.listen(PORT, () => {
         console.log(`Server Port: ${PORT}`);
