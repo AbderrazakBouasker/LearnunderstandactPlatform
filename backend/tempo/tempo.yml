@@ -1,0 +1,33 @@
+server:
+  http_listen_port: 3200
+
+# Single distributor configuration with OTLP receiver
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"
+
+ingester:
+  max_block_duration: 5m
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /tmp/tempo/wal
+    local:
+      path: /tmp/tempo/blocks
+
+compactor:
+  compaction:
+    block_retention: 24h
+
+# Use legacy format for overrides without the defaults key
+overrides:
+  ingestion_rate_limit_bytes: 150000000
+  ingestion_burst_size_bytes: 200000000
+  max_bytes_per_trace: 50000000

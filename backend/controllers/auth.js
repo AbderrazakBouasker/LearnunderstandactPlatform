@@ -25,6 +25,7 @@ export const register = async (req, res) => {
       role,
     });
     const savedUser = await newUser.save();
+    savedUser.password = undefined;
     res.status(200).json(savedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -44,7 +45,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign({ id: user.id }, process.env.jwtSecret);
-    delete user.password;
+    user.password = undefined;
     res.status(200).json({ token, user });
   } catch (error) {
     res.status(500).json({ error: error.message });
