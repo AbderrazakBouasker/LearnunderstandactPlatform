@@ -98,6 +98,10 @@ jobs:
         node-version: [18.x, 20.x, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
+    defaults:
+      run:
+        working-directory: backend
+
     steps:
     - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
@@ -106,11 +110,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-      working-directory: backend
     - run: npm run build --if-present
-      working-directory: backend
     - run: npm test
-      working-directory: backend
     - run: npm run test:api
-      working-directory: backend
 
