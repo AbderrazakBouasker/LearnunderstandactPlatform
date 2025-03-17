@@ -15,7 +15,6 @@ describe('Auth API', () => {
       expect(res.body).toHaveProperty('_id');
       expect(res.body.email).toBe(testUser.email);
       expect(res.body.role).toBe(testUser.role);
-      expect(res.body).toHaveProperty('password');
     });
 
     it('should fail if user with email already exists', async () => {

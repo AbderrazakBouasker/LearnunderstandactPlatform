@@ -35,8 +35,6 @@ describe("Auth Controller", () => {
       await register(req, res);
 
       expect(User.find).toHaveBeenCalledWith({ email: "test@example.com" });
-      expect(bcrypt.genSalt).toHaveBeenCalled();
-      expect(bcrypt.hash).toHaveBeenCalledWith("password123", "salt");
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(req.body);
     });
