@@ -49,8 +49,6 @@ components:
           type: string
         email:
           type: string
-        password:
-          type: string
         role:
           type: string
         createdAt:
