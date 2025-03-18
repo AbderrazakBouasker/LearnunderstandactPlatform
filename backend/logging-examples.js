@@ -1,4 +1,4 @@
-import logger from './logger';
+import logger from './logger.js';
 
 // 1. In Express middleware for request logging
 export const requestLogger = (req, res, next) => {

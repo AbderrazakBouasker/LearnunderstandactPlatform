@@ -1,7 +1,11 @@
-import { trace, context, logs, diag } from '@opentelemetry/api';
+import pkg from '@opentelemetry/api';
+const { trace, context, diag } = pkg;
+import logsApi from '@opentelemetry/api-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
+import { LoggerProvider } from '@opentelemetry/sdk-logs';
 import pino from 'pino';
 import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 
 // Map to convert Pino log levels to OpenTelemetry severity numbers
 const levelToSeverity = {
@@ -13,6 +17,11 @@ const levelToSeverity = {
   fatal: SeverityNumber.FATAL,
 };
 
+// Create a TracerProvider
+const tracerProvider = new NodeTracerProvider();
+// Initialize the provider
+tracerProvider.register();
+
 // Set up the Pino instrumentation to capture logs for OpenTelemetry
 const pinoInstrumentation = new PinoInstrumentation({
   // Optional: customize how logs are captured
@@ -23,8 +32,8 @@ const pinoInstrumentation = new PinoInstrumentation({
   },
 });
 
-// Register the instrumentation
-pinoInstrumentation.setTracerProvider(); // Connect to trace context automatically
+// Register the instrumentation with the tracer provider
+pinoInstrumentation.setTracerProvider(tracerProvider);
 
 // Create a standard Pino logger - its output will be captured by OpenTelemetry
 const logger = pino({
@@ -34,8 +43,13 @@ const logger = pino({
   }
 });
 
+// Create a logger provider for OpenTelemetry logs
+const loggerProvider = new LoggerProvider();
+// Register the logger provider with the API
+logsApi.logs.setGlobalLoggerProvider(loggerProvider);
+
 // Create a logger that sends logs to the OpenTelemetry collector
-const otelLogger = logs.getLogger('backend-service');
+const otelLogger = logsApi.logs.getLogger('backend-service');
 
 // Create a wrapper with convenient methods that mimic Pino's API
 const loggerWrapper = {

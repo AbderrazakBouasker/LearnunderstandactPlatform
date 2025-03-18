@@ -121,6 +121,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FormOutput'
+        401:
+          description: 'Token has expired or Invalid token'
+        403:
+          description: Not Authorized - Missing token
         429:
           description: Rate limit exceeded
         500:
@@ -147,6 +151,10 @@ paths:
                   $ref: '#/components/schemas/FormOutput'
         204:
           description: No content
+        401:
+          description: 'Token has expired or Invalid token'
+        403:
+          description: Not Authorized - Missing token
         429:
           description: Rate limit exceeded
         500:
@@ -176,6 +184,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FormOutput'
+        401:
+          description: 'Token has expired or Invalid token'
+        403:
+          description: Not Authorized - Missing token
         404:
           description: Form not found
         429:
@@ -213,6 +225,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FormOutput'
+        401:
+          description: 'Token has expired or Invalid token'
+        403:
+          description: Not Authorized - Missing token
         404:
           description: Form not found
         429:
@@ -244,6 +260,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FormOutput'
+        401:
+          description: 'Token has expired or Invalid token'
+        403:
+          description: Not Authorized - Missing token
         404:
           description: Form not found
         429:
@@ -275,8 +295,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        401:
+          description: 'Token has expired or Invalid token'
         403:
-          description: Forbidden
+          description: Not Authorized - Missing token
         429:
           description: Rate limit exceeded
         500:
@@ -430,6 +452,10 @@ paths:
                   $ref: '#/components/schemas/FeedbackOutput'
         204:
           description: No content
+        401:
+          description: 'Token has expired or Invalid token'
+        403:
+          description: Not Authorized - Missing token
         429:
           description: Rate limit exceeded
         500:
@@ -459,6 +485,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FeedbackOutput'
+        401:
+          description: 'Token has expired or Invalid token'
+        403:
+          description: Not Authorized - Missing token
         404:
           description: Feedback not found
         429:
@@ -494,6 +524,10 @@ paths:
                   $ref: '#/components/schemas/FeedbackOutput'
         204:
           description: No content
+        401:
+          description: 'Token has expired or Invalid token'
+        403:
+          description: Not Authorized - Missing token
         429:
           description: Rate limit exceeded
         500:
@@ -523,6 +557,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FeedbackOutput'
+        401:
+          description: 'Token has expired or Invalid token'
+        403:
+          description: Not Authorized - Missing token
         404:
           description: Feedback not found
         429:
