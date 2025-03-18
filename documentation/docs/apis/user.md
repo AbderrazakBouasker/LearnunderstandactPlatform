@@ -35,7 +35,8 @@ This endpoint retrieves a user's information by their unique ID. This is a secur
 | Status Code | Description | Response Body |
 |-------------|-------------|--------------|
 | 200 | User information retrieved successfully | User object |
-| 403 | Forbidden - Insufficient permissions | Error message |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Server error | Error message |
 

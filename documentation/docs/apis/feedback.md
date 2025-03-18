@@ -132,6 +132,8 @@ This endpoint retrieves all feedback submissions across all forms. This is a sec
 |-------------|-------------|--------------|
 | 200 | Feedbacks retrieved successfully | Array of Feedback objects |
 | 204 | No feedbacks found | No content |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Internal server error | Error message |
 
@@ -198,6 +200,8 @@ This endpoint retrieves a specific feedback submission by its ID. This is a secu
 | Status Code | Description | Response Body |
 |-------------|-------------|--------------|
 | 200 | Feedback retrieved successfully | Feedback object |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 404 | Feedback not found | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Internal server error | Error message |
@@ -268,6 +272,8 @@ This endpoint retrieves all feedback submissions for a specific form. This is a 
 |-------------|-------------|--------------|
 | 200 | Feedbacks retrieved successfully | Array of Feedback objects |
 | 204 | No feedbacks found | No content |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Internal server error | Error message |
 
@@ -334,6 +340,8 @@ This endpoint allows you to delete a feedback submission by its ID. This is a se
 | Status Code | Description | Response Body |
 |-------------|-------------|--------------|
 | 200 | Feedback deleted successfully | Deleted Feedback object |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 404 | Feedback not found | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Internal server error | Error message |

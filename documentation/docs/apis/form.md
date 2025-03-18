@@ -59,6 +59,8 @@ This endpoint allows you to create a new feedback form. This is a secured endpoi
 | Status Code | Description | Response Body |
 |-------------|-------------|--------------|
 | 201 | Form created successfully | Form object |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Internal server error | Error message |
 
@@ -145,6 +147,8 @@ This endpoint retrieves all forms created by the authenticated user. This is a s
 |-------------|-------------|--------------|
 | 200 | Forms retrieved successfully | Array of Form objects |
 | 204 | No forms found | No content |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Internal server error | Error message |
 
@@ -215,6 +219,8 @@ This endpoint retrieves a specific form by its ID. This is a secured endpoint th
 | Status Code | Description | Response Body |
 |-------------|-------------|--------------|
 | 200 | Form retrieved successfully | Form object |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 404 | Form not found | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Internal server error | Error message |
@@ -292,6 +298,8 @@ Same as for the Create Form endpoint. You can update any fields of the form.
 | Status Code | Description | Response Body |
 |-------------|-------------|--------------|
 | 200 | Form updated successfully | Updated Form object |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 404 | Form not found | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Internal server error | Error message |
@@ -354,6 +362,8 @@ This endpoint allows you to delete a form by its ID. This is a secured endpoint 
 | Status Code | Description | Response Body |
 |-------------|-------------|--------------|
 | 200 | Form deleted successfully | Deleted Form object |
+| 401 | Token has expired or Invalid token | Error message |
+| 403 | Not Authorized - Missing token | Error message |
 | 404 | Form not found | Error message |
 | 429 | Rate limit exceeded | Error message |
 | 500 | Internal server error | Error message |
