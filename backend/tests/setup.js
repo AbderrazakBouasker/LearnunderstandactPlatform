@@ -1,7 +1,23 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import jwt from 'jsonwebtoken';
+import { jest } from '@jest/globals';
+
+// Mock using ESM compatible approach
+const mockLogger = {
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  trace: jest.fn(),
+  fatal: jest.fn()
+};
+
+// Mock logger in ESM compatible way
+jest.unstable_mockModule('../logger.js', () => ({
+  default: mockLogger,
+  __esModule: true
+}));
 
 dotenv.config();
 
@@ -32,6 +48,9 @@ afterEach(async () => {
   for (const key in collections) {
     await collections[key].deleteMany({});
   }
+  
+  // Reset all mocks after each test
+  jest.clearAllMocks();
 });
 
 // Disconnect after all tests
@@ -40,3 +59,6 @@ afterAll(async () => {
   await mongoServer.stop();
   console.log("Disconnected from in-memory MongoDB");
 });
+
+// Export the mock for direct access in tests
+export { mockLogger };

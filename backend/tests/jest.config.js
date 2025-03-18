@@ -1,12 +1,8 @@
 export default {
-  transform: {
-    "^.+\\.jsx?$": "babel-jest"
-  },
-  testEnvironment: "node",
-  setupFilesAfterEnv: ["./setup.js"],
+  transform: {},
+  // Remove extensionsToTreatAsEsm since it's automatically inferred from package.json
+  testEnvironment: 'node',
   verbose: true,
-  testMatch: ["**/tests/*.test.js"],
-  moduleNameMapper: {
-    "^(\\.{1,2}/.*)\\.js$": "$1"
-  }
+  setupFilesAfterEnv: ['./setup.js'],
+  testTimeout: 15000
 };

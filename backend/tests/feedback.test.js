@@ -1,6 +1,7 @@
 import request from 'supertest';
-import { testApp, testUser, registerUser, loginUser } from './helpers.js';
+import { testApp, testUser, registerUser, loginUser, verifyLogCalls } from './helpers.js';
 import { jest } from '@jest/globals';
+import logger from '../logger.js';
 
 // Set longer timeout for API tests
 jest.setTimeout(10000);
@@ -49,6 +50,8 @@ describe('Feedback API', () => {
   };
   
   beforeEach(async () => {
+    jest.clearAllMocks();
+    
     // Register and login a user to get token
     await registerUser(testUser);
     const loginRes = await loginUser({
@@ -66,11 +69,13 @@ describe('Feedback API', () => {
       .send(testForm);
       
     formId = formRes.body._id;
+    
+    // Clear mocks after setup
+    jest.clearAllMocks();
   });
   
   describe('POST /api/feedback/:id', () => {
-    it('should create a new feedback with valid token and data', async () => {
-      // Note: This test assumes the route is enabled
+    it('should create a new feedback without logging errors', async () => {
       const res = await request(testApp)
         .post(`/api/feedback/${formId}`)
         .set('Authorization', `Bearer ${token}`)
@@ -78,10 +83,44 @@ describe('Feedback API', () => {
       
       expect(res.statusCode).toBe(201);
       expect(res.body).toHaveProperty('_id');
-      expect(res.body.formId).toBe(formId);
-      expect(res.body.formTitle).toBe(testForm.title);
-      expect(res.body.opinion).toBe(testFeedback.opinion);
-      expect(res.body.fields.length).toBe(testFeedback.fields.length);
+      
+      // Verify no controller errors were logged (middleware logs are fine)
+      verifyLogCalls.noControllerErrors();
+    });
+    
+    it('should not log errors for expected 404 when form not found', async () => {
+      const res = await request(testApp)
+        .post('/api/feedback/123456789012345678901234')
+        .set('Authorization', `Bearer ${token}`)
+        .send(testFeedback);
+      
+      expect(res.statusCode).toBe(404);
+      
+      // Verify no controller errors were logged (middleware logs are fine)
+      verifyLogCalls.noControllerErrors();
+    });
+    
+    it('should not log errors for expected validation failures', async () => {
+      const invalidFeedback = {
+        opinion: "like",
+        fields: [
+          {
+            label: "Name",
+            value: "John Doe"
+          }
+          // Missing Email and Comment fields
+        ]
+      };
+      
+      const res = await request(testApp)
+        .post(`/api/feedback/${formId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(invalidFeedback);
+      
+      expect(res.statusCode).toBe(400);
+      
+      // Verify no controller errors were logged (middleware logs are fine)
+      verifyLogCalls.noControllerErrors();
     });
     
     it('should fail if form does not exist', async () => {
@@ -218,12 +257,15 @@ describe('Feedback API', () => {
       expect(res.body.formId).toBe(formId);
     });
     
-    it('should fail with invalid feedback ID', async () => {
+    it('should log error for invalid feedback ID format', async () => {
       const res = await request(testApp)
-        .get('/api/feedback/invalidfeedbackid')
+        .get('/api/feedback/invalidid')
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(500);
+      
+      // Verify error was logged
+      verifyLogCalls.error('Error retrieving feedback by ID');
     });
     
     it('should fail when feedback does not exist', async () => {

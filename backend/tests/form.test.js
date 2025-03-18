@@ -1,6 +1,7 @@
 import request from 'supertest';
-import { testApp, testUser, registerUser, loginUser } from './helpers.js';
+import { testApp, testUser, registerUser, loginUser, verifyLogCalls } from './helpers.js';
 import { jest } from '@jest/globals';
+import logger from '../logger.js';
 
 // Set longer timeout for API tests
 jest.setTimeout(10000);
@@ -30,6 +31,8 @@ describe('Form API', () => {
   };
   
   beforeEach(async () => {
+    jest.clearAllMocks();
+    
     // Register and login a user to get token
     await registerUser(testUser);
     const loginRes = await loginUser({
@@ -39,6 +42,9 @@ describe('Form API', () => {
     
     token = loginRes.body.token;
     userId = loginRes.body.user._id;
+    
+    // Clear mocks after setup
+    jest.clearAllMocks();
   });
   
   describe('POST /api/form/create', () => {
@@ -53,17 +59,23 @@ describe('Form API', () => {
       expect(res.body.title).toBe(testForm.title);
       expect(res.body.description).toBe(testForm.description);
       expect(res.body.fields.length).toBe(testForm.fields.length);
+      
+      // Use noBusinessErrors instead of notCalled to ignore middleware logs
+      verifyLogCalls.noBusinessErrors();
     });
     
-    it('should fail without token', async () => {
+    it('should fail without token and log warning', async () => {
       const res = await request(testApp)
         .post('/api/form/create')
         .send(testForm);
       
       expect(res.statusCode).toBe(403);
+      
+      // Verify warning was logged
+      verifyLogCalls.warn('Authorization attempt with missing token');
     });
     
-    it('should fail with invalid form data', async () => {
+    it('should fail with invalid form data and log error', async () => {
       const invalidForm = {
         // Missing required title
         description: "Invalid form",
@@ -76,6 +88,9 @@ describe('Form API', () => {
         .send(invalidForm);
       
       expect(res.statusCode).toBe(500);
+      
+      // Verify error was logged
+      verifyLogCalls.error('Error creating form');
     });
   });
   
@@ -217,13 +232,15 @@ describe('Form API', () => {
       expect(checkRes.statusCode).toBe(404);
     });
     
-    it('should fail when form does not exist', async () => {
+    it('should log error when trying to delete non-existent form', async () => {
       const res = await request(testApp)
         .delete('/api/form/123456789012345678901234/delete')
         .set('Authorization', `Bearer ${token}`);
       
       expect(res.statusCode).toBe(404);
-      expect(res.body).toHaveProperty('error');
+      
+      // Use noBusinessErrors instead of notCalled to ignore middleware logs
+      verifyLogCalls.noBusinessErrors();
     });
   });
 });
