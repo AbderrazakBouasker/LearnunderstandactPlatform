@@ -1,4 +1,6 @@
 import Form from "../models/Form.js";
+import logger from '../logger.js';
+
 
 //CREATE
 export const createForm = async (req, res) => {
@@ -13,6 +15,12 @@ export const createForm = async (req, res) => {
     await newForm.save(); 
     res.status(201).json(newForm);
   } catch (error) {
+    // Log the error with additional context
+    logger.error('Error creating form', {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
     res.status(500).json({ error: error.message });
   }
 };
@@ -26,6 +34,11 @@ export const getForms = async (req, res) => {
     }
     res.status(200).json(form);
   } catch (error) {
+    // Log the error with additional context
+    logger.error('Error retrieving forms', {
+      error: error.message,
+      stack: error.stack,
+    });
     res.status(500).json({ error: error.message });
   }
 };
@@ -40,6 +53,11 @@ export const getForm = async (req, res) => {
     }
     res.status(200).json(form);
   } catch (error) {
+    // Log the error with additional context
+    logger.error('Error retrieving form by ID', {
+      error: error.message,
+      stack: error.stack,
+    });
     res.status(500).json({ error: error.message });
   }
 };
@@ -66,6 +84,12 @@ export const editForm = async (req, res) => {
     await form.save();
     res.status(200).json(form);
   } catch (error) {
+    // Log the error with additional context
+    logger.error('Error updating form', {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
     res.status(500).json({ error: error.message });
   }
 };
@@ -80,6 +104,11 @@ export const deleteForm = async (req, res) => {
     }
     res.status(200).json({deletedForm});
   } catch (error) {
+    // Log the error with additional context
+    logger.error('Error deleting form', {
+      error: error.message,
+      stack: error.stack,
+    });
     res.status(500).json({ error: error.message });
   }
 };

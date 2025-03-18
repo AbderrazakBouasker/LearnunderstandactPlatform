@@ -1,4 +1,5 @@
 import { Redis } from 'ioredis';
+import logger from '../logger.js';
 
 // Create Redis client with connection timeout and retry strategy
 export const redisClient = new Redis({
@@ -14,11 +15,20 @@ export const redisClient = new Redis({
 
 // Add event listeners to track connection state
 redisClient.on('error', (err) => {
-  console.error('Redis connection error:', err);
+    logger.error('Redis connection error:', {
+      error: err.message,
+      stack: err.stack,
+      host: process.env.REDIS_HOST,
+      port: process.env.REDIS_PORT,
+      retryAttempt: redisClient.status === 'reconnecting' ? 'yes' : 'no'
+    });
 });
 
 redisClient.on('connect', () => {
-  console.log('Connected to Redis');
+    logger.info('Connected to Redis', {
+      host: process.env.REDIS_HOST,
+      port: process.env.REDIS_PORT
+    });
 });
 
 // Custom Rate Limiting Middleware Sliding Window allows a max burst followed by a gradual refill
@@ -27,7 +37,11 @@ export const rateLimiter = (windowsize = 1, maxrequests = 5) => {
     try {
         // Skip rate limiting if Redis is not connected
         if (redisClient.status !== 'ready') {
-            console.warn('Redis not connected, skipping rate limiting');
+            logger.warn('Redis not connected, skipping rate limiting', {
+              redisStatus: redisClient.status,
+              path: req.path,
+              ip: req.ip
+            });
             return next();
         }
 
@@ -49,6 +63,14 @@ export const rateLimiter = (windowsize = 1, maxrequests = 5) => {
         ]);
 
         if (requests.length >= maxRequests) {
+            logger.warn('Rate limit exceeded', {
+              ip: req.ip, 
+              path: req.path, 
+              method: req.method,
+              requestCount: requests.length,
+              limit: maxRequests,
+              windowSize: `${windowsize} minutes`
+            });
             return res.status(429).json({ message: 'Too many requests, try again later.' });
         }
 
@@ -63,7 +85,14 @@ export const rateLimiter = (windowsize = 1, maxrequests = 5) => {
         
         next();
     } catch (error) {
-        console.error(`Rate limiter error:`, error);
+        logger.error('Rate limiter error', {
+            error: error.message,
+            stack: error.stack,
+            ip: req.ip,
+            path: req.path,
+            method: req.method,
+            redisStatus: redisClient.status
+        });
         // On error, allow the request to proceed to avoid blocking legitimate users
         next();
     }

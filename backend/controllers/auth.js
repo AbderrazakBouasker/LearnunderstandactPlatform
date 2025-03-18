@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import logger from '../logger.js';
+
 
 //REGISTER USER
 export const register = async (req, res) => {
@@ -28,6 +30,12 @@ export const register = async (req, res) => {
     savedUser.password = undefined;
     res.status(200).json(savedUser);
   } catch (error) {
+    // Log the error with additional context
+    logger.error('Error registering user', {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
     res.status(500).json({ error: error.message });
   }
 };
@@ -46,8 +54,18 @@ export const login = async (req, res) => {
 
     const token = jwt.sign({ id: user.id }, process.env.jwtSecret);
     user.password = undefined;
+    logger.info('User logged in successfully', {
+      userId: user.id,
+      email: user.email,
+    });
     res.status(200).json({ token, user });
   } catch (error) {
+    // Log the error with additional context
+    logger.error('Error logging in user', {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
     res.status(500).json({ error: error.message });
   }
 };

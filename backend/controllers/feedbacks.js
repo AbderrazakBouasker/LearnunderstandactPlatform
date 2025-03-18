@@ -1,5 +1,7 @@
 import Feedback from '../models/Feedback.js';
 import Form from '../models/Form.js';
+import logger from '../logger.js';
+
 
 // Helper function to map HTML types to JavaScript types
 const mapHtmlTypeToJsType = (htmlType) => {
@@ -50,6 +52,12 @@ export const createFeedback = async (req, res) => {
     await newFeedback.save();
     res.status(201).json(newFeedback);
   } catch (error) {
+    // Log the error with additional context
+    logger.error('Error creating feedback', {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
     res.status(500).json({ error: error.message });
   }
 };
@@ -63,6 +71,11 @@ export const getFeedbacks = async (req, res) => {
     }
     res.status(200).json(feedbacks);
   } catch (error) {
+    // Log the error with additional context
+    logger.error('Error retrieving feedbacks', {
+      error: error.message,
+      stack: error.stack,
+    });
     res.status(404).json({ error: error.message });
   }
 };
@@ -77,6 +90,11 @@ export const getFeedback = async (req, res) => {
         }
         res.status(200).json(feedback);
     } catch (error) {
+        // Log the error with additional context
+        logger.error('Error retrieving feedback by ID', {
+            error: error.message,
+            stack: error.stack,
+        });
         res.status(500).json({ error: error.message });
     }
     };
@@ -91,6 +109,11 @@ export const getFeedbackByFormId = async (req, res) => {
         }
         res.status(200).json(feedback);
     } catch (error) {
+        // Log the error with additional context
+        logger.error('Error retrieving feedback by form ID', {
+            error: error.message,
+            stack: error.stack,
+        });
         res.status(500).json({ error: error.message });
     }
 }
@@ -105,6 +128,11 @@ export const deleteFeedback = async (req, res) => {
         }
         res.status(200).json({feedback});
     } catch (error) {
+        // Log the error with additional context
+        logger.error('Error deleting feedback', {
+            error: error.message,
+            stack: error.stack,
+        });
         res.status(500).json({ error: error.message });
     }
 };

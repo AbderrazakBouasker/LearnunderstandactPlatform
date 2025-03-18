@@ -13,6 +13,8 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import formRoutes from "./routes/form.js";
 import feedbackRoutes from "./routes/feedback.js";
+import logger from "./logger.js";
+import { requestLogger, errorLogger } from "./logging-examples.js";
 
 import { register } from "./controllers/auth.js";
 import { createFeedback } from "./controllers/feedbacks.js";
@@ -33,6 +35,9 @@ app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 app.use(cors());
 app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 
+// Add request logging middleware
+app.use(requestLogger);
+
 //FILE STORAGE
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -48,8 +53,19 @@ const upload = multer({ storage });
 app.post("/api/feedback/:id", rateLimiter(1,5), (req, res, next) => {
   upload.array("pictures", 5)(req, res, (err) => {
     if (err instanceof multer.MulterError) {
+      logger.error('Multer error during file upload', { 
+        error: err.message,
+        code: err.code,
+        field: err.field,
+        requestPath: req.path
+      });
       return res.status(400).json({ error: err.message });
     } else if (err) {
+      logger.error('Unknown error during file upload', { 
+        error: err.message, 
+        stack: err.stack,
+        requestPath: req.path
+      });
       return res.status(500).json({ error: "An unknown error occurred during file upload." });
     }
     next();
@@ -65,20 +81,33 @@ app.use("/api/feedback", feedbackRoutes);
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
+// Add global error handler
+app.use(errorLogger);
+
 // Only connect to MongoDB and start server if this file is run directly, not when imported
 if (import.meta.url === `file://${process.argv[1]}`) {
   //MONGOOSE SETUP
   const PORT = process.env.PORT || 6001;
-  console.log(process.env.MONGO_URL+process.env.MONGO_DB_NAME);
+  logger.info('Connecting to MongoDB', { url: `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}` });
+  
   mongoose
     .connect(process.env.MONGO_URL+process.env.MONGO_DB_NAME)
     .then(() => {
       app.listen(PORT, () => {
-        console.log(`Server Port: ${PORT}`);
-        console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
+        logger.info(`Server started successfully`, { 
+          port: PORT,
+          environment: process.env.NODE_ENV || 'development',
+          swaggerDocsUrl: `http://localhost:${PORT}/api-docs`
+        });
       });
     })
-    .catch((error) => console.log(`${error} did not connect`));
+    .catch((error) => {
+      logger.error('Failed to connect to MongoDB', {
+        error: error.message,
+        stack: error.stack,
+        mongoUrl: `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}`,
+      });
+    });
 }
 
 // Export the app for testing
