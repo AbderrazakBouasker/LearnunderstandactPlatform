@@ -8,6 +8,10 @@ services:
       - "5000:5000" 
     env_file:
       - .env
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
+      OTEL_SERVICE_NAME: "backend-service"
     networks:
       - backend-network
     depends_on:
@@ -65,8 +69,14 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3000" # Grafana UI TODO: Change to 3000
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+      GF_PATHS_PROVISIONING: "/etc/grafana/provisioning"
     volumes:
       - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
     networks:
       - backend-network
     depends_on:
@@ -94,6 +104,8 @@ services:
     ports:
       - "4317:4317" # Keep original port mapping
       - "4318:4318" # Keep original port mapping
+    environment:
+      - LOKI_ENDPOINT=http://loki:3100/loki/api/v1/push
     networks:
       - backend-network
     depends_on:
@@ -108,6 +120,7 @@ services:
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yml
       - loki_data:/data
+    command: "-config.file=/etc/loki/local-config.yml"
     networks:
       - backend-network
   mimir:
