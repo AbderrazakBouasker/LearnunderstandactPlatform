@@ -3,13 +3,19 @@ import Feedback from "../models/Feedback.js";
 import Form from "../models/Form.js";
 
 jest.mock("../models/Feedback.js", () => {
+  // Create a mock save function that can be properly mocked further
+  const mockSave = jest.fn().mockResolvedValue({ _id: "feedbackId" });
+  
   const mockFeedback = jest.fn().mockImplementation((data) => {
     return {
       ...data,
       _id: "feedbackId",
-      save: jest.fn().mockResolvedValue({ ...data, _id: "feedbackId" })
+      save: mockSave
     };
   });
+  
+  // Expose mockSave on the prototype for test access
+  mockFeedback.prototype.save = mockSave;
   
   mockFeedback.find = jest.fn();
   mockFeedback.findById = jest.fn();
@@ -26,10 +32,25 @@ jest.mock("../models/Form.js", () => {
   return mockForm;
 });
 
+jest.mock("../logger.js", () => ({
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn()
+}));
+
+import logger from '../logger.js';
+
 describe("Feedback Controller", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+  
   describe("createFeedback", () => {
-    it("should create a new feedback", async () => {
-      const req = {
+    let req, res;
+    
+    beforeEach(() => {
+      req = {
         params: {
           id: "formId"
         },
@@ -38,11 +59,13 @@ describe("Feedback Controller", () => {
           fields: [{ label: "Name", value: "Test User" }]
         }
       };
-      const res = {
+      res = {
         status: jest.fn().mockReturnThis(),
         json: jest.fn()
       };
-      
+    });
+    
+    it("should create a new feedback without logging errors", async () => {
       const form = {
         _id: "formId",
         title: "Test Form",
@@ -59,6 +82,30 @@ describe("Feedback Controller", () => {
         formId: "formId",
         opinion: "happy"
       }));
+      expect(logger.error).not.toHaveBeenCalled();
+    });
+
+    it("should log errors when feedback creation fails", async () => {
+      const form = {
+        _id: "formId",
+        title: "Test Form",
+        description: "Test Description",
+        fields: [{ label: "Name", type: "text" }]
+      };
+      
+      Form.findById.mockResolvedValue(form);
+      
+      const error = new Error("Database error");
+      Feedback.prototype.save.mockRejectedValueOnce(error);
+      
+      await createFeedback(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(logger.error).toHaveBeenCalledWith('Error creating feedback', {
+        error: error.message,
+        stack: expect.any(String),
+        requestBody: req.body
+      });
     });
 
     it("should return 404 if form not found", async () => {
@@ -116,6 +163,16 @@ describe("Feedback Controller", () => {
   });
 
   describe("getFeedbacks", () => {
+    let req, res;
+    
+    beforeEach(() => {
+      req = {};
+      res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+    });
+    
     it("should get all feedbacks", async () => {
       const req = {};
       const res = {
@@ -149,9 +206,36 @@ describe("Feedback Controller", () => {
 
       expect(res.status).toHaveBeenCalledWith(204);
     });
+
+    it("should log errors when retrieving feedbacks fails", async () => {
+      const error = new Error("Database error");
+      Feedback.find.mockRejectedValue(error);
+      
+      await getFeedbacks(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(logger.error).toHaveBeenCalledWith('Error retrieving feedbacks', {
+        error: error.message,
+        stack: expect.any(String)
+      });
+    });
   });
 
   describe("getFeedback", () => {
+    let req, res;
+    
+    beforeEach(() => {
+      req = {
+        params: {
+          id: "feedbackId"
+        }
+      };
+      res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
+    });
+    
     it("should get feedback by id", async () => {
       const req = {
         params: {
@@ -190,6 +274,19 @@ describe("Feedback Controller", () => {
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ error: "Feedback not found" });
+    });
+
+    it("should log errors when retrieving a feedback fails", async () => {
+      const error = new Error("Database error");
+      Feedback.findById.mockRejectedValue(error);
+      
+      await getFeedback(req, res);
+      
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(logger.error).toHaveBeenCalledWith('Error retrieving feedback by ID', {
+        error: error.message,
+        stack: expect.any(String)
+      });
     });
   });
 

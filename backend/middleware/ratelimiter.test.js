@@ -2,6 +2,14 @@
  * Test file for rate limiter middleware
  */
 
+// Mock logger BEFORE importing the module
+jest.mock('../logger.js', () => ({
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn()
+}));
+
 // Mock ioredis BEFORE any imports
 jest.mock('ioredis', () => {
   // Create a mock EventEmitter class for Redis
@@ -21,16 +29,9 @@ jest.mock('ioredis', () => {
   };
 });
 
-// Mute console output
-const originalConsoleWarn = console.warn;
-const originalConsoleError = console.error;
-const originalConsoleLog = console.log;
-console.warn = jest.fn();
-console.error = jest.fn();
-console.log = jest.fn();
-
-// Now import the module using Redis
+// Now import the module using Redis and logger
 import { redisClient, rateLimiter } from './ratelimiter.js';
+import logger from '../logger.js';
 
 describe('Rate Limiter Middleware', () => {
   let mockReq;
@@ -39,10 +40,6 @@ describe('Rate Limiter Middleware', () => {
 
   afterAll(() => {
     redisClient.quit();
-    // Restore console methods
-    console.warn = originalConsoleWarn;
-    console.error = originalConsoleError;
-    console.log = originalConsoleLog;
   });
 
   beforeEach(() => {
@@ -50,7 +47,11 @@ describe('Rate Limiter Middleware', () => {
     jest.clearAllMocks();
     
     // Setup test doubles
-    mockReq = { ip: '127.0.0.1' };
+    mockReq = { 
+      ip: '127.0.0.1',
+      path: '/test-path',
+      method: 'GET'
+    };
     mockRes = { 
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
@@ -76,8 +77,13 @@ describe('Rate Limiter Middleware', () => {
     expect(mockNext).toHaveBeenCalled();
     expect(redisClient.zrangebyscore).not.toHaveBeenCalled();
     expect(redisClient.zadd).not.toHaveBeenCalled();
-    // Verify the warning was logged
-    expect(console.warn).toHaveBeenCalledWith('Redis not connected, skipping rate limiting');
+    
+    // Verify the warning was logged - ONLY check logger, not console
+    expect(logger.warn).toHaveBeenCalledWith('Redis not connected, skipping rate limiting', {
+      redisStatus: 'connecting',
+      path: mockReq.path,
+      ip: mockReq.ip
+    });
   });
 
   it('should allow request when under rate limit', async () => {
@@ -93,6 +99,10 @@ describe('Rate Limiter Middleware', () => {
     expect(redisClient.zadd).toHaveBeenCalled();
     expect(redisClient.expire).toHaveBeenCalled();
     expect(mockRes.status).not.toHaveBeenCalled();
+    
+    // Verify no logs were created in the normal path
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('should block request when over rate limit', async () => {
@@ -109,6 +119,15 @@ describe('Rate Limiter Middleware', () => {
     expect(mockRes.json).toHaveBeenCalledWith({ message: 'Too many requests, try again later.' });
     // zadd should not be called when rate limit is exceeded
     expect(redisClient.zadd).not.toHaveBeenCalled();
+    // Verify rate limit warning was logged
+    expect(logger.warn).toHaveBeenCalledWith('Rate limit exceeded', {
+      ip: mockReq.ip, 
+      path: mockReq.path, 
+      method: mockReq.method,
+      requestCount: 5,
+      limit: 5,
+      windowSize: '1 minutes'
+    });
   });
 
   it('should allow request when Redis operations time out', async () => {
@@ -141,7 +160,8 @@ describe('Rate Limiter Middleware', () => {
 
   it('should allow request when Redis throws an error', async () => {
     // Simulate Redis error
-    redisClient.zrangebyscore.mockRejectedValue(new Error('Redis error'));
+    const redisError = new Error('Redis error');
+    redisClient.zrangebyscore.mockRejectedValue(redisError);
     
     // Call middleware
     const middleware = rateLimiter(1, 5);
@@ -150,8 +170,13 @@ describe('Rate Limiter Middleware', () => {
     // Verify request was allowed despite error
     expect(mockNext).toHaveBeenCalled();
     expect(redisClient.zadd).not.toHaveBeenCalled();
-    // Verify error was logged
-    expect(console.error).toHaveBeenCalled();
+    // Verify error was logged with logger, not console
+    expect(logger.error).toHaveBeenCalledWith('Rate limiter error', expect.objectContaining({
+      error: 'Redis error',
+      ip: mockReq.ip,
+      path: mockReq.path,
+      method: mockReq.method
+    }));
   });
 
   it('should use correct window size and max requests', async () => {
@@ -179,5 +204,26 @@ describe('Rate Limiter Middleware', () => {
     
     // Check that expire was called with correct TTL (in seconds)
     expect(redisClient.expire).toHaveBeenCalledWith(mockReq.ip, expectedWindowSize / 1000);
+  });
+
+  it('should log errors when Redis operations fail', async () => {
+    // Simulate Redis error
+    const redisError = new Error('Redis error');
+    redisClient.zrangebyscore.mockRejectedValue(redisError);
+    
+    // Call middleware
+    const middleware = rateLimiter(1, 5);
+    await middleware(mockReq, mockRes, mockNext);
+    
+    // Verify request was allowed despite error and error was logged
+    expect(mockNext).toHaveBeenCalled();
+    expect(logger.error).toHaveBeenCalledWith('Rate limiter error', {
+      error: redisError.message,
+      stack: expect.any(String),
+      ip: mockReq.ip,
+      path: mockReq.path,
+      method: mockReq.method,
+      redisStatus: 'ready'
+    });
   });
 });
