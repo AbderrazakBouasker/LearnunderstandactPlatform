@@ -6,37 +6,19 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
-processors:
-  batch:
-    timeout: 1s
-  resource:
-    attributes:
-    - key: service.name
-      action: upsert
-      value: "backend-service"
-
 exporters:
-  logging:
-    verbosity: detailed
-    
   loki:
-    endpoint: http://loki:3100/loki/api/v1/push
+    endpoint: "http://loki:3100/loki/api/v1/push"
     tls:
       insecure: true
-    default_labels_enabled:
-      exporter: true
-      job: true
-      instance: true
-      level: true
-    format: json
-
-  otlphttp/tempo:
-    endpoint: http://tempo:4318
+  
+  prometheusremotewrite:
+    endpoint: "http://mimir:9009/api/v1/push"
     tls:
       insecure: true
 
-  otlphttp/mimir:
-    endpoint: http://mimir:9009/otlp
+  otlp:
+    endpoint: "tempo:4317"
     tls:
       insecure: true
 
@@ -44,13 +26,10 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch, resource]
-      exporters: [otlphttp/tempo, logging]
+      exporters: [otlp]
     metrics:
       receivers: [otlp]
-      processors: [batch, resource]
-      exporters: [otlphttp/mimir, logging]
+      exporters: [prometheusremotewrite]
     logs:
       receivers: [otlp]
-      processors: [batch]
-      exporters: [loki, logging]
+      exporters: [loki]

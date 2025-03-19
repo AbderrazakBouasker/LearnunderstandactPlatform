@@ -1,7 +1,8 @@
 import pkg from '@opentelemetry/api';
 const { trace, context, diag } = pkg;
-import * as logsApi from '@opentelemetry/api-logs';
+import logsApi from '@opentelemetry/api-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
+import { LoggerProvider } from '@opentelemetry/sdk-logs';
 import pino from 'pino';
 import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
@@ -34,19 +35,20 @@ const pinoInstrumentation = new PinoInstrumentation({
 // Register the instrumentation with the tracer provider
 pinoInstrumentation.setTracerProvider(tracerProvider);
 
-// Create a standard Pino logger with OTEL transport
+// Create a standard Pino logger - its output will be captured by OpenTelemetry
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
   base: {
     environment: process.env.NODE_ENV || 'development'
-  },
-  transport: {
-    target: 'pino/file',
-    options: { destination: 1 } // stdout
   }
 });
 
-// Get the logger from the global LoggerProvider (configured in instrumentation.js)
+// Create a logger provider for OpenTelemetry logs
+const loggerProvider = new LoggerProvider();
+// Register the logger provider with the API
+logsApi.logs.setGlobalLoggerProvider(loggerProvider);
+
+// Create a logger that sends logs to the OpenTelemetry collector
 const otelLogger = logsApi.logs.getLogger('backend-service');
 
 // Create a wrapper with convenient methods that mimic Pino's API
@@ -61,9 +63,6 @@ const loggerWrapper = {
 
 // Helper function to log with appropriate level
 function logWithLevel(level, message, attributes) {
-  // Log with Pino first
-  logger[level](attributes, message);
-  
   // Get current trace context if available
   const span = trace.getSpan(context.active());
   const spanContext = span?.spanContext();
@@ -81,6 +80,14 @@ function logWithLevel(level, message, attributes) {
     logAttributes.traceId = spanContext.traceId;
     logAttributes.spanId = spanContext.spanId;
   }
+
+  // Log to console for development visibility
+  console.log(JSON.stringify({
+    level,
+    message,
+    ...logAttributes,
+    timestamp: new Date().toISOString()
+  }));
   
   // Send to OpenTelemetry
   otelLogger.emit({
@@ -91,5 +98,7 @@ function logWithLevel(level, message, attributes) {
   });
 }
 
-// Export the wrapper as the default logger
-export default loggerWrapper;
+// You can also access OpenTelemetry's diagnostic logger if needed
+diag.debug('OpenTelemetry diagnostic logging is also available');
+
+export default logger;
