@@ -35,7 +35,7 @@ services:
     ports:
       - "6379:6379"
     environment:
-      - vm.overcommit_memory = 1
+      - vm.overcommit_memory=1
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     networks:
       - backend-network
@@ -108,6 +108,7 @@ services:
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yml
       - loki_data:/data
+    command: -config.file=/etc/loki/local-config.yaml
     networks:
       - backend-network
   mimir:

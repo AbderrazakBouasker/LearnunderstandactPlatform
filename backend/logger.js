@@ -1,104 +1,76 @@
-import pkg from '@opentelemetry/api';
-const { trace, context, diag } = pkg;
-import logsApi from '@opentelemetry/api-logs';
-import { SeverityNumber } from '@opentelemetry/api-logs';
-import { LoggerProvider } from '@opentelemetry/sdk-logs';
-import pino from 'pino';
-import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import * as logsApi from '@opentelemetry/api-logs';
 
-// Map to convert Pino log levels to OpenTelemetry severity numbers
-const levelToSeverity = {
-  trace: SeverityNumber.TRACE,
-  debug: SeverityNumber.DEBUG,
-  info: SeverityNumber.INFO,
-  warn: SeverityNumber.WARN,
-  error: SeverityNumber.ERROR,
-  fatal: SeverityNumber.FATAL,
-};
-
-// Create a TracerProvider
-const tracerProvider = new NodeTracerProvider();
-// Initialize the provider
-tracerProvider.register();
-
-// Set up the Pino instrumentation to capture logs for OpenTelemetry
-const pinoInstrumentation = new PinoInstrumentation({
-  // Optional: customize how logs are captured
-  logHook: (_span, record, _level) => {
-    // Add additional context to log records if needed
-    record['service.name'] = 'backend-service';
-    record['service.version'] = '1.0.0';
-  },
-});
-
-// Register the instrumentation with the tracer provider
-pinoInstrumentation.setTracerProvider(tracerProvider);
-
-// Create a standard Pino logger - its output will be captured by OpenTelemetry
-const logger = pino({
-  level: process.env.LOG_LEVEL || 'info',
-  base: {
-    environment: process.env.NODE_ENV || 'development'
-  }
-});
-
-// Create a logger provider for OpenTelemetry logs
-const loggerProvider = new LoggerProvider();
-// Register the logger provider with the API
-logsApi.logs.setGlobalLoggerProvider(loggerProvider);
-
-// Create a logger that sends logs to the OpenTelemetry collector
-const otelLogger = logsApi.logs.getLogger('backend-service');
-
-// Create a wrapper with convenient methods that mimic Pino's API
-const loggerWrapper = {
-  trace: (message, attributes = {}) => logWithLevel('trace', message, attributes),
-  debug: (message, attributes = {}) => logWithLevel('debug', message, attributes),
-  info: (message, attributes = {}) => logWithLevel('info', message, attributes),
-  warn: (message, attributes = {}) => logWithLevel('warn', message, attributes),
-  error: (message, attributes = {}) => logWithLevel('error', message, attributes),
-  fatal: (message, attributes = {}) => logWithLevel('fatal', message, attributes),
-};
-
-// Helper function to log with appropriate level
-function logWithLevel(level, message, attributes) {
-  // Get current trace context if available
-  const span = trace.getSpan(context.active());
-  const spanContext = span?.spanContext();
+/**
+ * Create a logger with OpenTelemetry integration
+ * 
+ * @param {string} loggerName - Name for this specific logger instance
+ * @returns {Object} Logger with standard logging methods
+ */
+function createLogger(loggerName = 'default-logger') {
+  // Get the globally registered logger provider (configured in instrumentation.js)
+  const otelLogger = logsApi.logs.getLogger(loggerName);
   
-  // Prepare log attributes
-  const logAttributes = {
-    ...attributes,
-    'service.name': 'backend-service',
-    'service.version': '1.0.0',
-    'deployment.environment': process.env.NODE_ENV || 'development',
+  // Debug check if we have a valid logger
+  if (!otelLogger || typeof otelLogger.emit !== 'function') {
+    console.warn('Warning: OTel logger not properly initialized - logs won\'t be sent to collector');
+  } else {
+    console.log('OTel logger successfully initialized for: ' + loggerName);
+  }
+
+  /**
+   * Log a message with the specified severity level
+   */
+  function logWithLevel(severityNumber, severityText, message, attributes = {}) {
+    try {
+      // Enrich attributes with timestamp for better correlation
+      const enhancedAttrs = {
+        ...attributes,
+        timestamp: new Date().toISOString(),
+      };
+      
+      // Emit to OpenTelemetry
+      otelLogger.emit({
+        severityNumber,
+        severityText,
+        body: message,
+        attributes: enhancedAttrs
+      });
+      
+      // Also log to console for development visibility
+      console.log(JSON.stringify({
+        level: severityText,
+        message,
+        ...enhancedAttrs
+      }));
+    } catch (error) {
+      console.error('Error emitting log:', error);
+      
+      // Fallback to console logging
+      console.log(JSON.stringify({
+        level: severityText,
+        message,
+        ...attributes,
+        timestamp: new Date().toISOString(),
+        loggingError: error.message
+      }));
+    }
+  }
+
+  // Return a logger object with standard methods
+  return {
+    trace: (message, attributes = {}) => logWithLevel(logsApi.SeverityNumber.TRACE, 'TRACE', message, attributes),
+    debug: (message, attributes = {}) => logWithLevel(logsApi.SeverityNumber.DEBUG, 'DEBUG', message, attributes),
+    info: (message, attributes = {}) => logWithLevel(logsApi.SeverityNumber.INFO, 'INFO', message, attributes),
+    warn: (message, attributes = {}) => logWithLevel(logsApi.SeverityNumber.WARN, 'WARN', message, attributes),
+    error: (message, attributes = {}) => logWithLevel(logsApi.SeverityNumber.ERROR, 'ERROR', message, attributes),
+    fatal: (message, attributes = {}) => logWithLevel(logsApi.SeverityNumber.FATAL, 'FATAL', message, attributes),
   };
-
-  // Add trace context if available
-  if (spanContext) {
-    logAttributes.traceId = spanContext.traceId;
-    logAttributes.spanId = spanContext.spanId;
-  }
-
-  // Log to console for development visibility
-  console.log(JSON.stringify({
-    level,
-    message,
-    ...logAttributes,
-    timestamp: new Date().toISOString()
-  }));
-  
-  // Send to OpenTelemetry
-  otelLogger.emit({
-    severityNumber: levelToSeverity[level],
-    severityText: level,
-    body: message,
-    attributes: logAttributes,
-  });
 }
 
-// You can also access OpenTelemetry's diagnostic logger if needed
-diag.debug('OpenTelemetry diagnostic logging is also available');
-
+// Create and export a default logger instance
+const logger = createLogger('backend-service');
 export default logger;
+
+// Also export the createLogger function for custom configuration
+export { createLogger };
+
