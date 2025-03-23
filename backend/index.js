@@ -1,5 +1,5 @@
 // Initialize OpenTelemetry
-import './instrumentation.js';
+// import './instrumentation.js';
 import express from "express";
 import { swaggerUi, specs } from "./swagger.js";
 import bodyParser from "body-parser";
@@ -15,7 +15,7 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import formRoutes from "./routes/form.js";
 import feedbackRoutes from "./routes/feedback.js";
-import logger from "./logger.js";  // Import directly instead of instantiating
+import logger from "./logger.js"; 
 import { requestLogger, errorLogger } from "./logging-examples.js";
 
 import { register } from "./controllers/auth.js";
@@ -38,7 +38,7 @@ app.use(cors());
 app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 
 // Add request logging middleware
-// app.use(requestLogger);
+app.use(requestLogger);
 
 //FILE STORAGE
 const storage = multer.diskStorage({
@@ -84,7 +84,7 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 // Add global error handler
-// app.use(errorLogger);
+app.use(errorLogger);
 
 // Only connect to MongoDB and start server if this file is run directly, not when imported
 if (import.meta.url === `file://${process.argv[1]}`) {
