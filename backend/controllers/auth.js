@@ -1,8 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import logger from '../logger.js';
-
+import logger from "../logger.js";
 
 //REGISTER USER
 export const register = async (req, res) => {
@@ -15,7 +14,8 @@ export const register = async (req, res) => {
       role,
     } = req.body;
     const user = await User.find({ email: email });
-    if (user.length !== 0) return res.status(409).json({error: "User already exists" });
+    if (user.length !== 0)
+      return res.status(409).json({ error: "User already exists" });
     const salt = await bcrypt.genSalt();
     const passwordHash = await bcrypt.hash(password, salt);
 
@@ -31,7 +31,7 @@ export const register = async (req, res) => {
     res.status(200).json(savedUser);
   } catch (error) {
     // Log the error with additional context
-    logger.error('Error registering user', {
+    logger.error("Error registering user", {
       error: error.message,
       stack: error.stack,
       requestBody: req.body,
@@ -52,19 +52,48 @@ export const login = async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user.id }, process.env.jwtSecret);
+    const token = jwt.sign({ id: user.id }, process.env.jwtSecret, {
+      expiresIn: process.env.TOKEN_EXPIRATION,
+    });
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      // secure: true,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 1, // 1 minute
+    });
     user.password = undefined;
-    logger.info('User logged in successfully', {
+    logger.info("User logged in successfully", {
       userId: user.id,
       email: user.email,
     });
-    res.status(200).json({ token, user });
+    res.status(200).json({ message: "Logged in successfully" });
   } catch (error) {
     // Log the error with additional context
-    logger.error('Error logging in user', {
+    logger.error("Error logging in user", {
       error: error.message,
       stack: error.stack,
       requestBody: req.body,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+//LOGOUT USER
+//TODO: zid ll documentation w updati il login w b9iet il api auth fil doc
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      // secure: true,
+      sameSite: "lax",
+    });
+    logger.info("User logged out successfully");
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    // Log the error with additional context
+    logger.error("Error logging out user", {
+      error: error.message,
+      stack: error.stack,
     });
     res.status(500).json({ error: error.message });
   }

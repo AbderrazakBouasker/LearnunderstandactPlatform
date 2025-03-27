@@ -1,5 +1,6 @@
 services:
   frontend:
+    container_name: frontend
     build:
       context: .
       dockerfile: Dockerfile
@@ -7,5 +8,9 @@ services:
       - "3002:3000"
     volumes:
       - ./:/app
-    
-  
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    name: luaplatformnetwork

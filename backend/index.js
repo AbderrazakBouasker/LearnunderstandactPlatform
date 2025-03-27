@@ -15,7 +15,7 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import formRoutes from "./routes/form.js";
 import feedbackRoutes from "./routes/feedback.js";
-import logger from "./logger.js"; 
+import logger from "./logger.js";
 import { requestLogger, errorLogger } from "./logging-examples.js";
 
 import { register } from "./controllers/auth.js";
@@ -26,7 +26,7 @@ import { rateLimiter } from "./middleware/ratelimiter.js";
 // CONFIGURATION
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({path: '.env'});
+dotenv.config({ path: ".env" });
 const app = express();
 app.use(express.json());
 app.use(helmet());
@@ -34,7 +34,13 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json({ limit: "100mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://luapp",
+    methods: ["GET", "POST", "DELETE", "PATCH"],
+    credentials: true,
+  })
+);
 app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 
 // Add request logging middleware
@@ -52,27 +58,34 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ROUTES WITH FILES
-app.post("/api/feedback/:id", rateLimiter(1,5), (req, res, next) => {
-  upload.array("pictures", 5)(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      logger.error('Multer error during file upload', { 
-        error: err.message,
-        code: err.code,
-        field: err.field,
-        requestPath: req.path
-      });
-      return res.status(400).json({ error: err.message });
-    } else if (err) {
-      logger.error('Unknown error during file upload', { 
-        error: err.message, 
-        stack: err.stack,
-        requestPath: req.path
-      });
-      return res.status(500).json({ error: "An unknown error occurred during file upload." });
-    }
-    next();
-  });
-}, createFeedback);
+app.post(
+  "/api/feedback/:id",
+  rateLimiter(1, 5),
+  (req, res, next) => {
+    upload.array("pictures", 5)(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        logger.error("Multer error during file upload", {
+          error: err.message,
+          code: err.code,
+          field: err.field,
+          requestPath: req.path,
+        });
+        return res.status(400).json({ error: err.message });
+      } else if (err) {
+        logger.error("Unknown error during file upload", {
+          error: err.message,
+          stack: err.stack,
+          requestPath: req.path,
+        });
+        return res
+          .status(500)
+          .json({ error: "An unknown error occurred during file upload." });
+      }
+      next();
+    });
+  },
+  createFeedback
+);
 
 //ROUTES
 app.use("/api/auth", authRoutes);
@@ -90,21 +103,23 @@ app.use(errorLogger);
 if (import.meta.url === `file://${process.argv[1]}`) {
   //MONGOOSE SETUP
   const PORT = process.env.PORT || 6001;
-  logger.info('Connecting to MongoDB', { url: `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}` });
-  
+  logger.info("Connecting to MongoDB", {
+    url: `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}`,
+  });
+
   mongoose
-    .connect(process.env.MONGO_URL+process.env.MONGO_DB_NAME)
+    .connect(process.env.MONGO_URL + process.env.MONGO_DB_NAME)
     .then(() => {
       app.listen(PORT, () => {
-        logger.info(`Server started successfully`, { 
+        logger.info(`Server started successfully`, {
           port: PORT,
-          environment: process.env.NODE_ENV || 'development',
-          swaggerDocsUrl: `http://localhost:${PORT}/api-docs`
+          environment: process.env.NODE_ENV || "development",
+          swaggerDocsUrl: `http://localhost:${PORT}/api-docs`,
         });
       });
     })
     .catch((error) => {
-      logger.error('Failed to connect to MongoDB', {
+      logger.error("Failed to connect to MongoDB", {
         error: error.message,
         stack: error.stack,
         mongoUrl: `${process.env.MONGO_URL}${process.env.MONGO_DB_NAME}`,

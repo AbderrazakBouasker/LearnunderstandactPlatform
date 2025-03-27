@@ -3,9 +3,9 @@ services:
     container_name: backend
     build:
       context: .
-      dockerfile: Dockerfile  # Uses Dockerfile.prod for production
+      dockerfile: Dockerfile # Uses Dockerfile.prod for production
     ports:
-      - "5000:5000" 
+      - "5000:5000"
     env_file:
       - .env
     networks:
@@ -108,7 +108,7 @@ services:
     container_name: loki
     image: grafana/loki:latest
     ports:
-      - "3100:3100" 
+      - "3100:3100"
     volumes:
       - ./loki/loki-config.yml:/etc/loki/local-config.yml
       - loki_data:/data
@@ -123,23 +123,23 @@ services:
     command: ["-config.file=/etc/mimir.yml"]
     volumes:
       - ./mimir/mimir-config.yml:/etc/mimir.yml
-      - mimir_data:/data  # Mount a volume to persist data
+      - mimir_data:/data # Mount a volume to persist data
     networks:
       - backend-network
   tempo:
     container_name: tempo
     image: grafana/tempo
-    user: root  # Run as root to ensure write permissions
-    command: [ "-config.file=/etc/tempo.yml" ]
+    user: root # Run as root to ensure write permissions
+    command: ["-config.file=/etc/tempo.yml"]
     ports:
-      - "3200:3200"  # Tempo UI
-      - "14317:4317"  # OTLP gRPC - Changed host port to 14317
-      - "14318:4318"  # OTLP HTTP - Changed host port to 14318
+      - "3200:3200" # Tempo UI
+      - "14317:4317" # OTLP gRPC - Changed host port to 14317
+      - "14318:4318" # OTLP HTTP - Changed host port to 14318
     networks:
       - backend-network
     volumes:
       - ./tempo/tempo.yml:/etc/tempo.yml
-      - tempo_data:/tmp/tempo  # Mount volume to /tmp/tempo instead of /data
+      - tempo_data:/tmp/tempo # Mount volume to /tmp/tempo instead of /data
 
 volumes:
   mongo_data:
@@ -150,3 +150,4 @@ volumes:
 
 networks:
   backend-network:
+    name: luaplatformnetwork

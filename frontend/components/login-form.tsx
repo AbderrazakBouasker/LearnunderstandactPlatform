@@ -42,17 +42,20 @@ export function LoginForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
       }
     );
 
     if (response.ok) {
-      router.push("/");
+      const data = await response.json();
+      console.log(data);
       setAlertDescription("Login successful");
       setAlertTitle("Success");
       setAlertVariant("default");
       setInvalidCredential(null);
       setUserNotFound(null);
       setIsAlert(true);
+      router.push("/");
     } else if (response.status === 400) {
       setInvalidCredential("Invalid credentials");
       setUserNotFound(null);
