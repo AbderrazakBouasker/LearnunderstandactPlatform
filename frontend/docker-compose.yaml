@@ -9,8 +9,8 @@ services:
     volumes:
       - ./:/app
     networks:
-      - backend-network
+      - luaplatform-network
 
 networks:
-  backend-network:
-    name: luaplatformnetwork
+  luaplatform-network:
+    external: true
