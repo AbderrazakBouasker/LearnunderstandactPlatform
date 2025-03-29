@@ -47,15 +47,13 @@ export function LoginForm({
     );
 
     if (response.ok) {
-      const data = await response.json();
-      console.log(data);
       setAlertDescription("Login successful");
       setAlertTitle("Success");
       setAlertVariant("default");
       setInvalidCredential(null);
       setUserNotFound(null);
       setIsAlert(true);
-      router.push("/");
+      router.push("/admin");
     } else if (response.status === 400) {
       setInvalidCredential("Invalid credentials");
       setUserNotFound(null);
@@ -71,6 +69,9 @@ export function LoginForm({
       setAlertTitle("Too many requests");
       setAlertVariant("destructive");
       setIsAlert(true);
+      setTimeout(() => {
+        setIsAlert(false);
+      }, 3000);
     } else {
       setInvalidCredential(null);
       setUserNotFound(null);
@@ -78,6 +79,9 @@ export function LoginForm({
       setAlertTitle("Error");
       setAlertVariant("destructive");
       setIsAlert(true);
+      setTimeout(() => {
+        setIsAlert(false);
+      }, 3000);
     }
   }
 
