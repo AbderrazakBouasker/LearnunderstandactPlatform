@@ -15,6 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useState } from "react";
 
 const data = {
   user: {
@@ -48,7 +49,25 @@ const data = {
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  onButtonClick,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  onButtonClick?: (button: string) => void;
+}) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [handleWhichButtonPressed, setHandleWhichButtonPressed] = useState<
+    string | null
+  >(null);
+
+  const handleButtonClick = (button: string) => {
+    setHandleWhichButtonPressed(button);
+    // Forward the button click to the parent component
+    if (onButtonClick) {
+      onButtonClick(button);
+    }
+  };
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -69,7 +88,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavProjects projects={data.management} />
+        <NavProjects
+          projects={data.management}
+          buttonClicked={handleButtonClick}
+        />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

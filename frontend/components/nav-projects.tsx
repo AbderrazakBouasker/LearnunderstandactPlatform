@@ -26,12 +26,14 @@ import {
 
 export function NavProjects({
   projects,
+  buttonClicked,
 }: {
   projects: {
     name: string;
     url: string;
     icon: LucideIcon;
   }[];
+  buttonClicked: (button: string) => void;
 }) {
   // const { isMobile } = useSidebar();
 
@@ -41,7 +43,7 @@ export function NavProjects({
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
+            <SidebarMenuButton asChild onClick={() => buttonClicked(item.name)}>
               <a href={item.url}>
                 <item.icon />
                 <span>{item.name}</span>
