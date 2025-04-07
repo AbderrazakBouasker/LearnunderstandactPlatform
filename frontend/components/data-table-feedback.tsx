@@ -35,7 +35,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
+import { FeedbackDetailModel } from "@/components/feedback-detail-modal";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 export type Feedback = {
   _id: string;
   formId: string;
@@ -49,13 +50,12 @@ export function DataTableFeedback() {
   const [data, setData] = React.useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [showFeedBackDetails, setShowFeedBackDetails] = React.useState(false);
-  const [feedbackDetails, setFeedbackDetails] = React.useState<Feedback | null>(
-    null
-  );
-  const [showFormDetails, setShowFormDetails] = React.useState(false);
-  const [formDetails, setFormDetails] = React.useState(null);
-
+  //   const [showFeedBackDetails, setShowFeedBackDetails] = React.useState(false);
+  //   const [feedbackDetails, setFeedbackDetails] = React.useState<Feedback | null>(
+  //     null
+  //   );
+  //   const [showFormDetails, setShowFormDetails] = React.useState(false);
+  //   const [formDetails, setFormDetails] = React.useState(null);
   const handleDeleteFeedback = async (id: string) => {
     try {
       const response = await fetch(
@@ -83,9 +83,9 @@ export function DataTableFeedback() {
     }
   };
 
-  const handleFeedbackDetails = (feedback: Feedback) => {
-    setFeedbackDetails(feedback);
-  };
+  //   const handleFeedbackDetails = (feedback: Feedback) => {
+  //     setFeedbackDetails(feedback);
+  //   };
 
   const columns: ColumnDef<Feedback>[] = [
     {
@@ -177,14 +177,14 @@ export function DataTableFeedback() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => {
-                  setShowFeedBackDetails(true);
-                  handleFeedbackDetails(feedback);
-                }}
-              >
-                View feedback details
-              </DropdownMenuItem>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    View feedback details
+                  </DropdownMenuItem>
+                </DialogTrigger>
+                <FeedbackDetailModel details={feedback} />
+              </Dialog>
               <DropdownMenuItem>View form details</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
