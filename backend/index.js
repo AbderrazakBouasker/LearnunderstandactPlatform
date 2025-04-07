@@ -3,6 +3,7 @@
 import express from "express";
 import { swaggerUi, specs } from "./swagger.js";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -34,6 +35,7 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json({ limit: "100mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
+app.use(cookieParser());
 app.use(
   cors({
     origin: "http://luapp",
