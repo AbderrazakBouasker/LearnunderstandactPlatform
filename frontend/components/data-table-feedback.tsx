@@ -35,7 +35,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FeedbackDetailModel } from "@/components/feedback-detail-modal";
+import { FeedbackDetailModal } from "@/components/feedback-detail-modal";
+import { FormDetailModal } from "@/components/form-detail-modal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 export type Feedback = {
   _id: string;
@@ -183,9 +184,16 @@ export function DataTableFeedback() {
                     View feedback details
                   </DropdownMenuItem>
                 </DialogTrigger>
-                <FeedbackDetailModel details={feedback} />
+                <FeedbackDetailModal details={feedback} />
               </Dialog>
-              <DropdownMenuItem>View form details</DropdownMenuItem>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    View form details
+                  </DropdownMenuItem>
+                </DialogTrigger>
+                <FormDetailModal formId={feedback.formId} />
+              </Dialog>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"

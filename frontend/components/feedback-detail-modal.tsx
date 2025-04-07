@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function FeedbackDetailModel({
+export function FeedbackDetailModal({
   details,
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
