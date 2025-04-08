@@ -17,6 +17,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Feedback } from "@/components/feedback";
+import { Form } from "@/components/form";
 
 export default function Page() {
   const [activeButton, setActiveButton] = useState<string | null>(null);
@@ -60,14 +61,9 @@ export default function Page() {
           <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min">
             {activeButton === "Feedbacks" ? (
               <Feedback />
-            ) : (
-              <div className="p-4">
-                <h2 className="text-2xl font-bold mb-4">
-                  Selected: {activeButton || "None"}
-                </h2>
-                <p>Click on a menu item from the sidebar to view content</p>
-              </div>
-            )}
+            ) : activeButton === "Forms" ? (
+              <Form />
+            ) : null}
           </div>
         </div>
       </SidebarInset>
