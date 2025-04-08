@@ -224,13 +224,11 @@ export function DataTableFeedback() {
         );
 
         if (!response.ok) {
-          console.log(response);
           throw new Error(`Error: ${response.status}`);
         }
 
         const feedbackData = await response.json();
         setData(feedbackData);
-        console.log(feedbackData);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch feedback data:", err);
@@ -324,14 +322,14 @@ export function DataTableFeedback() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border w-full overflow-hidden">
+        <Table className=" w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className="break-words">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -352,7 +350,10 @@ export function DataTableFeedback() {
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      className="break-words whitespace-normal"
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
