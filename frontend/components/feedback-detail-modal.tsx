@@ -6,8 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export function FeedbackDetailModal({
   details,
@@ -38,16 +38,19 @@ export function FeedbackDetailModal({
         {/* Display main form information */}
         {mainFieldsToDisplay.map((key) =>
           details[key] ? (
-            <div key={key} className="grid grid-cols-4 items-center gap-4">
+            <div key={key} className="grid grid-cols-4 items-center gap-4 ">
               <Label htmlFor={key} className="text-right capitalize">
                 {key.replace(/([A-Z])/g, " $1").trim()}
               </Label>
-              <Input
-                id={key}
-                value={details[key]?.toString() || ""}
-                className="col-span-3"
-                disabled
-              />
+              <div className="col-span-3 break-words">
+                <Textarea
+                  id={key}
+                  value={details[key]?.toString() || ""}
+                  className="resize-none w-full"
+                  disabled
+                  rows={details[key]?.toString().length > 100 ? 3 : 1}
+                />
+              </div>
             </div>
           ) : null
         )}
@@ -65,12 +68,15 @@ export function FeedbackDetailModal({
                 <Label htmlFor={field._id} className="text-right capitalize">
                   {field.label}
                 </Label>
-                <Input
-                  id={field._id}
-                  value={field.value || ""}
-                  className="col-span-3"
-                  disabled
-                />
+                <div className="col-span-3 break-words">
+                  <Textarea
+                    id={field._id}
+                    value={field.value || ""}
+                    className="resize-none w-full"
+                    disabled
+                    rows={field.value?.length > 100 ? 3 : 1}
+                  />
+                </div>
               </div>
             ))
           ) : (
@@ -94,12 +100,15 @@ export function FeedbackDetailModal({
               <Label htmlFor={key} className="text-right capitalize">
                 {key.replace(/([A-Z])/g, " $1").trim()}
               </Label>
-              <Input
-                id={key}
-                value={value?.toString() || ""}
-                className="col-span-3"
-                disabled
-              />
+              <div className="col-span-3 break-words">
+                <Textarea
+                  id={key}
+                  value={value?.toString() || ""}
+                  className="resize-none w-full"
+                  disabled
+                  rows={value?.toString().length > 100 ? 3 : 1}
+                />
+              </div>
             </div>
           ))}
       </div>

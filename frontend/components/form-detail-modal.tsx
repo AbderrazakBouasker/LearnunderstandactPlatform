@@ -4,8 +4,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
@@ -103,12 +103,19 @@ export function FormDetailModal({ formId }: { formId: string }) {
               <Label htmlFor={key} className="text-right capitalize">
                 {key.replace(/([A-Z])/g, " $1").trim()}
               </Label>
-              <Input
-                id={key}
-                value={formData[key as keyof FormData]?.toString() || ""}
-                className="col-span-3"
-                disabled
-              />
+              <div className="col-span-3 break-words">
+                <Textarea
+                  id={key}
+                  value={formData[key as keyof FormData]?.toString() || ""}
+                  className="resize-none w-full"
+                  disabled
+                  rows={
+                    formData[key as keyof FormData]?.toString().length > 100
+                      ? 3
+                      : 1
+                  }
+                />
+              </div>
             </div>
           ) : null
         )}
@@ -141,11 +148,13 @@ export function FormDetailModal({ formId }: { formId: string }) {
                 <Label htmlFor={field._id} className="text-right capitalize">
                   {field.label} ({field.type})
                 </Label>
-                <div className="col-span-3 flex items-center gap-2">
-                  <Input
+                <div className="col-span-3 break-words">
+                  <Textarea
                     id={field._id}
                     value={field.value || "No default value"}
+                    className="resize-none w-full"
                     disabled
+                    rows={(field.value?.length || 0) > 100 ? 3 : 1}
                   />
                 </div>
               </div>
@@ -172,12 +181,15 @@ export function FormDetailModal({ formId }: { formId: string }) {
               <Label htmlFor={key} className="text-right capitalize">
                 {key.replace(/([A-Z])/g, " $1").trim()}
               </Label>
-              <Input
-                id={key}
-                value={value?.toString() || ""}
-                className="col-span-3"
-                disabled
-              />
+              <div className="col-span-3 break-words">
+                <Textarea
+                  id={key}
+                  value={value?.toString() || ""}
+                  className="resize-none w-full"
+                  disabled
+                  rows={value?.toString().length > 100 ? 3 : 1}
+                />
+              </div>
             </div>
           ))}
       </div>
