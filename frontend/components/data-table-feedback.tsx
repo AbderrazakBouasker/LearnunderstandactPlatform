@@ -56,7 +56,6 @@ export type Feedback = {
 export function DataTableFeedback() {
   const [data, setData] = React.useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
   const [isAlert, setIsAlert] = React.useState<boolean>(false);
   const [alertVariant, setAlertVariant] = React.useState<
     "default" | "destructive" | null
@@ -96,7 +95,7 @@ export function DataTableFeedback() {
       }
       if (response.status === 401) {
         setAlertTitle("Unauthorized");
-        setAlertDescription("You are not authorized to delete this feedback");
+        setAlertDescription("Invalid or expired token");
         setAlertVariant("destructive");
         setIsAlert(true);
         setTimeout(() => {
@@ -105,9 +104,7 @@ export function DataTableFeedback() {
       }
       if (response.status === 403) {
         setAlertTitle("Forbidden");
-        setAlertDescription(
-          "You do not have permission to delete this feedback"
-        );
+        setAlertDescription("Not authorized or missing token");
         setAlertVariant("destructive");
         setIsAlert(true);
         setTimeout(() => {
@@ -288,17 +285,55 @@ export function DataTableFeedback() {
           }
         );
 
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status}`);
+        if (response.ok || response.status === 204) {
+          const feedbackData = await response.json();
+          setData(feedbackData);
         }
 
-        const feedbackData = await response.json();
-        setData(feedbackData);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch feedback data:", err);
-        setError("Failed to load feedback data. Please try again later.");
-        setData([]);
+        if (response.status === 401) {
+          setAlertTitle("Unauthorized");
+          setAlertDescription("Invalid or expired token");
+          setAlertVariant("destructive");
+          setIsAlert(true);
+          setTimeout(() => {
+            setIsAlert(false);
+          }, 3000);
+        }
+        if (response.status === 403) {
+          setAlertTitle("Forbidden");
+          setAlertDescription("Not authorized or missing token");
+          setAlertVariant("destructive");
+          setIsAlert(true);
+          setTimeout(() => {
+            setIsAlert(false);
+          }, 3000);
+        }
+        if (response.status === 429) {
+          setAlertTitle("Too Many Requests");
+          setAlertDescription("Please wait a few minutes before trying again.");
+          setAlertVariant("destructive");
+          setIsAlert(true);
+          setTimeout(() => {
+            setIsAlert(false);
+          }, 3000);
+        }
+        if (response.status === 500) {
+          setAlertTitle("Server Error");
+          setAlertDescription("An error occurred. Please try again.");
+          setAlertVariant("destructive");
+          setIsAlert(true);
+          setTimeout(() => {
+            setIsAlert(false);
+          }, 3000);
+        }
+      } catch {
+        setAlertTitle("Error");
+        setAlertDescription("Failed to load feedback data. Please try again.");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
       } finally {
         setIsLoading(false);
       }
@@ -346,11 +381,6 @@ export function DataTableFeedback() {
       <div className="w-full py-10 text-center">Loading feedback data...</div>
     );
   }
-
-  if (error) {
-    return <div className="w-full py-10 text-center text-red-500">{error}</div>;
-  }
-
   return (
     <>
       <div className="w-full">
