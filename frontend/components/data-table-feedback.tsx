@@ -13,10 +13,15 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  MoreHorizontal,
+  Terminal,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+// import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -38,6 +43,7 @@ import {
 import { FeedbackDetailModal } from "@/components/feedback-detail-modal";
 import { FormDetailModal } from "@/components/form-detail-modal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 export type Feedback = {
   _id: string;
   formId: string;
@@ -51,6 +57,14 @@ export function DataTableFeedback() {
   const [data, setData] = React.useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [isAlert, setIsAlert] = React.useState<boolean>(false);
+  const [alertVariant, setAlertVariant] = React.useState<
+    "default" | "destructive" | null
+  >("default");
+  const [alertDescription, setAlertDescription] = React.useState<string | null>(
+    null
+  );
+  const [alertTitle, setAlertTitle] = React.useState<string | null>(null);
   //   const [showFeedBackDetails, setShowFeedBackDetails] = React.useState(false);
   //   const [feedbackDetails, setFeedbackDetails] = React.useState<Feedback | null>(
   //     null
@@ -68,49 +82,100 @@ export function DataTableFeedback() {
         }
       );
 
-      if (!response.ok) {
-        console.log(response);
-        throw new Error(`Error: ${response.status}`);
+      if (response.ok) {
+        setAlertTitle("Success");
+        setAlertDescription("Successfully deleted feedback");
+        setAlertVariant("default");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+        setData((prevData) =>
+          prevData.filter((feedback) => feedback._id !== id)
+        );
       }
-
-      setData((prevData) => prevData.filter((feedback) => feedback._id !== id));
-      console.log(`Deleted feedback with ID: ${id}`);
-      setError(null);
-
-      // TODO: Show success message
+      if (response.status === 401) {
+        setAlertTitle("Unauthorized");
+        setAlertDescription("You are not authorized to delete this feedback");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      }
+      if (response.status === 403) {
+        setAlertTitle("Forbidden");
+        setAlertDescription(
+          "You do not have permission to delete this feedback"
+        );
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      }
+      if (response.status === 404) {
+        setAlertTitle("Not Found");
+        setAlertDescription("Feedback not found");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      }
+      if (response.status === 429) {
+        setAlertTitle("Too Many Requests");
+        setAlertDescription("Please wait a few minutes before trying again.");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      }
+      if (response.status === 500) {
+        setAlertTitle("Server Error");
+        setAlertDescription("An error occurred. Please try again.");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      }
     } catch (err) {
       console.error("Failed to delete feedback:", err);
-      // TODO: Show error message
+      setAlertTitle("Error");
+      setAlertDescription("Failed to delete feedback. Please try again.");
+      setAlertVariant("destructive");
+      setIsAlert(true);
+      setTimeout(() => {
+        setIsAlert(false);
+      }, 3000);
     }
   };
 
-  //   const handleFeedbackDetails = (feedback: Feedback) => {
-  //     setFeedbackDetails(feedback);
-  //   };
-
   const columns: ColumnDef<Feedback>[] = [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
+    // {
+    //   id: "select",
+    //   header: ({ table }) => (
+    //     <Checkbox
+    //       checked={
+    //         table.getIsAllPageRowsSelected() ||
+    //         (table.getIsSomePageRowsSelected() && "indeterminate")
+    //       }
+    //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+    //       aria-label="Select all"
+    //     />
+    //   ),
+    //   cell: ({ row }) => (
+    //     <Checkbox
+    //       checked={row.getIsSelected()}
+    //       onCheckedChange={(value) => row.toggleSelected(!!value)}
+    //       aria-label="Select row"
+    //     />
+    //   ),
+    //   enableSorting: false,
+    //   enableHiding: false,
+    // },
     {
       accessorKey: "formTitle",
       header: ({ column }) => {
@@ -287,118 +352,129 @@ export function DataTableFeedback() {
   }
 
   return (
-    <div className="w-full">
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Search across all columns..."
-          value={globalFilter ?? ""}
-          onChange={(event) => setGlobalFilter(event.target.value)}
-          className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div className="rounded-md border w-full overflow-hidden">
-        <Table className=" w-full">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
+    <>
+      <div className="w-full">
+        <div className="flex items-center py-4">
+          <Input
+            placeholder="Search across all columns..."
+            value={globalFilter ?? ""}
+            onChange={(event) => setGlobalFilter(event.target.value)}
+            className="max-w-sm"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
                   return (
-                    <TableHead key={header.id} className="break-words">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
                   );
                 })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="break-words whitespace-normal"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        <div className="rounded-md border w-full overflow-hidden">
+          <Table className=" w-full">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id} className="break-words">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className="break-words whitespace-normal"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <div className="flex-1 text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+      {isAlert && (
+        <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">
+          <Alert variant={alertVariant}>
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>{alertTitle}</AlertTitle>
+            <AlertDescription>{alertDescription}</AlertDescription>
+          </Alert>
+        </div>
+      )}
+    </>
   );
 }
