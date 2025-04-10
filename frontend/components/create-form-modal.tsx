@@ -24,7 +24,7 @@ export function CreateFormModal({
           <DialogTrigger asChild>
             <Button variant="outline">Create a new Form</Button>
           </DialogTrigger>
-          <DialogContent className="">
+          <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
             <FormsForm action="create" />
           </DialogContent>
         </Dialog>
@@ -33,7 +33,7 @@ export function CreateFormModal({
           <DialogTrigger asChild>
             <Button variant="outline">Edit Form</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
             <FormsForm action="edit" form={form} />
           </DialogContent>
         </Dialog>

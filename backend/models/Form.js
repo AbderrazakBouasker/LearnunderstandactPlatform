@@ -3,12 +3,24 @@ import mongoose from "mongoose";
 const fieldSchema = new mongoose.Schema({
   label: {
     type: String,
-    required: [true, 'Label is required'],
+    required: [true, "Label is required"],
   },
   type: {
     type: String,
-    enum: ["text", "number", "date", "email", "textarea", "file"],
-    required: [true, 'Type is required'],
+    enum: [
+      "text",
+      "number",
+      "tel",
+      "date",
+      "time",
+      "email",
+      "textarea",
+      "file",
+      "checkbox",
+      "radio",
+      "color",
+    ],
+    required: [true, "Type is required"],
   },
   value: {
     type: mongoose.Schema.Types.Mixed,
