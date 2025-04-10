@@ -150,8 +150,9 @@ export function FormsForm({
             : null}
         </DialogDescription>
       </DialogHeader>
-      <div className="grid gap-4 py-4">
-        <form onSubmit={handleSubmit}>
+
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-4 py-4">
           <div className="grid gap-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="title" className="text-right">
@@ -161,6 +162,7 @@ export function FormsForm({
                 id="title"
                 value={formData.title}
                 onChange={handleChange}
+                required
                 className="col-span-3"
               />
             </div>
@@ -173,6 +175,7 @@ export function FormsForm({
                 id="description"
                 value={formData.description}
                 onChange={handleChange}
+                required
                 className="col-span-3"
               />
             </div>
@@ -212,11 +215,12 @@ export function FormsForm({
               </div>
             </div>
           </div>
-        </form>
-      </div>
-      <DialogFooter>
-        <Button onClick={handleSubmit}>Save changes</Button>
-      </DialogFooter>
+        </div>
+
+        <DialogFooter>
+          <Button type="submit">Save changes</Button>
+        </DialogFooter>
+      </form>
     </>
   );
 }
