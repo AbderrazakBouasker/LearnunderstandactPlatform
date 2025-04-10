@@ -24,7 +24,7 @@ export function CreateFormModal({
           <DialogTrigger asChild>
             <Button variant="outline">Create a new Form</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="">
             <FormsForm action="create" />
           </DialogContent>
         </Dialog>
