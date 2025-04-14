@@ -16,7 +16,7 @@ export function FormsForm({
 }: {
   action: string;
   form?: {
-    id: string;
+    _id: string;
     title: string;
     description: string;
     opinion: string[];
@@ -31,7 +31,7 @@ export function FormsForm({
   };
 }) {
   const [formData, setFormData] = useState({
-    id: form?.id || "",
+    _id: form?._id || "",
     title: form?.title || "",
     description: form?.description || "",
     opinion: form?.opinion || ["unhappy", "neutral", "happy"],
@@ -262,9 +262,11 @@ export function FormsForm({
 
     //console.log("Submitting form data:", JSON.stringify(dataToSubmit));
 
-    if (action === "create") {
-      try {
-        const response = await fetch(
+    try {
+      let response;
+
+      if (action === "create") {
+        response = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/form/create`,
           {
             method: "POST",
@@ -273,18 +275,28 @@ export function FormsForm({
             credentials: "include",
           }
         );
-
-        if (!response.ok) {
-          //console.log("Response not OK:", response);
-          //console.log(formData);
-          throw new Error("Failed to create form");
-        }
-
-        // Handle successful response
-        //console.log("Form created successfully");
-      } catch (error) {
-        console.error("Error creating form:", error);
+      } else if (action === "edit") {
+        response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/form/${dataToSubmit._id}/edit`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dataToSubmit),
+            credentials: "include",
+          }
+        );
       }
+
+      if (!response || !response.ok) {
+        //console.log("Response not OK:", response);
+        //console.log(formData);
+        throw new Error(`Failed to ${action} form`);
+      }
+
+      // Handle successful response
+      //console.log(`Form ${action}d successfully`);
+    } catch (error) {
+      console.error(`Error ${action}ing form:`, error);
     }
   };
 
@@ -296,6 +308,8 @@ export function FormsForm({
             ? "Create a new Form"
             : action === "edit"
             ? "Edit the Form"
+            : action === "view"
+            ? "Form Details"
             : null}
         </DialogTitle>
         <DialogDescription>
@@ -303,6 +317,8 @@ export function FormsForm({
             ? "Create a new Form here. Click save when you're done."
             : action === "edit"
             ? "Edit the Form here. Click save when you're done."
+            : action === "view"
+            ? "View the form details."
             : null}
         </DialogDescription>
       </DialogHeader>
@@ -320,6 +336,7 @@ export function FormsForm({
                 onChange={handleChange}
                 required
                 className="col-span-3"
+                disabled={action === "view"}
               />
             </div>
 
@@ -333,6 +350,7 @@ export function FormsForm({
                 onChange={handleChange}
                 required
                 className="col-span-3"
+                disabled={action === "view"}
               />
             </div>
 
@@ -341,14 +359,16 @@ export function FormsForm({
                 Opinions
               </Label>
               <div className="col-span-3">
-                <Input
-                  id="opinion"
-                  value={newOpinion}
-                  onChange={(e) => setNewOpinion(e.target.value)}
-                  onKeyDown={handleOpinionKeyDown}
-                  placeholder="Type and press Enter to add"
-                  className="mb-2"
-                />
+                {action !== "view" && (
+                  <Input
+                    id="opinion"
+                    value={newOpinion}
+                    onChange={(e) => setNewOpinion(e.target.value)}
+                    onKeyDown={handleOpinionKeyDown}
+                    placeholder="Type and press Enter to add"
+                    className="mb-2"
+                  />
+                )}
 
                 <div
                   className="border rounded-md p-4 bg-muted/20 min-h-[100px] flex flex-wrap relative"
@@ -358,11 +378,22 @@ export function FormsForm({
                     <MovableBadge
                       key={`${op}-${index}`}
                       variant="secondary"
-                      onRemove={() => removeOpinion(index)}
-                      onDragStart={() => setDraggingIndex(index)}
-                      onDragEnd={handleReorderOpinions}
+                      onRemove={
+                        action !== "view"
+                          ? () => removeOpinion(index)
+                          : undefined
+                      }
+                      onDragStart={
+                        action !== "view"
+                          ? () => setDraggingIndex(index)
+                          : undefined
+                      }
+                      onDragEnd={
+                        action !== "view" ? handleReorderOpinions : undefined
+                      }
                       index={index}
                       totalItems={formData.opinion.length}
+                      draggable={action !== "view"}
                     >
                       {op}
                     </MovableBadge>
@@ -376,7 +407,9 @@ export function FormsForm({
               <div className="col-span-3 space-y-4">
                 {formData.fields.length > 0 && (
                   <div className="rounded-md border p-4 space-y-3">
-                    <h4 className="text-sm font-medium mb-2">Added Fields</h4>
+                    <h4 className="text-sm font-medium mb-2">
+                      {action === "view" ? "Fields" : "Added Fields"}
+                    </h4>
                     {formData.fields.map((field, index) => (
                       <div
                         key={index}
@@ -398,169 +431,175 @@ export function FormsForm({
                               </p>
                             )}
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeField(index)}
-                        >
-                          <span className="sr-only">Remove</span>×
-                        </Button>
+                        {action !== "view" && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeField(index)}
+                          >
+                            <span className="sr-only">Remove</span>×
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
 
-                <div className="rounded-md border p-4 space-y-3">
-                  <h4 className="text-sm font-medium">Add New Field</h4>
+                {action !== "view" && (
+                  <div className="rounded-md border p-4 space-y-3">
+                    <h4 className="text-sm font-medium">Add New Field</h4>
 
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1 flex flex-col">
-                      <Label htmlFor="field-label" className="min-h-[1.5rem]">
-                        Label
-                      </Label>
-                      <Input
-                        id="field-label"
-                        name="label"
-                        value={newField.label}
-                        onChange={handleFieldChange}
-                        placeholder="e.g. First Name"
-                      />
-                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1 flex flex-col">
+                        <Label htmlFor="field-label" className="min-h-[1.5rem]">
+                          Label
+                        </Label>
+                        <Input
+                          id="field-label"
+                          name="label"
+                          value={newField.label}
+                          onChange={handleFieldChange}
+                          placeholder="e.g. First Name"
+                        />
+                      </div>
 
-                    <div className="space-y-1 flex flex-col">
-                      <Label htmlFor="field-type" className="min-h-[1.5rem]">
-                        Type
-                      </Label>
-                      <select
-                        id="field-type"
-                        name="type"
-                        value={newField.type}
-                        onChange={handleFieldChange}
-                        className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-                      >
-                        <option value="text">Text</option>
-                        <option value="number">Number</option>
-                        <option value="email">Email</option>
-                        <option value="date">Date</option>
-                        <option value="time">Time</option>
-                        <option value="textarea">Textarea</option>
-                        <option value="tel">Telephone</option>
-                        <option value="url">URL</option>
-                        <option value="color">Color</option>
-                        <option value="checkbox">Checkbox</option>
-                        <option value="radio">Radio</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1 flex flex-col">
-                      <Label htmlFor="field-value" className="min-h-[1.5rem]">
-                        {newField.type === "checkbox" ||
-                        newField.type === "radio"
-                          ? "Default Selected Option"
-                          : "Default Value (Optional)"}
-                      </Label>
-                      {newField.type === "checkbox" ||
-                      newField.type === "radio" ? (
+                      <div className="space-y-1 flex flex-col">
+                        <Label htmlFor="field-type" className="min-h-[1.5rem]">
+                          Type
+                        </Label>
                         <select
-                          id="field-value"
-                          name="value"
-                          value={newField.value}
+                          id="field-type"
+                          name="type"
+                          value={newField.type}
                           onChange={handleFieldChange}
                           className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
                         >
-                          <option value="">No default selection</option>
-                          {newField.options.map((option, i) => (
-                            <option key={i} value={option}>
-                              {option}
-                            </option>
-                          ))}
+                          <option value="text">Text</option>
+                          <option value="number">Number</option>
+                          <option value="email">Email</option>
+                          <option value="date">Date</option>
+                          <option value="time">Time</option>
+                          <option value="textarea">Textarea</option>
+                          <option value="tel">Telephone</option>
+                          <option value="url">URL</option>
+                          <option value="color">Color</option>
+                          <option value="checkbox">Checkbox</option>
+                          <option value="radio">Radio</option>
                         </select>
-                      ) : newField.type === "color" ? (
-                        <div className="flex space-x-2">
+                      </div>
+
+                      <div className="space-y-1 flex flex-col">
+                        <Label htmlFor="field-value" className="min-h-[1.5rem]">
+                          {newField.type === "checkbox" ||
+                          newField.type === "radio"
+                            ? "Default Selected Option"
+                            : "Default Value (Optional)"}
+                        </Label>
+                        {newField.type === "checkbox" ||
+                        newField.type === "radio" ? (
+                          <select
+                            id="field-value"
+                            name="value"
+                            value={newField.value}
+                            onChange={handleFieldChange}
+                            className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+                          >
+                            <option value="">No default selection</option>
+                            {newField.options.map((option, i) => (
+                              <option key={i} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        ) : newField.type === "color" ? (
+                          <div className="flex space-x-2">
+                            <Input
+                              id="field-value"
+                              name="value"
+                              value={newField.value}
+                              onChange={handleFieldChange}
+                              placeholder="#000000"
+                            />
+                            <input
+                              type="color"
+                              value={newField.value || "#000000"}
+                              onChange={(e) =>
+                                setNewField((prev) => ({
+                                  ...prev,
+                                  value: e.target.value,
+                                }))
+                              }
+                              className="h-9 w-12 p-0 border rounded"
+                            />
+                          </div>
+                        ) : (
                           <Input
                             id="field-value"
                             name="value"
                             value={newField.value}
                             onChange={handleFieldChange}
-                            placeholder="#000000"
+                            placeholder="Default value"
                           />
-                          <input
-                            type="color"
-                            value={newField.value || "#000000"}
-                            onChange={(e) =>
-                              setNewField((prev) => ({
-                                ...prev,
-                                value: e.target.value,
-                              }))
-                            }
-                            className="h-9 w-12 p-0 border rounded"
-                          />
-                        </div>
-                      ) : (
-                        <Input
-                          id="field-value"
-                          name="value"
-                          value={newField.value}
-                          onChange={handleFieldChange}
-                          placeholder="Default value"
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Options section for checkbox and radio types */}
-                  {(newField.type === "checkbox" ||
-                    newField.type === "radio") && (
-                    <div className="grid grid-cols-1 gap-2 mt-3">
-                      <Label>Options</Label>
-                      <div className="flex space-x-2">
-                        <Input
-                          value={newOption}
-                          onChange={(e) => setNewOption(e.target.value)}
-                          onKeyDown={handleOptionKeyDown}
-                          placeholder="Add option and press Enter"
-                          className="flex-grow"
-                        />
-                        <Button type="button" onClick={addOption} size="sm">
-                          Add
-                        </Button>
+                        )}
                       </div>
-
-                      {newField.options.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2 p-2 border rounded-md">
-                          {newField.options.map((option, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center bg-muted px-2 py-1 rounded-md text-sm"
-                            >
-                              {option}
-                              <button
-                                type="button"
-                                className="ml-1 text-xs rounded-full h-4 w-4 inline-flex items-center justify-center hover:bg-secondary-foreground/20"
-                                onClick={() => removeOption(index)}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </div>
-                  )}
 
-                  <Button type="button" onClick={addField} className="w-full">
-                    Add Field
-                  </Button>
-                </div>
+                    {/* Options section for checkbox and radio types */}
+                    {(newField.type === "checkbox" ||
+                      newField.type === "radio") && (
+                      <div className="grid grid-cols-1 gap-2 mt-3">
+                        <Label>Options</Label>
+                        <div className="flex space-x-2">
+                          <Input
+                            value={newOption}
+                            onChange={(e) => setNewOption(e.target.value)}
+                            onKeyDown={handleOptionKeyDown}
+                            placeholder="Add option and press Enter"
+                            className="flex-grow"
+                          />
+                          <Button type="button" onClick={addOption} size="sm">
+                            Add
+                          </Button>
+                        </div>
+
+                        {newField.options.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2 p-2 border rounded-md">
+                            {newField.options.map((option, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center bg-muted px-2 py-1 rounded-md text-sm"
+                              >
+                                {option}
+                                <button
+                                  type="button"
+                                  className="ml-1 text-xs rounded-full h-4 w-4 inline-flex items-center justify-center hover:bg-secondary-foreground/20"
+                                  onClick={() => removeOption(index)}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <Button type="button" onClick={addField} className="w-full">
+                      Add Field
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button type="submit">Save changes</Button>
-        </DialogFooter>
+        {action !== "view" && (
+          <DialogFooter>
+            <Button type="submit">Save changes</Button>
+          </DialogFooter>
+        )}
       </form>
     </>
   );

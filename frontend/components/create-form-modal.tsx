@@ -8,7 +8,8 @@ export function CreateFormModal({
 }: {
   action: string;
   form?: {
-    id: string;
+    _id: string;
+    // id?: string;
     title: string;
     description: string;
     opinion: [];
@@ -29,23 +30,13 @@ export function CreateFormModal({
           </DialogContent>
         </Dialog>
       ) : action === "edit" && form ? (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">Edit Form</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
-            <FormsForm action="edit" form={form} />
-          </DialogContent>
-        </Dialog>
+        <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
+          <FormsForm action="edit" form={form} />
+        </DialogContent>
       ) : action === "view" && form ? (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">View Form</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
-            <FormsForm action="view" form={form} />
-          </DialogContent>
-        </Dialog>
+        <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
+          <FormsForm action="view" form={form} />
+        </DialogContent>
       ) : null}
     </>
   );

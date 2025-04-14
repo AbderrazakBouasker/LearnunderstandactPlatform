@@ -44,6 +44,7 @@ import {
 // import { FormFeedbackModal } from "@/components/form-feedback-modal";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { CreateFormModal } from "./create-form-modal";
 export type Form = {
   _id: string;
   title: string;
@@ -259,10 +260,10 @@ export function DataTableForm() {
               <Dialog>
                 <DialogTrigger asChild>
                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    View form details
+                    Edit form details
                   </DropdownMenuItem>
                 </DialogTrigger>
-                {/* <FormDetailModal details={form} /> */}
+                <CreateFormModal action="edit" form={form} />
               </Dialog>
               <Dialog>
                 <DialogTrigger asChild>
@@ -270,7 +271,7 @@ export function DataTableForm() {
                     View form details
                   </DropdownMenuItem>
                 </DialogTrigger>
-                {/* <FormFeedbackModal formId={form._id} /> */}
+                <CreateFormModal action="view" form={form} />
               </Dialog>
               <DropdownMenuSeparator />
               <DropdownMenuItem
