@@ -20,7 +20,12 @@ export function FormsForm({
     title: string;
     description: string;
     opinion: string[];
-    fields: { label: string; type: string; value: string; options: string[] }[];
+    fields: {
+      label: string;
+      type: string;
+      value: string;
+      options?: string[];
+    }[];
     createdAt: string;
     updatedAt: string;
   };
@@ -255,7 +260,7 @@ export function FormsForm({
       return field;
     });
 
-    console.log("Submitting form data:", JSON.stringify(dataToSubmit));
+    //console.log("Submitting form data:", JSON.stringify(dataToSubmit));
 
     if (action === "create") {
       try {
@@ -270,13 +275,13 @@ export function FormsForm({
         );
 
         if (!response.ok) {
-          console.log("Response not OK:", response);
-          console.log(formData);
+          //console.log("Response not OK:", response);
+          //console.log(formData);
           throw new Error("Failed to create form");
         }
 
         // Handle successful response
-        console.log("Form created successfully");
+        //console.log("Form created successfully");
       } catch (error) {
         console.error("Error creating form:", error);
       }

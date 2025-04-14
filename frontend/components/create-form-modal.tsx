@@ -37,6 +37,15 @@ export function CreateFormModal({
             <FormsForm action="edit" form={form} />
           </DialogContent>
         </Dialog>
+      ) : action === "view" && form ? (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">View Form</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
+            <FormsForm action="view" form={form} />
+          </DialogContent>
+        </Dialog>
       ) : null}
     </>
   );
