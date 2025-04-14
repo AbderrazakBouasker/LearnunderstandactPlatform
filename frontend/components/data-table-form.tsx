@@ -277,11 +277,13 @@ export function DataTableForm() {
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
                 onSelect={() => {
-                  setSelectedForm(form);
-                  setEditDialogOpen(true);
+                  window.open(
+                    `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/form/${form._id}`,
+                    "_blank"
+                  );
                 }}
               >
-                Edit form details
+                Open Form Link
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => {
@@ -290,6 +292,14 @@ export function DataTableForm() {
                 }}
               >
                 View form details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setSelectedForm(form);
+                  setEditDialogOpen(true);
+                }}
+              >
+                Edit form details
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

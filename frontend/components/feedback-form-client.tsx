@@ -53,15 +53,17 @@ export function FeedbackFormClient({
     }
   }, [isAlert]);
 
+  // Make sure radio fields are initialized with empty string - just like opinion
   const initialState = {
     opinion: "",
     ...formData.fields.reduce((acc, field) => {
       if (field.type === "checkbox") {
         acc[field.label] = [];
+      } else if (field.type === "radio") {
+        // Explicitly set radio fields to empty string, just like opinion
+        acc[field.label] = "";
       } else if (field.type === "color") {
         acc[field.label] = field.value || "#000000";
-      } else if (field.type === "text" || field.type === "textarea") {
-        acc[field.label] = field.value || "";
       } else {
         acc[field.label] = field.value || "";
       }
@@ -83,6 +85,11 @@ export function FeedbackFormClient({
       ...prev,
       [fieldLabel]: value,
     }));
+
+    // Clear validation error when value is selected
+    if (validationErrors[fieldLabel]) {
+      setValidationErrors((prev) => ({ ...prev, [fieldLabel]: false }));
+    }
   };
 
   const handleCheckboxChange = (
@@ -92,18 +99,23 @@ export function FeedbackFormClient({
   ) => {
     setFormState((prev) => {
       const currentValues = prev[fieldLabel] || [];
+      let newValues;
 
       if (checked) {
-        return {
-          ...prev,
-          [fieldLabel]: [...currentValues, value],
-        };
+        newValues = [...currentValues, value];
       } else {
-        return {
-          ...prev,
-          [fieldLabel]: currentValues.filter((v: string) => v !== value),
-        };
+        newValues = currentValues.filter((v: string) => v !== value);
       }
+
+      // Clear validation error if at least one checkbox is checked
+      if (validationErrors[fieldLabel] && newValues.length > 0) {
+        setValidationErrors((prev) => ({ ...prev, [fieldLabel]: false }));
+      }
+
+      return {
+        ...prev,
+        [fieldLabel]: newValues,
+      };
     });
   };
 
@@ -117,6 +129,35 @@ export function FeedbackFormClient({
     if (formData.opinion && formData.opinion.length > 0 && !formState.opinion) {
       errors.opinion = true;
     }
+
+    // Log state and fields to debug
+    console.log("Form state at validation:", formState);
+    console.log("Fields for validation:", formData.fields);
+
+    // Very simple validation for radio fields matching opinion exactly
+    formData.fields.forEach((field) => {
+      if (field.type === "radio") {
+        console.log(
+          `Checking radio field: ${field.label}, value: ${
+            formState[field.label]
+          }`
+        );
+        if (!formState[field.label]) {
+          errors[field.label] = true;
+        }
+      }
+
+      // For checkbox fields
+      if (
+        field.type === "checkbox" &&
+        Array.isArray(formState[field.label]) &&
+        formState[field.label].length === 0
+      ) {
+        errors[field.label] = true;
+      }
+    });
+
+    console.log("Validation errors:", errors);
 
     // If there are validation errors, stop submission
     if (Object.keys(errors).length > 0) {
@@ -134,10 +175,22 @@ export function FeedbackFormClient({
       // Transform the form state to the required format
       const submissionData = {
         opinion: formState.opinion,
-        fields: formData.fields.map((field) => ({
-          label: field.label,
-          value: formState[field.label],
-        })),
+        fields: formData.fields.map((field) => {
+          // Convert number type values from string to actual numbers
+          if (field.type === "number") {
+            return {
+              label: field.label,
+              value: formState[field.label]
+                ? Number(formState[field.label])
+                : null,
+            };
+          }
+
+          return {
+            label: field.label,
+            value: formState[field.label],
+          };
+        }),
       };
 
       console.log("Submitting form data:", submissionData);
@@ -286,13 +339,34 @@ export function FeedbackFormClient({
         );
 
       case "radio":
+        const hasRadioError = validationErrors[field.label];
         return (
           <div className="space-y-2">
-            <Label>{field.label}</Label>
+            <div className="flex items-center justify-between">
+              <Label className={hasRadioError ? "text-destructive" : ""}>
+                {field.label}
+              </Label>
+              {hasRadioError && (
+                <span className="text-xs text-destructive">
+                  Please select an option
+                </span>
+              )}
+            </div>
             <RadioGroup
               value={formState[field.label] || ""}
-              onValueChange={(value) => handleInputChange(field.label, value)}
-              aria-required="true"
+              onValueChange={(value) => {
+                handleInputChange(field.label, value);
+                // Explicitly clear validation error when a radio option is selected
+                if (validationErrors[field.label]) {
+                  setValidationErrors((prev) => ({
+                    ...prev,
+                    [field.label]: false,
+                  }));
+                }
+              }}
+              className={`${
+                hasRadioError ? "border border-destructive rounded-md p-2" : ""
+              }`}
             >
               {Array.isArray(field.value) ? (
                 field.value.map((option) => (
@@ -314,31 +388,49 @@ export function FeedbackFormClient({
         );
 
       case "checkbox":
+        const hasCheckboxError = validationErrors[field.label];
         return (
           <div className="space-y-2">
-            <Label>{field.label}</Label>
-            {Array.isArray(field.value) ? (
-              field.value.map((option) => (
-                <div className="flex items-center space-x-2" key={option}>
-                  <Checkbox
-                    id={`${field._id}-${option}`}
-                    checked={(formState[field.label] || []).includes(option)}
-                    onCheckedChange={(checked) =>
-                      handleCheckboxChange(
-                        field.label,
-                        option,
-                        checked as boolean
-                      )
-                    }
-                  />
-                  <Label htmlFor={`${field._id}-${option}`}>{option}</Label>
+            <div className="flex items-center justify-between">
+              <Label className={hasCheckboxError ? "text-destructive" : ""}>
+                {field.label}
+              </Label>
+              {hasCheckboxError && (
+                <span className="text-xs text-destructive">
+                  Please select at least one option
+                </span>
+              )}
+            </div>
+            <div
+              className={
+                hasCheckboxError
+                  ? "border border-destructive rounded-md p-2"
+                  : ""
+              }
+            >
+              {Array.isArray(field.value) ? (
+                field.value.map((option) => (
+                  <div className="flex items-center space-x-2" key={option}>
+                    <Checkbox
+                      id={`${field._id}-${option}`}
+                      checked={(formState[field.label] || []).includes(option)}
+                      onCheckedChange={(checked) =>
+                        handleCheckboxChange(
+                          field.label,
+                          option,
+                          checked as boolean
+                        )
+                      }
+                    />
+                    <Label htmlFor={`${field._id}-${option}`}>{option}</Label>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No options available
                 </div>
-              ))
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                No options available
-              </div>
-            )}
+              )}
+            </div>
           </div>
         );
 
