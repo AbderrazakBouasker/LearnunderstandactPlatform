@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   DialogDescription,
@@ -13,6 +14,7 @@ import { useState, useRef } from "react";
 export function FormsForm({
   action,
   form,
+  onAlert,
 }: {
   action: string;
   form?: {
@@ -29,6 +31,11 @@ export function FormsForm({
     createdAt: string;
     updatedAt: string;
   };
+  onAlert?: (alertInfo: {
+    title: string;
+    description: string;
+    variant: "default" | "destructive";
+  }) => void;
 }) {
   const [formData, setFormData] = useState({
     _id: form?._id || "",
@@ -221,6 +228,20 @@ export function FormsForm({
     }));
   };
 
+  const showAlert = (
+    title: string,
+    description: string,
+    variant: "default" | "destructive"
+  ) => {
+    if (onAlert) {
+      onAlert({
+        title,
+        description,
+        variant,
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -260,8 +281,6 @@ export function FormsForm({
       return field;
     });
 
-    //console.log("Submitting form data:", JSON.stringify(dataToSubmit));
-
     try {
       let response;
 
@@ -287,16 +306,52 @@ export function FormsForm({
         );
       }
 
-      if (!response || !response.ok) {
-        //console.log("Response not OK:", response);
-        //console.log(formData);
-        throw new Error(`Failed to ${action} form`);
+      if (response?.ok) {
+        // Handle successful response
+        showAlert(
+          "Success",
+          `Form ${action === "create" ? "created" : "updated"} successfully`,
+          "default"
+        );
+      } else {
+        // Handle error responses based on status code
+        if (response?.status === 401) {
+          showAlert("Unauthorized", "Invalid or expired token", "destructive");
+        } else if (response?.status === 403) {
+          showAlert(
+            "Forbidden",
+            "Not authorized or missing token",
+            "destructive"
+          );
+        } else if (response?.status === 404 && action === "edit") {
+          showAlert("Not Found", "Form not found", "destructive");
+        } else if (response?.status === 429) {
+          showAlert(
+            "Too Many Requests",
+            "Please wait a few minutes before trying again",
+            "destructive"
+          );
+        } else if (response?.status === 500) {
+          showAlert(
+            "Server Error",
+            "An error occurred. Please try again",
+            "destructive"
+          );
+        } else {
+          showAlert(
+            "Error",
+            `Failed to ${action} form. Please try again.`,
+            "destructive"
+          );
+        }
       }
-
-      // Handle successful response
-      //console.log(`Form ${action}d successfully`);
     } catch (error) {
       console.error(`Error ${action}ing form:`, error);
+      showAlert(
+        "Error",
+        `An error occurred while trying to ${action} the form. Please try again.`,
+        "destructive"
+      );
     }
   };
 

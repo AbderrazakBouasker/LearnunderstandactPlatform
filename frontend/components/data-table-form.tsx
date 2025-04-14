@@ -72,6 +72,21 @@ export function DataTableForm() {
   //   );
   //   const [showFormDetails, setShowFormDetails] = React.useState(false);
   //   const [formDetails, setFormDetails] = React.useState(null);
+
+  const handleAlert = (alertInfo: {
+    title: string;
+    description: string;
+    variant: "default" | "destructive";
+  }) => {
+    setAlertTitle(alertInfo.title);
+    setAlertDescription(alertInfo.description);
+    setAlertVariant(alertInfo.variant);
+    setIsAlert(true);
+    setTimeout(() => {
+      setIsAlert(false);
+    }, 3000);
+  };
+
   const handleDeleteForm = async (id: string) => {
     try {
       const response = await fetch(
@@ -263,7 +278,11 @@ export function DataTableForm() {
                     Edit form details
                   </DropdownMenuItem>
                 </DialogTrigger>
-                <CreateFormModal action="edit" form={form} />
+                <CreateFormModal
+                  action="edit"
+                  form={form}
+                  onAlert={handleAlert}
+                />
               </Dialog>
               <Dialog>
                 <DialogTrigger asChild>
@@ -271,7 +290,11 @@ export function DataTableForm() {
                     View form details
                   </DropdownMenuItem>
                 </DialogTrigger>
-                <CreateFormModal action="view" form={form} />
+                <CreateFormModal
+                  action="view"
+                  form={form}
+                  onAlert={handleAlert}
+                />
               </Dialog>
               <DropdownMenuSeparator />
               <DropdownMenuItem

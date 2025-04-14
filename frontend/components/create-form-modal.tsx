@@ -1,15 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { FormsForm } from "./forms-form";
+import { useState } from "react";
 
 export function CreateFormModal({
   action,
   form,
+  onAlert,
 }: {
   action: string;
   form?: {
     _id: string;
-    // id?: string;
     title: string;
     description: string;
     opinion: [];
@@ -17,7 +18,22 @@ export function CreateFormModal({
     createdAt: string;
     updatedAt: string;
   };
+  onAlert?: (alertInfo: {
+    title: string;
+    description: string;
+    variant: "default" | "destructive";
+  }) => void;
 }) {
+  const handleAlert = (alertInfo: {
+    title: string;
+    description: string;
+    variant: "default" | "destructive";
+  }) => {
+    if (onAlert) {
+      onAlert(alertInfo);
+    }
+  };
+
   return (
     <>
       {action === "create" ? (
@@ -26,16 +42,16 @@ export function CreateFormModal({
             <Button variant="outline">Create a new Form</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
-            <FormsForm action="create" />
+            <FormsForm action="create" onAlert={handleAlert} />
           </DialogContent>
         </Dialog>
       ) : action === "edit" && form ? (
         <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
-          <FormsForm action="edit" form={form} />
+          <FormsForm action="edit" form={form} onAlert={handleAlert} />
         </DialogContent>
       ) : action === "view" && form ? (
         <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
-          <FormsForm action="view" form={form} />
+          <FormsForm action="view" form={form} onAlert={handleAlert} />
         </DialogContent>
       ) : null}
     </>
