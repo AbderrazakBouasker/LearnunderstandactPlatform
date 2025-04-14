@@ -66,12 +66,9 @@ export function DataTableForm() {
     null
   );
   const [alertTitle, setAlertTitle] = React.useState<string | null>(null);
-  //   const [showFeedBackDetails, setShowFeedBackDetails] = React.useState(false);
-  //   const [formDetails, setFormDetails] = React.useState<Form | null>(
-  //     null
-  //   );
-  //   const [showFormDetails, setShowFormDetails] = React.useState(false);
-  //   const [formDetails, setFormDetails] = React.useState(null);
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = React.useState(false);
+  const [selectedForm, setSelectedForm] = React.useState<Form | null>(null);
 
   const handleAlert = (alertInfo: {
     title: string;
@@ -85,6 +82,12 @@ export function DataTableForm() {
     setTimeout(() => {
       setIsAlert(false);
     }, 3000);
+
+    // Close the dialog if the alert indicates success
+    if (alertInfo.variant === "default" && alertInfo.title === "Success") {
+      setEditDialogOpen(false);
+      setViewDialogOpen(false);
+    }
   };
 
   const handleDeleteForm = async (id: string) => {
@@ -272,30 +275,22 @@ export function DataTableForm() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    Edit form details
-                  </DropdownMenuItem>
-                </DialogTrigger>
-                <CreateFormModal
-                  action="edit"
-                  form={form}
-                  onAlert={handleAlert}
-                />
-              </Dialog>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    View form details
-                  </DropdownMenuItem>
-                </DialogTrigger>
-                <CreateFormModal
-                  action="view"
-                  form={form}
-                  onAlert={handleAlert}
-                />
-              </Dialog>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setSelectedForm(form);
+                  setEditDialogOpen(true);
+                }}
+              >
+                Edit form details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setSelectedForm(form);
+                  setViewDialogOpen(true);
+                }}
+              >
+                View form details
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
@@ -534,6 +529,28 @@ export function DataTableForm() {
           </div>
         </div>
       </div>
+
+      {/* Add controlled dialogs */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        {selectedForm && (
+          <CreateFormModal
+            action="edit"
+            form={selectedForm}
+            onAlert={handleAlert}
+          />
+        )}
+      </Dialog>
+
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        {selectedForm && (
+          <CreateFormModal
+            action="view"
+            form={selectedForm}
+            onAlert={handleAlert}
+          />
+        )}
+      </Dialog>
+
       {isAlert && (
         <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">
           <Alert variant={alertVariant}>

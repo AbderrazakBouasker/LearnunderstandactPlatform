@@ -24,6 +24,8 @@ export function CreateFormModal({
     variant: "default" | "destructive";
   }) => void;
 }) {
+  const [open, setOpen] = useState(false);
+
   const handleAlert = (alertInfo: {
     title: string;
     description: string;
@@ -32,12 +34,17 @@ export function CreateFormModal({
     if (onAlert) {
       onAlert(alertInfo);
     }
+
+    // Close the dialog if the alert indicates success
+    if (alertInfo.variant === "default" && alertInfo.title === "Success") {
+      setOpen(false);
+    }
   };
 
   return (
     <>
       {action === "create" ? (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button variant="outline">Create a new Form</Button>
           </DialogTrigger>

@@ -25,7 +25,7 @@ export function FormsForm({
     fields: {
       label: string;
       type: string;
-      value: string;
+      value: string | string[];
       options?: string[];
     }[];
     createdAt: string;
@@ -53,10 +53,12 @@ export function FormsForm({
     value: "",
     options: [] as string[], // Added options array for checkbox/radio
   });
+  // eslint-disable-next-line
   const [opinionPositions, setOpinionPositions] = useState<
     Record<number, { x: number; y: number }>
   >({});
   const opinionContainerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
   const handleReorderOpinions = (fromIndex: number, toIndex: number) => {
@@ -113,16 +115,6 @@ export function FormsForm({
     }
   };
 
-  const updateOpinionPosition = (
-    index: number,
-    position: { x: number; y: number }
-  ) => {
-    setOpinionPositions((prev) => ({
-      ...prev,
-      [index]: position,
-    }));
-  };
-
   const addField = () => {
     if (newField.label.trim() === "") {
       alert("Field label is required");
@@ -148,7 +140,7 @@ export function FormsForm({
     // For checkbox and radio, put all options directly in the value field
     if (newField.type === "checkbox" || newField.type === "radio") {
       // Create a copy of options
-      let options = [...newField.options];
+      const options = [...newField.options];
 
       // If a default value is set, move it to the beginning of the array
       if (newField.value) {
@@ -165,7 +157,7 @@ export function FormsForm({
         ...fieldToAdd,
         value: options, // Set options array directly as value
         selectedOption: newField.value, // Keep track of selected value separately for UI only
-        options: undefined, // Remove the separate options field
+        options: [], // Set options to an empty array
       };
     }
 
@@ -249,6 +241,7 @@ export function FormsForm({
     const dataToSubmit = { ...formData };
 
     // Ensure all checkbox and radio fields have options in their value field
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dataToSubmit.fields = formData.fields.map((field: any) => {
       if (field.type !== "checkbox" && field.type !== "radio") {
         return field;
@@ -305,14 +298,11 @@ export function FormsForm({
           }
         );
       }
-
-      if (response?.ok) {
+      if (response?.status === 201) {
+        showAlert("Success", `Form created successfully`, "default");
+      } else if (response?.ok) {
         // Handle successful response
-        showAlert(
-          "Success",
-          `Form ${action === "create" ? "created" : "updated"} successfully`,
-          "default"
-        );
+        showAlert("Success", `Form updated successfully`, "default");
       } else {
         // Handle error responses based on status code
         if (response?.status === 401) {
@@ -482,7 +472,10 @@ export function FormsForm({
                             field.value &&
                             field.value.length > 0 && (
                               <p className="text-xs text-muted-foreground mt-1">
-                                Options: {field.value.join(", ")}
+                                Options:{" "}
+                                {Array.isArray(field.value)
+                                  ? field.value.join(", ")
+                                  : field.value}
                               </p>
                             )}
                         </div>
