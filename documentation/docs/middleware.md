@@ -19,7 +19,7 @@ The request logger middleware provides detailed logging for all incoming HTTP re
 ### Usage
 
 ```javascript
-import { requestLogger } from './logging-examples.js';
+import { requestLogger } from "./logging-examples.js";
 
 app.use(requestLogger);
 ```
@@ -27,6 +27,7 @@ app.use(requestLogger);
 ### Log Output Example
 
 Request start:
+
 ```json
 {
   "level": "info",
@@ -39,6 +40,7 @@ Request start:
 ```
 
 Request completion:
+
 ```json
 {
   "level": "info",
@@ -64,7 +66,7 @@ The error logger middleware handles uncaught exceptions and errors in the applic
 ### Usage
 
 ```javascript
-import { errorLogger } from './logging-examples.js';
+import { errorLogger } from "./logging-examples.js";
 
 // Make sure to add this last in your middleware chain
 app.use(errorLogger);
@@ -80,17 +82,19 @@ app.use(errorLogger);
   "stack": "Error: Database connection failed\n    at ...",
   "method": "POST",
   "url": "/api/users",
-  "body": {"username": "john"}
+  "body": { "username": "john" }
 }
 ```
 
 ## Best Practices
 
 1. **Order of Middleware**
+
    - Place the requestLogger at the beginning of your middleware chain
    - Place the errorLogger at the end of your middleware chain
 
 2. **Error Handling**
+
    - Always let the errorLogger handle uncaught exceptions
    - Avoid catching errors unless you need specific error handling logic
 
@@ -122,10 +126,10 @@ The authentication middleware verifies JWT tokens and protects routes that requi
 ### Usage
 
 ```javascript
-import { verifyToken } from './middleware/auth.js';
+import { verifyToken } from "./middleware/auth.js";
 
 // Protect a single route
-app.get('/protected', verifyToken, (req, res) => {
+app.get("/protected", verifyToken, (req, res) => {
   // Route handler code
 });
 
@@ -135,12 +139,12 @@ router.use(verifyToken);
 
 ### Error Responses
 
-| Scenario | Status Code | Response |
-|----------|------------|-----------|
-| No token | 403 | "Not Authorized" |
-| Expired token | 401 | { error: "Token has expired" } |
-| Invalid token | 401 | { error: "Invalid token" } |
-| Server error | 500 | { error: "Error message" } |
+| Scenario      | Status Code | Response                      |
+| ------------- | ----------- | ----------------------------- |
+| No token      | 403         | "Not Authorized"              |
+| Expired token | 401         | ( error: "Token has expired") |
+| Invalid token | 401         | ( error: "Invalid token" )    |
+| Server error  | 500         | ( error: "Error message" )    |
 
 ## Rate Limiter
 
@@ -157,7 +161,7 @@ The rate limiter middleware implements a sliding window algorithm using Redis to
 ### Usage
 
 ```javascript
-import { rateLimiter } from './middleware/ratelimiter.js';
+import { rateLimiter } from "./middleware/ratelimiter.js";
 
 // Default: 5 requests per 1 minute
 app.use(rateLimiter());
@@ -174,6 +178,7 @@ app.use(rateLimiter(5, 10));
 ### Redis Requirements
 
 The rate limiter requires a Redis connection with the following environment variables:
+
 ```
 REDIS_HOST=your-redis-host
 REDIS_PORT=your-redis-port
@@ -194,11 +199,13 @@ REDIS_PASSWORD=your-redis-password
 ## Security Best Practices
 
 1. **Authentication**
+
    - Keep JWT secrets secure and rotate regularly
    - Use environment variables for sensitive configuration
    - Implement token refresh mechanisms
 
 2. **Rate Limiting**
+
    - Set appropriate limits based on your application's capacity
    - Consider different limits for different endpoints
    - Monitor and adjust limits based on usage patterns
