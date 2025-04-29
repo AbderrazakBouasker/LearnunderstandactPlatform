@@ -14,6 +14,13 @@ const UserSchema = new mongoose.Schema(
     //   min: 1,
     //   max: 50,
     // },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      min: 1,
+      max: 50,
+    },
     email: {
       type: String,
       required: true,
@@ -25,10 +32,15 @@ const UserSchema = new mongoose.Schema(
       required: true,
       min: 8,
     },
-    role:{
+    role: {
       type: String,
       required: true,
-      default: "admin",
+      default: "user",
+    },
+    organization: {
+      type: [String],
+      required: true,
+      default: [],
     },
   },
   { timestamps: true }

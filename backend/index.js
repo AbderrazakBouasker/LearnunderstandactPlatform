@@ -16,6 +16,7 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import formRoutes from "./routes/form.js";
 import feedbackRoutes from "./routes/feedback.js";
+import organizationRoutes from "./routes/organization.js";
 import logger from "./logger.js";
 import { requestLogger, errorLogger } from "./logging-examples.js";
 
@@ -94,6 +95,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use("/api/organization", organizationRoutes);
 
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
