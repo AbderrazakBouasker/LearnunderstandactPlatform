@@ -44,6 +44,10 @@ const formSchema = mongoose.Schema(
       default: ["unhappy", "neutral", "happy"],
     },
     fields: [fieldSchema],
+    organization: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

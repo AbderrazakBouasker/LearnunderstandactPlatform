@@ -1,37 +1,41 @@
 import mongoose from "mongoose";
 
 const feedbackSchema = mongoose.Schema(
-    {
-        formId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        },
-        formTitle: {
-        type: String,
-        required: true,
-        },
-        formDescription: {
-        type: String,
-        required: true,
-        },
-        opinion: {
-        type: String,
-        required: true,
-        },
-        fields: [
-          {
-            label: {
-              type: String,
-              required: true,
-            },
-            value: {
-              type: mongoose.Schema.Types.Mixed,
-              required: true,
-            }
-          }
-        ]
+  {
+    formId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
     },
-    { timestamps: true }
+    formTitle: {
+      type: String,
+      required: true,
+    },
+    formDescription: {
+      type: String,
+      required: true,
+    },
+    opinion: {
+      type: String,
+      required: true,
+    },
+    fields: [
+      {
+        label: {
+          type: String,
+          required: true,
+        },
+        value: {
+          type: mongoose.Schema.Types.Mixed,
+          required: true,
+        },
+      },
+    ],
+    organization: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true }
 );
 
 const Feedback = mongoose.model("Feedback", feedbackSchema);
