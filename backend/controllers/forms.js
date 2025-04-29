@@ -8,7 +8,6 @@ export const createForm = async (req, res) => {
     const newForm = new Form({
       title,
       description,
-      opinion,
       fields,
       organization,
     });
@@ -94,7 +93,7 @@ export const editForm = async (req, res) => {
 
     if (title !== undefined) form.title = title;
     if (description !== undefined) form.description = description;
-    if (opinion !== undefined) form.opinion = opinion;
+    // if (opinion !== undefined) form.opinion = opinion;
     form.fields = fields;
 
     await form.save();

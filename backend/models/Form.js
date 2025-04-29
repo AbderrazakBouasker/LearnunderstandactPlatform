@@ -41,7 +41,13 @@ const formSchema = mongoose.Schema(
     opinion: {
       type: [String],
       required: true,
-      default: ["unhappy", "neutral", "happy"],
+      default: [
+        "very dissatisfied",
+        "dissatisfied",
+        "neutral",
+        "satisfied",
+        "very satisfied",
+      ],
     },
     fields: [fieldSchema],
     organization: {
