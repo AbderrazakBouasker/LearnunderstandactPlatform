@@ -114,6 +114,7 @@ export function RegisterForm({
         // Clear any previous errors
         setUserFound(null);
         setInvalidCredential(null);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         setAlertDescription(
           "An error occurred during validation. Please try again."
