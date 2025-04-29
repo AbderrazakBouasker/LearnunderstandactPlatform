@@ -54,6 +54,7 @@ export const createFeedback = async (req, res) => {
       formId,
       formTitle: form.title,
       formDescription: form.description,
+      organization: form.organization,
       opinion,
       fields,
     });
@@ -85,6 +86,25 @@ export const getFeedbacks = async (req, res) => {
       stack: error.stack,
     });
     res.status(404).json({ error: error.message });
+  }
+};
+
+//READ BY ORGANIZATION
+export const getFeedbacksByOrganization = async (req, res) => {
+  try {
+    const { organization } = req.params;
+    const feedbacks = await Feedback.find({ organization });
+    if (feedbacks.length === 0) {
+      return res.status(204).json();
+    }
+    res.status(200).json(feedbacks);
+  } catch (error) {
+    // Log the error with additional context
+    logger.error("Error retrieving feedbacks by organization", {
+      error: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({ error: error.message });
   }
 };
 
