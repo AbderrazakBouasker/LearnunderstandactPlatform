@@ -40,7 +40,9 @@ const UserSchema = new mongoose.Schema(
     organization: {
       type: [String],
       required: true,
-      default: [],
+      default: function () {
+        return [this.username + "@org"];
+      },
     },
   },
   { timestamps: true }

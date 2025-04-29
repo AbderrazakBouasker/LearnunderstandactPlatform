@@ -7,12 +7,26 @@ export const createOrganization = async (req, res) => {
   try {
     const { name, identifier, members } = req.body;
 
+    // Validate required fields
+    if (!identifier) {
+      return res
+        .status(400)
+        .json({ error: "Organization identifier is required" });
+    }
+
     // Check if organization with this identifier already exists
     const existingOrg = await Organization.findOne({ identifier });
     if (existingOrg) {
+      logger.warn("Attempt to create organization with existing identifier", {
+        identifier,
+        requestedName: name,
+      });
       return res
-        .status(400)
-        .json({ error: "Organization with this identifier already exists" });
+        .status(409) // Changed from 400 to 409 Conflict for consistency
+        .json({
+          error:
+            "Organization with identifier '" + identifier + "' already exists",
+        });
     }
 
     const newOrganization = new Organization({

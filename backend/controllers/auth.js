@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import Organization from "../models/Organization.js";
 import logger from "../logger.js";
 
 //REGISTER USER
@@ -14,13 +15,39 @@ export const register = async (req, res) => {
       password,
       role,
       organization,
+      organizationName,
     } = req.body;
+
+    // Check if email exists
     var user = await User.find({ email: email });
     if (user.length !== 0)
-      return res.status(409).json({ error: "User already exists" });
+      return res.status(409).json({ error: "Email already exists" });
+
+    // Check if username exists
     user = await User.find({ username: username });
     if (user.length !== 0)
       return res.status(409).json({ error: "Username already exists" });
+
+    // Check if organization exists if provided
+    if (organization) {
+      const existingOrg = await Organization.findOne({
+        identifier: organization,
+      });
+      if (existingOrg) {
+        logger.warn(
+          "Attempt to register user with existing organization identifier",
+          {
+            organization,
+            username,
+            email,
+          }
+        );
+        return res.status(409).json({
+          error: `Organization already exists`,
+        });
+      }
+    }
+
     const salt = await bcrypt.genSalt();
     const passwordHash = await bcrypt.hash(password, salt);
 
@@ -32,7 +59,19 @@ export const register = async (req, res) => {
       password: passwordHash,
       role,
       organization,
+      organizationName,
     });
+    const newOrganization = new Organization({
+      name: organizationName,
+      identifier: organization,
+      members: [
+        {
+          user: newUser._id,
+          role: "admin",
+        },
+      ],
+    });
+    await newOrganization.save();
     const savedUser = await newUser.save();
     savedUser.password = undefined;
     res.status(200).json(savedUser);

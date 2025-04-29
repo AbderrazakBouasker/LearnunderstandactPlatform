@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
+import { Terminal, EyeIcon, EyeOffIcon, LockIcon } from "lucide-react";
 
 export function LoginForm({
   className,
@@ -24,11 +24,17 @@ export function LoginForm({
   );
   const [userNotFound, setUserNotFound] = useState<string | null>(null);
   const [isAlert, setIsAlert] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [alertVariant, setAlertVariant] = useState<
     "default" | "destructive" | null
   >("default");
   const [alertDescription, setAlertDescription] = useState<string | null>(null);
   const [alertTitle, setAlertTitle] = useState<string | null>(null);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   const router = useRouter();
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -121,12 +127,24 @@ export function LoginForm({
                     Forgot your password?
                   </a> */}
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    name="password"
-                    required
-                  />
+                  <div className="relative flex items-center rounded-md border focus-within:ring-1 focus-within:ring-ring px-2">
+                    <LockIcon className="h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      placeholder="Password"
+                      className="border-0 focus-visible:ring-0 shadow-none"
+                      required
+                    />
+                    <button type="button" onClick={togglePasswordVisibility}>
+                      {showPassword ? (
+                        <EyeOffIcon className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 {invalidCredential && (
                   <div className="text-red-600 text-sm">
@@ -142,12 +160,15 @@ export function LoginForm({
                 </Button> */}
                 </div>
               </div>
-              {/* <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <a href="#" className="underline underline-offset-4">
-                Sign up
-              </a>
-            </div> */}
+              <div className="mt-4 text-center text-sm">
+                Don&apos;t have an account?{" "}
+                <a
+                  href="/admin/register"
+                  className="underline underline-offset-4"
+                >
+                  Sign up
+                </a>
+              </div>
             </form>
           </CardContent>
         </Card>

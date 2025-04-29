@@ -8,8 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MovableBadge } from "@/components/ui/movable-badge";
-import { useState, useRef } from "react";
+import { useState } from "react";
 
 export function FormsForm({
   action,
@@ -37,43 +36,65 @@ export function FormsForm({
     variant: "default" | "destructive";
   }) => void;
 }) {
+  const opinionTemplates = {
+    "5-point": [
+      "very dissatisfied",
+      "dissatisfied",
+      "neutral",
+      "satisfied",
+      "very satisfied",
+    ],
+    "7-point": [
+      "very dissatisfied",
+      "dissatisfied",
+      "somewhat dissatisfied",
+      "neutral",
+      "somewhat satisfied",
+      "satisfied",
+      "very satisfied",
+    ],
+    "3-point": ["dissatisfied", "neutral", "satisfied"],
+  };
+
+  const [selectedTemplate, setSelectedTemplate] = useState<
+    "3-point" | "5-point" | "7-point"
+  >(
+    form?.opinion
+      ? form.opinion.length === 3
+        ? "3-point"
+        : form.opinion.length === 7
+        ? "7-point"
+        : "5-point"
+      : "5-point"
+  );
+
   const [formData, setFormData] = useState({
     _id: form?._id || "",
     title: form?.title || "",
     description: form?.description || "",
-    opinion: form?.opinion || ["unhappy", "neutral", "happy"],
+    opinion: form?.opinion || opinionTemplates[selectedTemplate],
     fields: form?.fields || [],
     createdAt: form?.createdAt || "",
     updatedAt: form?.updatedAt || "",
   });
-  const [newOpinion, setNewOpinion] = useState("");
-  const [newField, setNewField] = useState({
-    label: "",
-    type: "text",
-    value: "",
-    options: [] as string[], // Added options array for checkbox/radio
-  });
-  // eslint-disable-next-line
-  const [opinionPositions, setOpinionPositions] = useState<
-    Record<number, { x: number; y: number }>
-  >({});
-  const opinionContainerRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
-  const handleReorderOpinions = (fromIndex: number, toIndex: number) => {
-    setFormData((prev) => {
-      const opinions = [...prev.opinion];
-      const [movedOpinion] = opinions.splice(fromIndex, 1);
-      opinions.splice(toIndex, 0, movedOpinion);
-      return {
-        ...prev,
-        opinion: opinions,
-      };
-    });
+  const opinionEmojis: Record<string, string> = {
+    "very dissatisfied": "😠",
+    dissatisfied: "🙁",
+    "somewhat dissatisfied": "😕",
+    neutral: "😐",
+    "somewhat satisfied": "🙂",
+    satisfied: "😊",
+    "very satisfied": "😄",
+  };
 
-    // Also update position tracking after reordering
-    setOpinionPositions({});
+  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const template = e.target.value as "3-point" | "5-point" | "7-point";
+    setSelectedTemplate(template);
+    setFormData((prev) => ({
+      ...prev,
+      opinion: opinionTemplates[template],
+    }));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,36 +105,12 @@ export function FormsForm({
     }));
   };
 
-  const addOpinion = () => {
-    if (newOpinion.trim() !== "") {
-      setFormData((prev) => ({
-        ...prev,
-        opinion: [...prev.opinion, newOpinion.trim()],
-      }));
-      setNewOpinion("");
-    }
-  };
-
-  const removeOpinion = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      opinion: prev.opinion.filter((_, i) => i !== index),
-    }));
-
-    // Clean up position data for the removed opinion
-    setOpinionPositions((prev) => {
-      const updated = { ...prev };
-      delete updated[index];
-      return updated;
-    });
-  };
-
-  const handleOpinionKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addOpinion();
-    }
-  };
+  const [newField, setNewField] = useState({
+    label: "",
+    type: "text",
+    value: "",
+    options: [] as string[],
+  });
 
   const addField = () => {
     if (newField.label.trim() === "") {
@@ -121,7 +118,6 @@ export function FormsForm({
       return;
     }
 
-    // Validate that checkbox and radio have options
     if (
       (newField.type === "checkbox" || newField.type === "radio") &&
       newField.options.length === 0
@@ -134,30 +130,24 @@ export function FormsForm({
       return;
     }
 
-    // Create a field object to add to the form
     let fieldToAdd = { ...newField };
 
-    // For checkbox and radio, put all options directly in the value field
     if (newField.type === "checkbox" || newField.type === "radio") {
-      // Create a copy of options
       const options = [...newField.options];
 
-      // If a default value is set, move it to the beginning of the array
       if (newField.value) {
         const defaultIndex = options.findIndex((opt) => opt === newField.value);
         if (defaultIndex >= 0) {
-          // Remove from current position and add to beginning
           const defaultOption = options.splice(defaultIndex, 1)[0];
           options.unshift(defaultOption);
         }
       }
 
-      // Store the options directly in the value field
       fieldToAdd = {
         ...fieldToAdd,
-        value: options, // Set options array directly as value
-        selectedOption: newField.value, // Keep track of selected value separately for UI only
-        options: [], // Set options to an empty array
+        value: options,
+        selectedOption: newField.value,
+        options: [],
       };
     }
 
@@ -166,7 +156,6 @@ export function FormsForm({
       fields: [...prev.fields, fieldToAdd],
     }));
 
-    // Reset field form
     setNewField({
       label: "",
       type: "text",
@@ -175,7 +164,6 @@ export function FormsForm({
     });
   };
 
-  // Add option to checkbox/radio options list
   const [newOption, setNewOption] = useState("");
 
   const addOption = () => {
@@ -237,37 +225,29 @@ export function FormsForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Make a copy of the form data to send to the server
     const dataToSubmit = { ...formData };
 
-    // Ensure all checkbox and radio fields have options in their value field
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dataToSubmit.fields = formData.fields.map((field: any) => {
       if (field.type !== "checkbox" && field.type !== "radio") {
         return field;
       }
 
-      // If we still have options in a separate field, move them to value
       if (field.options && !Array.isArray(field.value)) {
-        // Get the options array
         let options = [...field.options];
 
-        // If there's a selected value, put it first
         if (
           field.value &&
           typeof field.value === "string" &&
           options.includes(field.value)
         ) {
-          // Remove from current position
           options = options.filter((opt) => opt !== field.value);
-          // Add to beginning
           options.unshift(field.value);
         }
 
         return {
           ...field,
-          value: options, // Use options array as value
-          options: undefined, // Remove separate options field
+          value: options,
+          options: undefined,
         };
       }
 
@@ -301,10 +281,8 @@ export function FormsForm({
       if (response?.status === 201) {
         showAlert("Success", `Form created successfully`, "default");
       } else if (response?.ok) {
-        // Handle successful response
         showAlert("Success", `Form updated successfully`, "default");
       } else {
-        // Handle error responses based on status code
         if (response?.status === 401) {
           showAlert("Unauthorized", "Invalid or expired token", "destructive");
         } else if (response?.status === 403) {
@@ -405,45 +383,45 @@ export function FormsForm({
               </Label>
               <div className="col-span-3">
                 {action !== "view" && (
-                  <Input
-                    id="opinion"
-                    value={newOpinion}
-                    onChange={(e) => setNewOpinion(e.target.value)}
-                    onKeyDown={handleOpinionKeyDown}
-                    placeholder="Type and press Enter to add"
-                    className="mb-2"
-                  />
+                  <div className="mb-3">
+                    <Label
+                      htmlFor="template-select"
+                      className="text-sm mb-1 block"
+                    >
+                      Choose Opinion Template
+                    </Label>
+                    <select
+                      id="template-select"
+                      value={selectedTemplate}
+                      onChange={handleTemplateChange}
+                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm mb-2"
+                      disabled={action === "view"}
+                    >
+                      <option value="3-point">3-point scale (Simple)</option>
+                      <option value="5-point">5-point scale (Standard)</option>
+                      <option value="7-point">7-point scale (Detailed)</option>
+                    </select>
+                  </div>
                 )}
 
-                <div
-                  className="border rounded-md p-4 bg-muted/20 min-h-[100px] flex flex-wrap relative"
-                  ref={opinionContainerRef}
-                >
+                <div className="border rounded-md p-4 bg-muted/20 min-h-[80px] flex items-center justify-between">
                   {formData.opinion.map((op, index) => (
-                    <MovableBadge
-                      key={`${op}-${index}`}
-                      variant="secondary"
-                      onRemove={
-                        action !== "view"
-                          ? () => removeOpinion(index)
-                          : undefined
-                      }
-                      onDragStart={
-                        action !== "view"
-                          ? () => setDraggingIndex(index)
-                          : undefined
-                      }
-                      onDragEnd={
-                        action !== "view" ? handleReorderOpinions : undefined
-                      }
-                      index={index}
-                      totalItems={formData.opinion.length}
-                      draggable={action !== "view"}
-                    >
-                      {op}
-                    </MovableBadge>
+                    <div key={index} className="flex flex-col items-center">
+                      <span
+                        className="text-3xl"
+                        title={op} // Add title attribute for accessibility/tooltip
+                      >
+                        {opinionEmojis[op.toLowerCase()] || op}
+                      </span>
+                    </div>
                   ))}
                 </div>
+                {action !== "view" && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    These opinion options will be shown to users when they fill
+                    out this form.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -464,18 +442,17 @@ export function FormsForm({
                           <p className="text-sm font-medium">{field.label}</p>
                           <p className="text-xs text-muted-foreground">
                             Type: {field.type}
-                            {field.value ? ` • Default: ${field.value}` : ""}
+                            {field.value && !Array.isArray(field.value)
+                              ? ` • Default: ${field.value}`
+                              : ""}
                           </p>
-                          {/* Display options for checkbox and radio fields */}
                           {(field.type === "checkbox" ||
                             field.type === "radio") &&
                             field.value &&
+                            Array.isArray(field.value) &&
                             field.value.length > 0 && (
                               <p className="text-xs text-muted-foreground mt-1">
-                                Options:{" "}
-                                {Array.isArray(field.value)
-                                  ? field.value.join(", ")
-                                  : field.value}
+                                Options: {field.value.join(", ")}
                               </p>
                             )}
                         </div>
@@ -593,7 +570,6 @@ export function FormsForm({
                       </div>
                     </div>
 
-                    {/* Options section for checkbox and radio types */}
                     {(newField.type === "checkbox" ||
                       newField.type === "radio") && (
                       <div className="grid grid-cols-1 gap-2 mt-3">
