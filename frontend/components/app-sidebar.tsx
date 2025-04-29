@@ -6,14 +6,15 @@ import { Command, Frame, LifeBuoy, PieChart, Send } from "lucide-react";
 import { NavProjects } from "@/components/nav-projects";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
+import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
+  // SidebarMenu,
+  // SidebarMenuButton,
+  // SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useState } from "react";
 
@@ -71,7 +72,7 @@ export function AppSidebar({
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
+        {/* <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
@@ -85,7 +86,21 @@ export function AppSidebar({
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
-        </SidebarMenu>
+        </SidebarMenu> */}
+        <TeamSwitcher
+          teams={[
+            {
+              name: "LUA App",
+              logo: Command,
+              plan: "Enterprise",
+            },
+            {
+              name: "LUA App2",
+              logo: Command,
+              plan: "Enterprise2",
+            },
+          ]}
+        />
       </SidebarHeader>
       <SidebarContent>
         <NavProjects
