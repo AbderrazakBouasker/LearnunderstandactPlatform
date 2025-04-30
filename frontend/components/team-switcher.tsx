@@ -26,6 +26,7 @@ export function TeamSwitcher({
   teams: {
     name: string;
     logo: React.ElementType;
+    identifier: string;
     plan: string;
   }[];
   onOrganizationChange?: (organization: string) => void;
@@ -36,7 +37,7 @@ export function TeamSwitcher({
   // Call onOrganizationChange with initial team on mount
   React.useEffect(() => {
     if (activeTeam && onOrganizationChange) {
-      onOrganizationChange(activeTeam.name);
+      onOrganizationChange(activeTeam.identifier);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array ensures this only runs once on mount
@@ -44,6 +45,7 @@ export function TeamSwitcher({
   if (!activeTeam) {
     return null;
   }
+  // console.log(teams);
 
   return (
     <SidebarMenu>
@@ -80,7 +82,7 @@ export function TeamSwitcher({
                 key={team.name}
                 onClick={() => {
                   setActiveTeam(team);
-                  onOrganizationChange?.(team.name);
+                  onOrganizationChange?.(team.identifier);
                 }}
                 className="gap-2 p-2"
               >

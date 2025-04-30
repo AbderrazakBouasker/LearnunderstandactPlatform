@@ -12,11 +12,35 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  // SidebarMenu,
-  // SidebarMenuButton,
-  // SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useState } from "react";
+
+// Define interfaces for userData structure
+interface Member {
+  user: string;
+  role: string;
+  _id: string;
+}
+
+interface OrganizationDetail {
+  _id: string;
+  name: string;
+  identifier: string;
+  members: Member[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface UserData {
+  _id: string;
+  username: string;
+  email: string;
+  organization: string[];
+  createdAt: string;
+  organizationDetails: OrganizationDetail[];
+  id: string;
+}
 
 const data = {
   user: {
@@ -53,12 +77,13 @@ const data = {
 export function AppSidebar({
   onButtonClick,
   onOrganizationChange,
+  userData,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   onButtonClick?: (button: string) => void;
   onOrganizationChange?: (organization: string) => void;
+  userData?: UserData;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [handleWhichButtonPressed, setHandleWhichButtonPressed] = useState<
     string | null
   >(null);
@@ -71,39 +96,36 @@ export function AppSidebar({
     }
   };
 
+  // Memoize the teams array to prevent recalculation on every render
+  const teams = React.useMemo(() => {
+    return userData?.organizationDetails?.length
+      ? userData.organizationDetails.map((org: OrganizationDetail) => ({
+          name: org.name,
+          logo: Command,
+          identifier: org.identifier,
+          plan: "Enterprise",
+        }))
+      : [
+          {
+            name: userData?.username ? userData.username + "org" : "LUA App",
+            logo: Command,
+            identifier: userData?.username
+              ? userData.username + "@org"
+              : "lua-app",
+            plan: "Enterprise",
+          },
+        ];
+  }, [userData]);
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
-        {/* <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <a href="#">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Command className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">LUA App</span>
-                  <span className="truncate text-xs">Enterprise</span>
-                </div>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu> */}
-        <TeamSwitcher
-          teams={[
-            {
-              name: "LUA App",
-              logo: Command,
-              plan: "Enterprise",
-            },
-            {
-              name: "LUA App2",
-              logo: Command,
-              plan: "Enterprise2",
-            },
-          ]}
-          onOrganizationChange={onOrganizationChange}
-        />
+        {userData ? (
+          <TeamSwitcher
+            teams={teams}
+            onOrganizationChange={onOrganizationChange}
+          />
+        ) : null}
       </SidebarHeader>
       <SidebarContent>
         <NavProjects
