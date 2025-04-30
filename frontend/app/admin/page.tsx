@@ -21,14 +21,22 @@ import { Form } from "@/components/form";
 
 export default function Page() {
   const [activeButton, setActiveButton] = useState<string | null>(null);
-
+  const [selectedOrganization, setSelectedOrganization] = useState<
+    string | null
+  >(null);
   const handleButtonClick = (button: string) => {
     setActiveButton(button);
+  };
+  const handleOrganizationChange = (organization: string) => {
+    setSelectedOrganization(organization);
   };
 
   return (
     <SidebarProvider>
-      <AppSidebar onButtonClick={handleButtonClick} />
+      <AppSidebar
+        onButtonClick={handleButtonClick}
+        onOrganizationChange={handleOrganizationChange}
+      />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
@@ -40,7 +48,9 @@ export default function Page() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbPage>Admin Dashboard</BreadcrumbPage>
+                  <BreadcrumbPage>
+                    Admin Dashboard {selectedOrganization}
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>

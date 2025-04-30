@@ -52,9 +52,11 @@ const data = {
 
 export function AppSidebar({
   onButtonClick,
+  onOrganizationChange,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   onButtonClick?: (button: string) => void;
+  onOrganizationChange?: (organization: string) => void;
 }) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [handleWhichButtonPressed, setHandleWhichButtonPressed] = useState<
@@ -100,6 +102,7 @@ export function AppSidebar({
               plan: "Enterprise2",
             },
           ]}
+          onOrganizationChange={onOrganizationChange}
         />
       </SidebarHeader>
       <SidebarContent>

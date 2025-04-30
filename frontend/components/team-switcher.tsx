@@ -21,15 +21,25 @@ import {
 
 export function TeamSwitcher({
   teams,
+  onOrganizationChange,
 }: {
   teams: {
     name: string;
     logo: React.ElementType;
     plan: string;
   }[];
+  onOrganizationChange?: (organization: string) => void;
 }) {
   const { isMobile } = useSidebar();
   const [activeTeam, setActiveTeam] = React.useState(teams[0]);
+
+  // Call onOrganizationChange with initial team on mount
+  React.useEffect(() => {
+    if (activeTeam && onOrganizationChange) {
+      onOrganizationChange(activeTeam.name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this only runs once on mount
 
   if (!activeTeam) {
     return null;
@@ -68,7 +78,10 @@ export function TeamSwitcher({
             {teams.map((team, index) => (
               <DropdownMenuItem
                 key={team.name}
-                onClick={() => setActiveTeam(team)}
+                onClick={() => {
+                  setActiveTeam(team);
+                  onOrganizationChange?.(team.name);
+                }}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border">
