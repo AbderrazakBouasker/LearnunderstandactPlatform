@@ -45,8 +45,23 @@ const UserSchema = new mongoose.Schema(
       },
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
+
+UserSchema.virtual("organizationDetails", {
+  ref: "Organization",
+  localField: "organization",
+  foreignField: "identifier",
+  justOne: false,
+});
+
+UserSchema.methods.populateOrganizations = async function () {
+  return await this.populate("organizationDetails").execPopulate();
+};
 
 const User = mongoose.model("User", UserSchema);
 
