@@ -15,6 +15,17 @@ export function FeedbackDetailModal({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   details: Record<string, any>;
 }) {
+  // Add emoji mapping for opinion values
+  const opinionEmojis: Record<string, string> = {
+    "very dissatisfied": "😠",
+    dissatisfied: "🙁",
+    "somewhat dissatisfied": "😕",
+    neutral: "😐",
+    "somewhat satisfied": "🙂",
+    satisfied: "😊",
+    "very satisfied": "😄",
+  };
+
   // Define which top-level fields to display
   const mainFieldsToDisplay = [
     "formTitle",
@@ -25,6 +36,31 @@ export function FeedbackDetailModal({
 
   // Fields to skip from direct display
   const skipFields = ["fields", "_id", "__v", "formId", "updatedAt"];
+
+  // Function to render the opinion field with emoji
+  const renderOpinionField = () => {
+    if (!details.opinion) return null;
+
+    const opinion = details.opinion.toString();
+    const emoji = opinionEmojis[opinion.toLowerCase()] || "";
+
+    return (
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="opinion" className="text-right capitalize">
+          Opinion
+        </Label>
+        <div className="col-span-3 break-words">
+          <Textarea
+            id="opinion"
+            value={`${emoji} ${opinion}`}
+            className="resize-none w-full"
+            disabled
+            rows={1}
+          />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <DialogContent className="sm:max-w-[600px]">
@@ -37,7 +73,7 @@ export function FeedbackDetailModal({
       <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
         {/* Display main form information */}
         {mainFieldsToDisplay.map((key) =>
-          details[key] ? (
+          details[key] && key !== "opinion" ? (
             <div key={key} className="grid grid-cols-4 items-center gap-4 ">
               <Label htmlFor={key} className="text-right capitalize">
                 {key.replace(/([A-Z])/g, " $1").trim()}
@@ -54,6 +90,9 @@ export function FeedbackDetailModal({
             </div>
           ) : null
         )}
+
+        {/* Render opinion with emoji */}
+        {details.opinion && renderOpinionField()}
 
         {/* Display custom field values */}
         <div className="border-t pt-4 mt-2">

@@ -38,6 +38,17 @@ export function FormDetailModal({ formId }: { formId: string }) {
   // Fields to skip from direct display
   const skipFields = ["fields", "_id", "__v", "opinion", "updatedAt"];
 
+  // Add emoji mapping for opinion values
+  const opinionEmojis: Record<string, string> = {
+    "very dissatisfied": "😠",
+    dissatisfied: "🙁",
+    "somewhat dissatisfied": "😕",
+    neutral: "😐",
+    "somewhat satisfied": "🙂",
+    satisfied: "😊",
+    "very satisfied": "😄",
+  };
+
   useEffect(() => {
     const fetchFormData = async () => {
       try {
@@ -120,18 +131,22 @@ export function FormDetailModal({ formId }: { formId: string }) {
           ) : null
         )}
 
-        {/* Display opinion options */}
+        {/* Display opinion options with emojis */}
         {formData.opinion && formData.opinion.length > 0 && (
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="opinion" className="text-right capitalize">
               Opinion Options
             </Label>
-            <div className="flex flex-wrap gap-2 col-span-3">
-              {formData.opinion.map((option, index) => (
-                <Badge key={index} variant="outline">
-                  {option}
-                </Badge>
-              ))}
+            <div className="col-span-3">
+              <div className="border rounded-md p-4 bg-muted/20 flex justify-between items-center">
+                {formData.opinion.map((option, index) => (
+                  <div key={index} className="flex flex-col items-center">
+                    <span className="text-3xl" title={option}>
+                      {opinionEmojis[option.toLowerCase()] || option}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
