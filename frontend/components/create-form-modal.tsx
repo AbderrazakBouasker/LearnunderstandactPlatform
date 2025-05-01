@@ -16,6 +16,7 @@ export function CreateFormModal({
     description: string;
     opinion: [];
     fields: [];
+    organization: string;
     createdAt: string;
     updatedAt: string;
   };

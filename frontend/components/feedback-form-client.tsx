@@ -34,6 +34,17 @@ export function FeedbackFormClient({
   };
   formId: string;
 }) {
+  // Add emoji mapping for opinion options
+  const opinionEmojis: Record<string, string> = {
+    "very dissatisfied": "😠",
+    dissatisfied: "🙁",
+    "somewhat dissatisfied": "😕",
+    neutral: "😐",
+    "somewhat satisfied": "🙂",
+    satisfied: "😊",
+    "very satisfied": "😄",
+  };
+
   const [isAlert, setIsAlert] = useState(false);
   const [alertTitle, setAlertTitle] = useState("");
   const [alertDescription, setAlertDescription] = useState("");
@@ -537,26 +548,31 @@ export function FeedbackFormClient({
             </span>
           )}
         </div>
-        <RadioGroup
-          value={formState.opinion || ""}
-          onValueChange={(value) => {
-            handleInputChange("opinion", value);
-            // Clear validation error when value is selected
-            if (validationErrors.opinion) {
-              setValidationErrors((prev) => ({ ...prev, opinion: false }));
-            }
-          }}
-          className={`flex flex-wrap gap-4 ${
-            hasError ? "border border-destructive rounded-md p-2" : ""
-          }`}
+        <div
+          className={`${
+            hasError ? "border border-destructive rounded-md p-4" : "p-2"
+          } border rounded-md bg-muted/20 flex justify-between items-center`}
         >
           {formData.opinion.map((option) => (
-            <div className="flex items-center space-x-2" key={option}>
-              <RadioGroupItem value={option} id={`opinion-${option}`} />
-              <Label htmlFor={`opinion-${option}`}>{option}</Label>
-            </div>
+            <button
+              type="button"
+              key={option}
+              onClick={() => handleInputChange("opinion", option)}
+              className={`flex flex-col items-center p-2 rounded-md transition-all ${
+                formState.opinion === option
+                  ? "bg-primary/10 ring-2 ring-primary"
+                  : "hover:bg-muted/50"
+              }`}
+              title={option}
+              aria-label={option}
+              aria-pressed={formState.opinion === option}
+            >
+              <span className="text-3xl cursor-pointer">
+                {opinionEmojis[option.toLowerCase()] || option}
+              </span>
+            </button>
           ))}
-        </RadioGroup>
+        </div>
       </div>
     );
   };
