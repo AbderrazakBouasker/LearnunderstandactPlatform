@@ -68,12 +68,18 @@ export function DataTableFeedback({
     null
   );
   const [alertTitle, setAlertTitle] = React.useState<string | null>(null);
-  //   const [showFeedBackDetails, setShowFeedBackDetails] = React.useState(false);
-  //   const [feedbackDetails, setFeedbackDetails] = React.useState<Feedback | null>(
-  //     null
-  //   );
-  //   const [showFormDetails, setShowFormDetails] = React.useState(false);
-  //   const [formDetails, setFormDetails] = React.useState(null);
+
+  // Add emoji mapping for opinion values
+  const opinionEmojis: Record<string, string> = {
+    "very dissatisfied": "😠",
+    dissatisfied: "🙁",
+    "somewhat dissatisfied": "😕",
+    neutral: "😐",
+    "somewhat satisfied": "🙂",
+    satisfied: "😊",
+    "very satisfied": "😄",
+  };
+
   const handleDeleteFeedback = async (id: string) => {
     try {
       const response = await fetch(
@@ -224,9 +230,20 @@ export function DataTableFeedback({
           </Button>
         );
       },
-      cell: ({ row }) => (
-        <div className="lowercase">{row.getValue("opinion")}</div>
-      ),
+      cell: ({ row }) => {
+        const opinion = row.getValue("opinion") as string;
+        return (
+          <div
+            className="text-2xl flex items-center"
+            title={opinion} // Add tooltip for accessibility
+          >
+            {opinionEmojis[opinion.toLowerCase()] || opinion}
+            <span className="ml-2 text-xs text-muted-foreground">
+              {opinion}
+            </span>
+          </div>
+        );
+      },
     },
     {
       id: "actions",
