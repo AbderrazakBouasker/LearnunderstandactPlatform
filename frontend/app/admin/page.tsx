@@ -33,9 +33,7 @@ export default function Page() {
   }
 
   const [activeButton, setActiveButton] = useState<string | null>(null);
-  const [selectedOrganization, setSelectedOrganization] = useState<
-    string | null
-  >(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<string>();
   const [userData, setUserData] = useState<UserData>(null);
   const [isAlert, setIsAlert] = useState(false);
   const [alertTitle, setAlertTitle] = useState("");
@@ -164,9 +162,9 @@ export default function Page() {
             </div>
             <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min">
               {activeButton === "Feedbacks" ? (
-                <Feedback />
+                <Feedback selectedOrganization={selectedOrganization} />
               ) : activeButton === "Forms" ? (
-                <Form />
+                <Form selectedOrganization={selectedOrganization} />
               ) : null}
             </div>
           </div>

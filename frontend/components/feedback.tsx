@@ -1,9 +1,13 @@
 "use client";
 import { DataTableFeedback } from "./data-table-feedback";
-export function Feedback() {
+export function Feedback({
+  selectedOrganization,
+}: {
+  selectedOrganization: string;
+}) {
   return (
     <>
-      <DataTableFeedback />
+      <DataTableFeedback selectedOrganization={selectedOrganization} />
     </>
   );
 }

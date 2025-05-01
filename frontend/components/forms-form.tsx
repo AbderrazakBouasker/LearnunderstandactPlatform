@@ -14,6 +14,7 @@ export function FormsForm({
   action,
   form,
   onAlert,
+  selectedOrganization,
 }: {
   action: string;
   form?: {
@@ -35,6 +36,7 @@ export function FormsForm({
     description: string;
     variant: "default" | "destructive";
   }) => void;
+  selectedOrganization: string;
 }) {
   const opinionTemplates = {
     "5-point": [
@@ -76,6 +78,7 @@ export function FormsForm({
     fields: form?.fields || [],
     createdAt: form?.createdAt || "",
     updatedAt: form?.updatedAt || "",
+    organization: selectedOrganization,
   });
 
   const opinionEmojis: Record<string, string> = {

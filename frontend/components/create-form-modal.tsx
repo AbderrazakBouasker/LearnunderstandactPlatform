@@ -7,6 +7,7 @@ export function CreateFormModal({
   action,
   form,
   onAlert,
+  selectedOrganization,
 }: {
   action: string;
   form?: {
@@ -23,6 +24,7 @@ export function CreateFormModal({
     description: string;
     variant: "default" | "destructive";
   }) => void;
+  selectedOrganization: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -49,7 +51,11 @@ export function CreateFormModal({
             <Button variant="outline">Create a new Form</Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl w-auto max-h-[90vh] overflow-y-auto">
-            <FormsForm action="create" onAlert={handleAlert} />
+            <FormsForm
+              action="create"
+              onAlert={handleAlert}
+              selectedOrganization={selectedOrganization}
+            />
           </DialogContent>
         </Dialog>
       ) : action === "edit" && form ? (

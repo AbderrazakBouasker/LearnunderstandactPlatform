@@ -53,7 +53,11 @@ export type Feedback = {
   fields: [];
 };
 
-export function DataTableFeedback() {
+export function DataTableFeedback({
+  selectedOrganization,
+}: {
+  selectedOrganization: string;
+}) {
   const [data, setData] = React.useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAlert, setIsAlert] = React.useState<boolean>(false);
@@ -277,7 +281,7 @@ export function DataTableFeedback() {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/feedback/`,
+          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/feedback/organization/${selectedOrganization}`,
           {
             method: "GET",
             headers: { "Content-Type": "application/json" },

@@ -55,7 +55,11 @@ export type Form = {
   updatedAt: string;
 };
 
-export function DataTableForm() {
+export function DataTableForm({
+  selectedOrganization,
+}: {
+  selectedOrganization: string;
+}) {
   const [data, setData] = React.useState<Form[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAlert, setIsAlert] = React.useState<boolean>(false);
@@ -322,7 +326,7 @@ export function DataTableForm() {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/form/`,
+          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/form/organization/${selectedOrganization}`,
           {
             method: "GET",
             headers: { "Content-Type": "application/json" },
