@@ -45,6 +45,7 @@ import {
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { CreateFormModal } from "./create-form-modal";
+import { LinkCopyModal } from "@/components/link-copy-modal";
 export type Form = {
   _id: string;
   title: string;
@@ -268,54 +269,64 @@ export function DataTableForm({
       enableHiding: false,
       cell: ({ row }) => {
         const form = row.original;
+        const [linkModalOpen, setLinkModalOpen] = React.useState(false);
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onSelect={() => {
-                  window.open(
-                    `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/form/${form._id}`,
-                    "_blank"
-                  );
-                }}
-              >
-                Open Form Link
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => {
-                  setSelectedForm(form);
-                  setViewDialogOpen(true);
-                }}
-              >
-                View form details
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => {
-                  setSelectedForm(form);
-                  setEditDialogOpen(true);
-                }}
-              >
-                Edit form details
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => {
-                  handleDeleteForm(form._id);
-                }}
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    window.open(
+                      `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/form/${form._id}`,
+                      "_blank"
+                    );
+                  }}
+                >
+                  Open Form Link
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setLinkModalOpen(true)}>
+                  Embed Form Link
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setSelectedForm(form);
+                    setViewDialogOpen(true);
+                  }}
+                >
+                  View form details
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setSelectedForm(form);
+                    setEditDialogOpen(true);
+                  }}
+                >
+                  Edit form details
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => {
+                    handleDeleteForm(form._id);
+                  }}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Dialog open={linkModalOpen} onOpenChange={setLinkModalOpen}>
+              <LinkCopyModal formId={form._id} />
+            </Dialog>
+          </>
         );
       },
     },

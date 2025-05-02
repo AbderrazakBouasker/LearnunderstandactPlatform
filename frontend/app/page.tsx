@@ -1,13 +1,18 @@
 import Image from "next/image";
-import { EmbeddableButton } from "@/components/embeddable-button";
 export default function Home() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <EmbeddableButton
-          formid={"68137eb7e151cb9289fcee46"}
-          isEmbedded={true}
-        />
+        {/* <iframe
+          src="http://luapp/embed/form/6813773cb04fb660b58b5941"
+          width="100%"
+          height="500px"
+          style={{ border: "none", borderRadius: "8px" }}
+        ></iframe> */}
+        <script
+          src="http://luapp/api/embed.js"
+          data-formid="6813773cb04fb660b58b5941"
+        ></script>
         <Image
           className="dark:invert"
           src="/next.svg"
