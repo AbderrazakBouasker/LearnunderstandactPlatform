@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { FeedbackFormClient } from "./feedback-form-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function FeedbackForm({ formid }: { formid: string }) {
+export function FeedbackForm({
+  formid,
+  isEmbedded,
+}: {
+  formid: string;
+  isEmbedded: boolean;
+}) {
   const [formData, setFormData] = useState<any>(null);
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("An unknown error occurred");
