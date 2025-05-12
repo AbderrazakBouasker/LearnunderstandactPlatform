@@ -37,7 +37,7 @@ export function LinkCopyModal({ formId }: { formId: string }) {
   style={{ border: "none", borderRadius: "8px" }}
 ></iframe>`;
 
-  const buttonCode = `<script src="${baseUrl}/api/embed.js" data-formid="${formId}"></script>`;
+  const buttonCode = `<script src="${baseUrl}/embed/widget/embed.js" data-formid="${formId}"></script>`;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
