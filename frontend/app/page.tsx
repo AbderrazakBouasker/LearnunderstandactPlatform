@@ -4,16 +4,25 @@ export default function Home() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        {/* <iframe
+        <iframe
           src="http://luapp/embed/form/6821c57c09e9c97679d2ba9a"
           width="100%"
           height="500px"
           style={{ border: "none", borderRadius: "8px" }}
-        ></iframe> */}
+        ></iframe>
 
         <Script
           src="http://luapp/embed/widget/embed.js"
           data-formid="68137eb7e151cb9289fcee46"
+          data-button-text="Give Feedback"
+          data-button-position="bottom-right"
+          data-button-style-background-color="#383838"
+          data-iframe-width="50%"
+          data-iframe-height="400px"
+          data-iframe-frameborder="0"
+          data-iframe-allowtransparency="true"
+          data-iframe-style='{"borderRadius":"20px", "boxShadow":"0 4px 14px rgba(0, 0, 0, 0.15)"}'
+          data-modal-style-backdrop-filter="blur(10px)"
           strategy="lazyOnload"
         ></Script>
 

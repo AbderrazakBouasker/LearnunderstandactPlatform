@@ -69,9 +69,150 @@ export function LinkCopyModal({ formId }: { formId: string }) {
     }, 3000);
   };
 
+  // Shared documentation component
+  const CustomizationDocs = ({
+    isReactJs = false,
+  }: {
+    isReactJs?: boolean;
+  }) => (
+    <div className="mt-4 border rounded-md">
+      <div className="bg-muted px-4 py-2 border-b">
+        <h4 className="font-medium text-sm">Customization Options</h4>
+      </div>
+      <div className="p-4 text-xs space-y-4 max-h-64 overflow-y-auto">
+        <div>
+          <h5 className="font-medium mb-1">Button Options</h5>
+          <ul className="space-y-1 opacity-90">
+            <li>
+              {isReactJs ? (
+                <code>
+                  script.setAttribute("data-button-text", "Your Text")
+                </code>
+              ) : (
+                <code>data-button-text</code>
+              )}
+              {' - Button text (default: "Give Feedback")'}
+            </li>
+            <li>
+              {isReactJs ? (
+                <code>
+                  script.setAttribute("data-button-position", "bottom-right")
+                </code>
+              ) : (
+                <code>data-button-position</code>
+              )}
+              {
+                ' - Position on screen: "bottom-right", "bottom-left", "top-right", "top-left" (default: "bottom-right")'
+              }
+            </li>
+            <li>
+              {isReactJs ? (
+                <code>script.setAttribute("data-button-style-*", "value")</code>
+              ) : (
+                <code>data-button-style-*</code>
+              )}
+              {" - Any CSS property (e.g., "}
+              {isReactJs ? (
+                <code>
+                  script.setAttribute("data-button-style-background-color",
+                  "#000")
+                </code>
+              ) : (
+                <code>data-button-style-background-color="#000"</code>
+              )}
+              {")"}
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h5 className="font-medium mb-1">Modal Options</h5>
+          <ul className="space-y-1 opacity-90">
+            <li>
+              {isReactJs ? (
+                <code>script.setAttribute("data-modal-style-*", "value")</code>
+              ) : (
+                <code>data-modal-style-*</code>
+              )}
+              {" - Any CSS property (e.g., "}
+              {isReactJs ? (
+                <code>
+                  script.setAttribute("data-modal-style-backdrop-filter",
+                  "blur(5px)")
+                </code>
+              ) : (
+                <code>data-modal-style-backdrop-filter="blur(5px)"</code>
+              )}
+              {")"}
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h5 className="font-medium mb-1">Iframe Options</h5>
+          <ul className="space-y-1 opacity-90">
+            <li>
+              {isReactJs ? (
+                <code>script.setAttribute("data-iframe-width", "90%")</code>
+              ) : (
+                <code>data-iframe-width</code>
+              )}
+              {' - Width of iframe (default: "90%")'}
+            </li>
+            <li>
+              {isReactJs ? (
+                <code>script.setAttribute("data-iframe-height", "80%")</code>
+              ) : (
+                <code>data-iframe-height</code>
+              )}
+              {' - Height of iframe (default: "80%")'}
+            </li>
+            <li>
+              {isReactJs ? (
+                <code>script.setAttribute("data-iframe-*", "value")</code>
+              ) : (
+                <code>data-iframe-*</code>
+              )}
+              {" - Any iframe attribute ("}
+              <code>frameborder</code>
+              {", "}
+              <code>allowtransparency</code>
+              {", etc.)"}
+            </li>
+            <li>
+              {isReactJs ? (
+                <code>
+                  script.setAttribute("data-iframe-style",
+                  "&#123;"borderRadius":"8px"&#125;")
+                </code>
+              ) : (
+                <>
+                  <code>data-iframe-style</code>
+                  {" - JSON string of CSS properties. Example:"}
+                  <div className="mt-1 bg-muted p-1 rounded">
+                    <code>
+                      data-iframe-style='&#123;"borderRadius":"8px"&#125;'
+                    </code>
+                  </div>
+                </>
+              )}
+              {isReactJs && " - JSON string of CSS properties"}
+            </li>
+            <li>
+              {isReactJs ? (
+                <code>script.setAttribute("data-iframe-style-*", "value")</code>
+              ) : (
+                <code>data-iframe-style-*</code>
+              )}
+              {" - Any CSS property"}
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[calc(100vh-20px)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Embed Form</DialogTitle>
           <DialogDescription>
@@ -130,7 +271,16 @@ export function LinkCopyModal({ formId }: { formId: string }) {
                     </Label>
                     <Input
                       id="nextjs-code"
-                      defaultValue={nextJsCode}
+                      defaultValue={`<Script
+  src="${baseUrl}/embed/widget/embed.js"
+  data-formid="${formId}"
+  data-button-text="Give Feedback"
+  data-button-position="bottom-right"
+  data-button-style-background-color="#0070f3"
+  data-iframe-width="90%"
+  data-iframe-height="80%"
+  strategy="lazyOnload"
+></Script>`}
                       readOnly
                     />
                   </div>
@@ -143,6 +293,8 @@ export function LinkCopyModal({ formId }: { formId: string }) {
                     <Copy />
                   </Button>
                 </div>
+
+                <CustomizationDocs isReactJs={false} />
               </TabsContent>
 
               <TabsContent value="reactjs" className="space-y-2">
@@ -156,8 +308,27 @@ export function LinkCopyModal({ formId }: { formId: string }) {
                     </Label>
                     <textarea
                       id="reactjs-code"
-                      className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      defaultValue={reactJsCode}
+                      className="flex h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      defaultValue={`useEffect(() => {
+  // Create script element
+  const script = document.createElement("script");
+  script.src = "${baseUrl}/embed/widget/embed.js";
+  script.setAttribute("data-formid", "${formId}");
+  script.setAttribute("data-button-text", "Give Feedback");
+  script.setAttribute("data-button-position", "bottom-right");
+  script.setAttribute("data-button-style-background-color", "#0070f3");
+  script.setAttribute("data-iframe-width", "90%");
+  script.setAttribute("data-iframe-height", "80%");
+  script.async = true;
+  
+  // Append to document body
+  document.body.appendChild(script);
+  
+  // Cleanup function
+  return () => {
+    document.body.removeChild(script);
+  };
+}, []);`}
                       readOnly
                     />
                   </div>
@@ -170,6 +341,8 @@ export function LinkCopyModal({ formId }: { formId: string }) {
                     <Copy />
                   </Button>
                 </div>
+
+                <CustomizationDocs isReactJs={true} />
               </TabsContent>
             </Tabs>
           </TabsContent>
