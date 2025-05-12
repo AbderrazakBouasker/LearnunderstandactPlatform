@@ -1,5 +1,5 @@
 import { Copy, Terminal } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DialogClose,
@@ -38,6 +38,25 @@ export function LinkCopyModal({ formId }: { formId: string }) {
 ></iframe>`;
 
   const buttonCode = `<script src="${baseUrl}/embed/widget/embed.js" data-formid="${formId}"></script>`;
+
+  const nextJsCode = `<Script src="${baseUrl}/embed/widget/embed.js" data-formid="${formId}" strategy="lazyOnload" ></Script>`;
+
+  const reactJsCode = `useEffect(() => {
+  // Create script element
+  const script = document.createElement("script");
+  script.src = "${baseUrl}/embed/widget/embed.js";
+  script.setAttribute("data-formid", "${formId}");
+  // script.setAttribute("data-target", "button-container"); // Specify target if supported
+  script.async = true;
+  
+  // Append to document body
+  document.body.appendChild(script);
+  
+  // Cleanup function
+  return () => {
+    document.body.removeChild(script);
+  };
+}, []);`;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -92,22 +111,67 @@ export function LinkCopyModal({ formId }: { formId: string }) {
             <div className="text-sm text-muted-foreground">
               Add a floating feedback button that opens the form in a popup:
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="grid flex-1 gap-2">
-                <Label htmlFor="button-code" className="sr-only">
-                  Button Code
-                </Label>
-                <Input id="button-code" defaultValue={buttonCode} readOnly />
-              </div>
-              <Button
-                size="sm"
-                className="px-3"
-                onClick={() => handleCopy(buttonCode)}
-              >
-                <span className="sr-only">Copy</span>
-                <Copy />
-              </Button>
-            </div>
+
+            <Tabs defaultValue="nextjs" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="nextjs">Next.js</TabsTrigger>
+                <TabsTrigger value="reactjs">React.js</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="nextjs" className="space-y-2">
+                <div className="text-xs text-muted-foreground mt-2">
+                  Import from next/script:{" "}
+                  <code>import Script from 'next/script'</code>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="grid flex-1 gap-2">
+                    <Label htmlFor="nextjs-code" className="sr-only">
+                      Next.js Code
+                    </Label>
+                    <Input
+                      id="nextjs-code"
+                      defaultValue={nextJsCode}
+                      readOnly
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="px-3"
+                    onClick={() => handleCopy(nextJsCode)}
+                  >
+                    <span className="sr-only">Copy</span>
+                    <Copy />
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="reactjs" className="space-y-2">
+                <div className="text-xs text-muted-foreground mt-2">
+                  Use in a React.js component with useEffect:
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="grid flex-1 gap-2">
+                    <Label htmlFor="reactjs-code" className="sr-only">
+                      React.js Code
+                    </Label>
+                    <textarea
+                      id="reactjs-code"
+                      className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      defaultValue={reactJsCode}
+                      readOnly
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="px-3"
+                    onClick={() => handleCopy(reactJsCode)}
+                  >
+                    <span className="sr-only">Copy</span>
+                    <Copy />
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
 

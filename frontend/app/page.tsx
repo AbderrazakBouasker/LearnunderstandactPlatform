@@ -13,7 +13,7 @@ export default function Home() {
 
         <Script
           src="http://luapp/embed/widget/embed.js"
-          data-formid="6821c57c09e9c97679d2ba9a"
+          data-formid="68137eb7e151cb9289fcee46"
           strategy="lazyOnload"
         ></Script>
 
