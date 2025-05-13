@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import logger from "../logger.js";
+import bcrypt from "bcrypt"; // Add this import for password hashing
 
 //READ
 export const getUser = async (req, res) => {
@@ -39,6 +40,86 @@ export const getMe = async (req, res) => {
     logger.error("Error retrieving user", {
       error: error.message,
       stack: error.stack,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+//UPDATE
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = { ...req.body };
+
+    // Find the user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Require password verification for ALL modifications
+    if (!updates.currentPassword) {
+      return res.status(400).json({
+        error: "Current password is required for any account modifications",
+      });
+    }
+
+    // Verify the current password
+    const isMatch = await bcrypt.compare(
+      updates.currentPassword,
+      user.password
+    );
+    if (!isMatch) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+
+    // Remove currentPassword from updates as we don't want to save it
+    delete updates.currentPassword;
+
+    // Check if username update is requested and if it already exists
+    if (updates.username) {
+      const existingUser = await User.findOne({
+        username: updates.username,
+        _id: { $ne: id }, // exclude current user
+      });
+
+      if (existingUser) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+    }
+
+    // Check if email update is requested and if it already exists
+    if (updates.email) {
+      const existingUser = await User.findOne({
+        email: updates.email,
+        _id: { $ne: id }, // exclude current user
+      });
+
+      if (existingUser) {
+        return res.status(400).json({ error: "Email already exists" });
+      }
+    }
+
+    // Hash the new password if it's being updated
+    if (updates.password) {
+      const salt = await bcrypt.genSalt();
+      updates.password = await bcrypt.hash(updates.password, salt);
+    }
+
+    // Update the user with validated fields
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json("User updated successfully");
+  } catch (error) {
+    // Log the error with additional context
+    logger.error("Error updating user", {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
     });
     res.status(500).json({ error: error.message });
   }
