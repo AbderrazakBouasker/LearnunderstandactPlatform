@@ -123,6 +123,7 @@ export function AppSidebar({
         {userData ? (
           <TeamSwitcher
             teams={teams}
+            userData={userData}
             onOrganizationChange={onOrganizationChange}
           />
         ) : null}

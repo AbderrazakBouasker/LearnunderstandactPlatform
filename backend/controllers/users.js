@@ -124,3 +124,85 @@ export const updateUser = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+//ADD TO ORGANIZATION
+export const addToOrganization = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { organizationIdentifier } = req.body;
+
+    // Find the user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (!organizationIdentifier) {
+      return res
+        .status(400)
+        .json({ error: "Organization identifier is required" });
+    }
+
+    // Check if the user is already in the organization
+    if (user.organization.includes(organizationIdentifier)) {
+      return res
+        .status(400)
+        .json({ error: "User already in this organization" });
+    }
+
+    // Add the organization to the user's organizations
+    user.organization.push(organizationIdentifier);
+    await user.save();
+
+    res.status(200).json("User added to organization successfully");
+  } catch (error) {
+    // Log the error with additional context
+    logger.error("Error adding user to organization", {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+//DELETE FROM ORGANIZATION
+export const deleteFromOrganization = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { organizationIdentifier } = req.body;
+
+    // Find the user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (!organizationIdentifier) {
+      return res
+        .status(400)
+        .json({ error: "Organization identifier is required" });
+    }
+
+    // Check if the user is in the organization
+    if (!user.organization.includes(organizationIdentifier)) {
+      return res.status(400).json({ error: "User not in this organization" });
+    }
+
+    // Remove the organization from the user's organizations
+    user.organization = user.organization.filter(
+      (org) => org !== organizationIdentifier
+    );
+    await user.save();
+
+    res.status(200).json("User removed from organization successfully");
+  } catch (error) {
+    // Log the error with additional context
+    logger.error("Error removing user from organization", {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};

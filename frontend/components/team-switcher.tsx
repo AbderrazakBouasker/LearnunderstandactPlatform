@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ChevronsUpDown, Plus } from "lucide-react";
+import { OrganizationCreateModal } from "./organization-create-modal";
 
 import {
   DropdownMenu,
@@ -19,8 +20,25 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
+interface Member {
+  user: string;
+  role: string;
+  _id: string;
+}
+
+interface OrganizationDetail {
+  _id: string;
+  name: string;
+  identifier: string;
+  members: Member[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
 export function TeamSwitcher({
   teams,
+  userData,
   onOrganizationChange,
 }: {
   teams: {
@@ -29,10 +47,20 @@ export function TeamSwitcher({
     identifier: string;
     plan: string;
   }[];
+  UserData: {
+    _id: string;
+    username: string;
+    email: string;
+    organization: string[];
+    createdAt: string;
+    organizationDetails: OrganizationDetail[];
+    id: string;
+  };
   onOrganizationChange?: (organization: string) => void;
 }) {
   const { isMobile } = useSidebar();
   const [activeTeam, setActiveTeam] = React.useState(teams[0]);
+  const [isOrgModalOpen, setIsOrgModalOpen] = React.useState(false);
 
   // Call onOrganizationChange with initial team on mount
   React.useEffect(() => {
@@ -94,7 +122,10 @@ export function TeamSwitcher({
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
+            <DropdownMenuItem
+              className="gap-2 p-2"
+              onClick={() => setIsOrgModalOpen(true)}
+            >
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <Plus className="size-4" />
               </div>
@@ -103,6 +134,13 @@ export function TeamSwitcher({
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+
+      {/* Organization Create Modal */}
+      <OrganizationCreateModal
+        userData={userData}
+        open={isOrgModalOpen}
+        onOpenChange={setIsOrgModalOpen}
+      />
     </SidebarMenu>
   );
 }
