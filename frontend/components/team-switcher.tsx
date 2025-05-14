@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ChevronsUpDown, Plus } from "lucide-react";
 import { OrganizationCreateModal } from "./organization-create-modal";
+import { OrganizationOptionsDroplist } from "./organization-options-droplist";
 
 import {
   DropdownMenu,
@@ -119,6 +120,10 @@ export function TeamSwitcher({
                 </div>
                 {team.name}
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                <OrganizationOptionsDroplist
+                  organization={team}
+                  userData={userData}
+                />
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />

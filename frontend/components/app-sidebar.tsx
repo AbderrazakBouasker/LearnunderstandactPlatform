@@ -13,6 +13,7 @@ import {
   SidebarFooter,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import { OrganizationOptionsDroplist } from "./organization-options-droplist";
 import { useState } from "react";
 
 // Define interfaces for userData structure
