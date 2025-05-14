@@ -41,87 +41,106 @@ export default function Page() {
   const [alertVariant, setAlertVariant] = useState<
     "default" | "destructive" | null | undefined
   >("default");
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleButtonClick = (button: string) => {
     setActiveButton(button);
   };
+
   const handleOrganizationChange = (organization: string) => {
     setSelectedOrganization(organization);
+    if (!activeButton) {
+      setActiveButton("Feedbacks");
+    }
   };
 
-  useEffect(() => {
-    const fetchFeedbackData = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/user/me`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
-        );
+  const fetchUserData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/user/me`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
 
-        if (response.ok) {
-          const userdata = await response.json();
-          setUserData(userdata);
-        }
-        if (response.status === 404) {
-          setAlertTitle("Not Found");
-          setAlertDescription("User not found");
-          setAlertVariant("destructive");
-          setIsAlert(true);
-          setTimeout(() => {
-            setIsAlert(false);
-          }, 3000);
-        }
-        if (response.status === 401) {
-          setAlertTitle("Unauthorized");
-          setAlertDescription("Invalid or expired token");
-          setAlertVariant("destructive");
-          setIsAlert(true);
-          setTimeout(() => {
-            setIsAlert(false);
-          }, 3000);
-        }
-        if (response.status === 403) {
-          setAlertTitle("Forbidden");
-          setAlertDescription("Not authorized or missing token");
-          setAlertVariant("destructive");
-          setIsAlert(true);
-          setTimeout(() => {
-            setIsAlert(false);
-          }, 3000);
-        }
-        if (response.status === 429) {
-          setAlertTitle("Too Many Requests");
-          setAlertDescription("Please wait a few minutes before trying again.");
-          setAlertVariant("destructive");
-          setIsAlert(true);
-          setTimeout(() => {
-            setIsAlert(false);
-          }, 3000);
-        }
-        if (response.status === 500) {
-          setAlertTitle("Server Error");
-          setAlertDescription("An error occurred. Please try again.");
-          setAlertVariant("destructive");
-          setIsAlert(true);
-          setTimeout(() => {
-            setIsAlert(false);
-          }, 3000);
-        }
-      } catch {
-        setAlertTitle("Error");
-        setAlertDescription("Failed to load feedback data. Please try again.");
+      if (response.ok) {
+        const userdata = await response.json();
+        setUserData(userdata);
+      } else if (response.status === 404) {
+        setAlertTitle("Not Found");
+        setAlertDescription("User not found");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 401) {
+        setAlertTitle("Unauthorized");
+        setAlertDescription("Invalid or expired token");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 403) {
+        setAlertTitle("Forbidden");
+        setAlertDescription("Not authorized or missing token");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 429) {
+        setAlertTitle("Too Many Requests");
+        setAlertDescription("Please wait a few minutes before trying again.");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 500) {
+        setAlertTitle("Server Error");
+        setAlertDescription("An error occurred. Please try again.");
         setAlertVariant("destructive");
         setIsAlert(true);
         setTimeout(() => {
           setIsAlert(false);
         }, 3000);
       }
-    };
+    } catch {
+      setAlertTitle("Error");
+      setAlertDescription("Failed to load data. Please try again.");
+      setAlertVariant("destructive");
+      setIsAlert(true);
+      setTimeout(() => {
+        setIsAlert(false);
+      }, 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchFeedbackData();
+  useEffect(() => {
+    fetchUserData();
   }, []);
+
+  useEffect(() => {
+    if (selectedOrganization) {
+      if (activeButton) {
+        setActiveButton((prevActive) => {
+          setActiveButton(null);
+          return prevActive;
+        });
+
+        setTimeout(() => {
+          setActiveButton(activeButton);
+        }, 50);
+      }
+    }
+  }, [selectedOrganization]);
 
   return (
     <>
@@ -155,17 +174,27 @@ export default function Page() {
             </div>
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-              {/* <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" /> */}
-            </div>
+            <div className="grid auto-rows-min gap-4 md:grid-cols-3"></div>
             <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min">
-              {activeButton === "Feedbacks" ? (
-                <Feedback selectedOrganization={selectedOrganization} />
-              ) : activeButton === "Forms" ? (
-                <Form selectedOrganization={selectedOrganization} />
-              ) : null}
+              {isLoading ? (
+                <div className="flex h-full w-full items-center justify-center">
+                  <div className="animate-spin rounded-full border-t-2 border-l-2 border-primary h-8 w-8"></div>
+                </div>
+              ) : (
+                <>
+                  {activeButton === "Feedbacks" ? (
+                    <Feedback
+                      selectedOrganization={selectedOrganization}
+                      key={`feedback-${selectedOrganization}`}
+                    />
+                  ) : activeButton === "Forms" ? (
+                    <Form
+                      selectedOrganization={selectedOrganization}
+                      key={`form-${selectedOrganization}`}
+                    />
+                  ) : null}
+                </>
+              )}
             </div>
           </div>
         </SidebarInset>
