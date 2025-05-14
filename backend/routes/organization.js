@@ -6,6 +6,9 @@ import {
   createOrganization,
   updateOrganization,
   deleteOrganization,
+  addMemberToOrganizationByUsername,
+  addMemberToOrganizationByEmail,
+  deleteMemberFromOrganization,
 } from "../controllers/organization.js";
 import { verifyToken } from "../middleware/auth.js";
 import { rateLimiter } from "../middleware/ratelimiter.js";
@@ -36,6 +39,27 @@ router.delete(
   rateLimiter(1, 100),
   verifyToken,
   deleteOrganization
+);
+//ADD MEMBER TO ORGANIZATION BY USERNAME
+router.post(
+  "/:identifier/member/add/username",
+  rateLimiter(1, 100),
+  verifyToken,
+  addMemberToOrganizationByUsername
+);
+//ADD MEMBER TO ORGANIZATION BY EMAIL
+router.post(
+  "/:identifier/member/add/email",
+  rateLimiter(1, 100),
+  verifyToken,
+  addMemberToOrganizationByEmail
+);
+//REMOVE MEMBER FROM ORGANIZATION
+router.delete(
+  "/:identifier/member/remove",
+  rateLimiter(1, 100),
+  verifyToken,
+  deleteMemberFromOrganization
 );
 
 export default router;

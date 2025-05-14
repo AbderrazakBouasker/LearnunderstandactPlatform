@@ -107,24 +107,26 @@ export function TeamSwitcher({
               Teams
             </DropdownMenuLabel>
             {teams.map((team, index) => (
-              <DropdownMenuItem
-                key={team.name}
-                onClick={() => {
-                  setActiveTeam(team);
-                  onOrganizationChange?.(team.identifier);
-                }}
-                className="gap-2 p-2"
-              >
-                <div className="flex size-6 items-center justify-center rounded-sm border">
-                  <team.logo className="size-4 shrink-0" />
-                </div>
-                {team.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+              <div key={team.name} className="flex items-center">
+                <DropdownMenuItem
+                  key={team.name}
+                  onClick={() => {
+                    setActiveTeam(team);
+                    onOrganizationChange?.(team.identifier);
+                  }}
+                  className="flex-1 gap-2 p-2"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-sm border">
+                    <team.logo className="size-4 shrink-0" />
+                  </div>
+                  {team.name}
+                  <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                </DropdownMenuItem>
                 <OrganizationOptionsDroplist
                   organization={team}
                   userData={userData}
                 />
-              </DropdownMenuItem>
+              </div>
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem

@@ -163,3 +163,147 @@ export const deleteOrganization = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+//ADD MEMBER TO ORGANIZATION BY USERNAME
+export const addMemberToOrganizationByUsername = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { username } = req.body;
+
+    // Find the organization
+    const organization = await Organization.findOne({ identifier });
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    // Find the user by username
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if the user is already a member
+    const isMember = organization.members.some(
+      (member) => member.user && member.user.toString() === user._id.toString()
+    );
+
+    if (isMember) {
+      return res
+        .status(400)
+        .json({ error: "User is already a member of this organization" });
+    }
+
+    // Add the user to the organization's members
+    organization.members.push({ user: user._id, role: "user" });
+    await organization.save();
+
+    // Also add the organization to the user's organization list
+    if (!user.organization.includes(identifier)) {
+      user.organization.push(identifier);
+      await user.save();
+    }
+
+    res.status(200).json("User added to organization successfully");
+  } catch (error) {
+    logger.error("Error adding user to organization", {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};
+//ADD MEMBER TO ORGANIZATION BY EMAIL
+export const addMemberToOrganizationByEmail = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { email } = req.body;
+
+    // Find the organization
+    const organization = await Organization.findOne({ email });
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    // Find the user by username
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if the user is already a member
+    const isMember = organization.members.some(
+      (member) => member.user && member.user.toString() === user._id.toString()
+    );
+
+    if (isMember) {
+      return res
+        .status(400)
+        .json({ error: "User is already a member of this organization" });
+    }
+
+    // Add the user to the organization's members
+    organization.members.push({ user: user._id, role: "user" });
+    await organization.save();
+
+    // Also add the organization to the user's organization list
+    if (!user.organization.includes(identifier)) {
+      user.organization.push(identifier);
+      await user.save();
+    }
+
+    res.status(200).json("User added to organization successfully");
+  } catch (error) {
+    logger.error("Error adding user to organization", {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};
+//DELETE MEMBER FROM ORGANIZATION
+export const deleteMemberFromOrganization = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { username } = req.body;
+
+    // Find the organization
+    const organization = await Organization.findOne({ identifier });
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    // Find the user by username
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if the user is a member
+    const isMember = organization.members.some(
+      (member) => member.user && member.user.toString() === user._id.toString()
+    );
+
+    if (!isMember) {
+      return res
+        .status(400)
+        .json({ error: "User is not a member of this organization" });
+    }
+
+    // Remove the user from the organization's members
+    organization.members = organization.members.filter(
+      (member) => member.user.toString() !== user._id.toString()
+    );
+    await organization.save();
+
+    res.status(200).json("User removed from organization successfully");
+  } catch (error) {
+    logger.error("Error removing user from organization", {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};
