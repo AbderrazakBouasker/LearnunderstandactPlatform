@@ -42,6 +42,11 @@ export function OrganizationMembersModal({
   const [alertDescription, setAlertDescription] = useState<string | null>(null);
   const [alertTitle, setAlertTitle] = useState<string | null>(null);
 
+  // Prevent clicks inside the modal from closing it
+  const handleContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   // Fetch members when the modal opens
   useEffect(() => {
     if (open && organizationIdentifier) {
@@ -95,7 +100,10 @@ export function OrganizationMembersModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent
+          className="sm:max-w-[500px]"
+          onClick={handleContentClick}
+        >
           <DialogHeader>
             <DialogTitle>Organization Members</DialogTitle>
             <DialogDescription>

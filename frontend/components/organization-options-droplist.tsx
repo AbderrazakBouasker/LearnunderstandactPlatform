@@ -35,6 +35,12 @@ export function OrganizationOptionsDroplist({
 }) {
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
 
+  const handleMembersClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsMembersModalOpen(true);
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -48,7 +54,7 @@ export function OrganizationOptionsDroplist({
           <DropdownMenuLabel>Organization Options</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => setIsMembersModalOpen(true)}>
+            <DropdownMenuItem onClick={handleMembersClick}>
               Members
               <DropdownMenuShortcut>⌘M</DropdownMenuShortcut>
             </DropdownMenuItem>
