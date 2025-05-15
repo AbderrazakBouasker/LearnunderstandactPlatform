@@ -10,9 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
-import { useState, useRef } from "react";
 import { OrganizationMembersModal } from "./organization-members-modal";
-import { DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { useState } from "react";
 
 export function OrganizationOptionsDroplist({
   organization,
@@ -34,27 +34,24 @@ export function OrganizationOptionsDroplist({
     id: string;
   };
 }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  //   const [isModalOpen, setIsModalOpen] = useState(false);
+  //   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // This function correctly handles the members button click
-  const handleMembersClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  //   // This function correctly handles the members button click
+  //   const handleMembersClick = () => {
+  //     // Close dropdown first
+  //     setIsDropdownOpen(false);
 
-    // Close dropdown first
-    setIsDropdownOpen(false);
-
-    // Open modal with a slight delay to ensure dropdown is closed
-    setTimeout(() => {
-      setIsModalOpen(true);
-    }, 100);
-  };
-
+  //     // Open modal with a slight delay to ensure dropdown is closed
+  //     setTimeout(() => {
+  //       setIsModalOpen(true);
+  //     }, 100);
+  //   };
+  const [openMembersModal, setOpenMembersModal] = useState(false);
   return (
     <>
-      <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
             <span className="sr-only">Open menu</span>
             <MoreHorizontal />
@@ -64,7 +61,17 @@ export function OrganizationOptionsDroplist({
           <DropdownMenuLabel>Organization Options</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem onSelect={handleMembersClick}>
+            {/* <Dialog> */}
+            {/* <DialogTrigger asChild> */}
+            {/* <Button variant="outline">Edit Profile</Button> */}
+            {/* <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  Members
+                  <DropdownMenuShortcut>⌘M</DropdownMenuShortcut>
+                </DropdownMenuItem>
+              </DialogTrigger>
+              <OrganizationMembersModal />
+            </Dialog> */}
+            <DropdownMenuItem onSelect={() => setOpenMembersModal(true)}>
               Members
               <DropdownMenuShortcut>⌘M</DropdownMenuShortcut>
             </DropdownMenuItem>
@@ -72,20 +79,19 @@ export function OrganizationOptionsDroplist({
               Settings
               <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem className="alert">
+            <DropdownMenuItem>
               Delete
               <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Standalone modal with controlled open state */}
-      <OrganizationMembersModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        organizationIdentifier={organization.identifier}
-      />
+      <Dialog open={openMembersModal} onOpenChange={setOpenMembersModal}>
+        <OrganizationMembersModal
+          organization={organization}
+          userData={userData}
+        />
+      </Dialog>
     </>
   );
 }
