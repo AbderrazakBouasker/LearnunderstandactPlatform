@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, Loader2, UserIcon } from "lucide-react";
+import { X, Loader2, UserIcon, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -10,6 +10,38 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogOverlay,
+} from "@/components/ui/alert-dialog";
+
+interface Member {
+  user: {
+    _id: string;
+    username: string;
+    email: string;
+    id: string;
+  };
+  role: string;
+  _id: string;
+}
+
+interface Organization {
+  _id: string;
+  name: string;
+  identifier: string;
+  members: Member[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
 
 interface OrganizationMembersModalProps {
   organization: {
@@ -38,6 +70,14 @@ export function OrganizationMembersModal({
   const [orgData, setOrgData] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [removingUser, setRemovingUser] = useState<string | null>(null);
+  const [confirmUser, setConfirmUser] = useState<Member | null>(null);
+
+  // Check if current user is admin in this org
+  const isCurrentUserAdmin =
+    orgData?.members.some(
+      (m) => m.user._id === userData._id && m.role === "admin"
+    ) ?? false;
 
   useEffect(() => {
     const fetchOrganizationData = async () => {
@@ -68,6 +108,41 @@ export function OrganizationMembersModal({
 
     fetchOrganizationData();
   }, [organization.identifier]);
+
+  // Remove member handler
+  const handleRemoveMember = async (username: string) => {
+    if (!orgData) return;
+    setRemovingUser(username);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/member/remove`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to remove member");
+      }
+      setOrgData((prev) =>
+        prev
+          ? {
+              ...prev,
+              members: prev.members.filter((m) => m.user.username !== username),
+            }
+          : prev
+      );
+    } catch (err) {
+      // Optionally show error
+      // eslint-disable-next-line no-console
+      console.error(err);
+    } finally {
+      setRemovingUser(null);
+      setConfirmUser(null);
+    }
+  };
 
   return (
     <div className="bg-background rounded-lg shadow-lg max-w-2xl w-full mx-auto p-6 relative flex flex-col items-center justify-center">
@@ -111,6 +186,7 @@ export function OrganizationMembersModal({
                   <TableHead>User</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  {isCurrentUserAdmin && <TableHead>Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -140,6 +216,27 @@ export function OrganizationMembersModal({
                         {member.role}
                       </Badge>
                     </TableCell>
+                    {isCurrentUserAdmin && (
+                      <TableCell>
+                        {member.user._id !== userData._id && (
+                          <>
+                            <Button
+                              size="icon"
+                              variant="destructive"
+                              disabled={removingUser === member.user.username}
+                              onClick={() => setConfirmUser(member)}
+                              title="Remove member"
+                            >
+                              {removingUser === member.user.username ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -157,6 +254,49 @@ export function OrganizationMembersModal({
           Close
         </Button>
       </div>
+
+      {/* AlertDialog for confirmation */}
+      {confirmUser && (
+        <AlertDialog
+          open={!!confirmUser}
+          onOpenChange={(open) => !open && setConfirmUser(null)}
+        >
+          <AlertDialogOverlay />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove member</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove{" "}
+                <span className="font-semibold">
+                  {confirmUser.user.username}
+                </span>{" "}
+                from the organization?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setConfirmUser(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                asChild
+                disabled={removingUser === confirmUser.user.username}
+              >
+                <Button
+                  variant="destructive"
+                  onClick={() => handleRemoveMember(confirmUser.user.username)}
+                  disabled={removingUser === confirmUser.user.username}
+                >
+                  {removingUser === confirmUser.user.username ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Remove"
+                  )}
+                </Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

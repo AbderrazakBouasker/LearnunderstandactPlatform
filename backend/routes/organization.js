@@ -55,7 +55,7 @@ router.post(
   addMemberToOrganizationByEmail
 );
 //REMOVE MEMBER FROM ORGANIZATION
-router.delete(
+router.post(
   "/:identifier/member/remove",
   rateLimiter(1, 100),
   verifyToken,
