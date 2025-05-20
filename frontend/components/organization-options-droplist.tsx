@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { OrganizationMembersModal } from "./organization-members-modal";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 export function OrganizationOptionsDroplist({
   organization,
@@ -34,20 +34,23 @@ export function OrganizationOptionsDroplist({
     id: string;
   };
 }) {
-  //   const [isModalOpen, setIsModalOpen] = useState(false);
-  //   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  //   // This function correctly handles the members button click
-  //   const handleMembersClick = () => {
-  //     // Close dropdown first
-  //     setIsDropdownOpen(false);
-
-  //     // Open modal with a slight delay to ensure dropdown is closed
-  //     setTimeout(() => {
-  //       setIsModalOpen(true);
-  //     }, 100);
-  //   };
   const [openMembersModal, setOpenMembersModal] = useState(false);
+
+  // Prevent background scroll and pointer events when modal is open
+  useEffect(() => {
+    if (openMembersModal) {
+      document.body.style.overflow = "hidden";
+      document.body.style.pointerEvents = "none";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.pointerEvents = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.pointerEvents = "";
+    };
+  }, [openMembersModal]);
+
   return (
     <>
       <DropdownMenu>
@@ -61,17 +64,12 @@ export function OrganizationOptionsDroplist({
           <DropdownMenuLabel>Organization Options</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            {/* <Dialog> */}
-            {/* <DialogTrigger asChild> */}
-            {/* <Button variant="outline">Edit Profile</Button> */}
-            {/* <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  Members
-                  <DropdownMenuShortcut>⌘M</DropdownMenuShortcut>
-                </DropdownMenuItem>
-              </DialogTrigger>
-              <OrganizationMembersModal />
-            </Dialog> */}
-            <DropdownMenuItem onSelect={() => setOpenMembersModal(true)}>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setOpenMembersModal(true);
+              }}
+            >
               Members
               <DropdownMenuShortcut>⌘M</DropdownMenuShortcut>
             </DropdownMenuItem>
@@ -86,12 +84,29 @@ export function OrganizationOptionsDroplist({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Dialog open={openMembersModal} onOpenChange={setOpenMembersModal}>
-        <OrganizationMembersModal
-          organization={organization}
-          userData={userData}
-        />
-      </Dialog>
+
+      {/* Modal overlay and centering, like shadcn dialog */}
+      {openMembersModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            style={{ pointerEvents: "auto" }}
+            onClick={() => setOpenMembersModal(false)}
+          >
+            <div
+              className="relative z-60 w-full max-w-2xl mx-auto"
+              onClick={(e) => e.stopPropagation()}
+              style={{ pointerEvents: "auto" }}
+            >
+              <OrganizationMembersModal
+                organization={organization}
+                userData={userData}
+                onClose={() => setOpenMembersModal(false)}
+              />
+            </div>
+          </div>,
+          typeof window !== "undefined" ? document.body : (null as any)
+        )}
     </>
   );
 }
