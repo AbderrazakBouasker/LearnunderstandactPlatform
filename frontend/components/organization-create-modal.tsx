@@ -1,31 +1,14 @@
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { Terminal, Loader2 } from "lucide-react";
+import { Terminal, Loader2, X } from "lucide-react";
 
 interface OrganizationCreateModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-}
-
-export function OrganizationCreateModal({
-  open,
-  onOpenChange,
-  userData,
-}: {
-  OrganizationCreateModalProps: any;
-  UserData: {
+  userData: {
     _id: string;
     username: string;
     email: string;
@@ -34,7 +17,13 @@ export function OrganizationCreateModal({
     organizationDetails: [];
     id: string;
   };
-}) {
+}
+
+export function OrganizationCreateModal({
+  open,
+  onOpenChange,
+  userData,
+}: OrganizationCreateModalProps) {
   const [name, setName] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [nameError, setNameError] = useState("");
@@ -193,63 +182,96 @@ export function OrganizationCreateModal({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        {!onOpenChange && (
-          <DialogTrigger asChild>
-            <Button variant="outline">Create New Organization</Button>
-          </DialogTrigger>
-        )}
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Create New Organization</DialogTitle>
-            <DialogDescription>
-              Fill the form to create a new organization.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                placeholder="Organization Name"
-                value={name}
-                onChange={handleNameChange}
-              />
-              {nameError && <p className="text-sm text-red-500">{nameError}</p>}
+      {/* Custom Modal Trigger Button (only show if not controlled externally) */}
+      {!onOpenChange && (
+        <Button variant="outline" onClick={() => handleOpenChange(true)}>
+          Create New Organization
+        </Button>
+      )}
+
+      {/* Custom Modal Implementation */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => handleOpenChange(false)}
+        >
+          <div
+            className="bg-background rounded-lg shadow-lg max-w-md w-full mx-auto p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold">
+                  Create New Organization
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Fill the form to create a new organization.
+                </p>
+              </div>
+              <button
+                className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none"
+                style={{ width: "2.5rem", height: "2.5rem" }}
+                onClick={() => handleOpenChange(false)}
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="identifier">Identifier</Label>
-              <Input
-                id="identifier"
-                placeholder="Organization Identifier"
-                value={identifier}
-                onChange={handleIdentifierChange}
-              />
-              {identifierError && (
-                <p className="text-sm text-red-500">{identifierError}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                The identifier must be unique and will be used in URLs.
-              </p>
+
+            {/* Modal Content */}
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  placeholder="Organization Name"
+                  value={name}
+                  onChange={handleNameChange}
+                />
+                {nameError && (
+                  <p className="text-sm text-red-500">{nameError}</p>
+                )}
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="identifier">Identifier</Label>
+                <Input
+                  id="identifier"
+                  placeholder="Organization Identifier"
+                  value={identifier}
+                  onChange={handleIdentifierChange}
+                />
+                {identifierError && (
+                  <p className="text-sm text-red-500">{identifierError}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  The identifier must be unique and will be used in URLs.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Organization"
+                )}
+              </Button>
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create Organization"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {isAlert && (
-        <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">
+        <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0 z-70">
           <Alert variant={alertVariant}>
             <Terminal className="h-4 w-4" />
             <AlertTitle>{alertTitle}</AlertTitle>
