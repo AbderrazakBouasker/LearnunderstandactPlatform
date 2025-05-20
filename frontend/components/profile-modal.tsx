@@ -1,19 +1,10 @@
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -244,180 +235,208 @@ export function ProfileModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-11/12 w-auto overflow-auto">
-          <DialogHeader>
-            <DialogTitle>Edit profile</DialogTitle>
-            <DialogDescription>
-              Make changes to your profile here. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-          <Tabs
-            defaultValue="account"
-            className="w-[400px]"
-            value={activeTab}
-            onValueChange={setActiveTab}
+      {/* Main Modal Content */}
+      <div className="bg-background rounded-lg shadow-lg max-w-lg w-full mx-auto p-6 relative flex flex-col items-center justify-center">
+        <div className="flex items-center justify-between mb-4 w-full">
+          <h2 className="text-lg font-semibold mx-auto text-center flex-1">
+            Edit profile
+          </h2>
+          <button
+            className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none ml-2"
+            style={{ width: "2.5rem", height: "2.5rem" }}
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
           >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="account">Account</TabsTrigger>
-              <TabsTrigger value="password">Password</TabsTrigger>
-            </TabsList>
-            <TabsContent value="account">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Account</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                    />
-                    {usernameError && (
-                      <p className="text-sm text-red-500">{usernameError}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      value={email || ""}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                    {emailError && (
-                      <p className="text-sm text-red-500">{emailError}</p>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button onClick={handleSaveClick}>Save changes</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            <TabsContent value="password">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Password</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-1">
-                    <Label htmlFor="new">New password</Label>
-                    <div className="relative flex items-center rounded-md border focus-within:ring-1 focus-within:ring-ring px-2">
-                      <LockIcon className="h-5 w-5 text-muted-foreground" />
-                      <Input
-                        id="new"
-                        type={showNewPassword ? "text" : "password"}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="border-0 focus-visible:ring-0 shadow-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={toggleNewPasswordVisibility}
-                      >
-                        {showNewPassword ? (
-                          <EyeOffIcon className="h-5 w-5 text-muted-foreground" />
-                        ) : (
-                          <EyeIcon className="h-5 w-5 text-muted-foreground" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="confirm">Confirm password</Label>
-                    <div className="relative flex items-center rounded-md border focus-within:ring-1 focus-within:ring-ring px-2">
-                      <LockIcon className="h-5 w-5 text-muted-foreground" />
-                      <Input
-                        id="confirm"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="border-0 focus-visible:ring-0 shadow-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={toggleConfirmPasswordVisibility}
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOffIcon className="h-5 w-5 text-muted-foreground" />
-                        ) : (
-                          <EyeIcon className="h-5 w-5 text-muted-foreground" />
-                        )}
-                      </button>
-                    </div>
-                    {passwordError && (
-                      <p className="text-sm text-red-500">{passwordError}</p>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button onClick={handleSaveClick}>Save password</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-
-      {/* Password Confirmation Modal */}
-      <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirm your password</DialogTitle>
-            <DialogDescription>
-              Please enter your current password to confirm changes.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="current-password">Current Password</Label>
-              <div className="relative flex items-center rounded-md border focus-within:ring-1 focus-within:ring-ring px-2">
-                <LockIcon className="h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="current-password"
-                  type={showCurrentPassword ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="border-0 focus-visible:ring-0 shadow-none"
-                />
-                <button type="button" onClick={toggleCurrentPasswordVisibility}>
-                  {showCurrentPassword ? (
-                    <EyeOffIcon className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-muted-foreground" />
+            ×
+          </button>
+        </div>
+        <p className="text-muted-foreground mb-4 text-center w-full">
+          Make changes to your profile here. Click save when you're done.
+        </p>
+        <Tabs
+          defaultValue="account"
+          className="w-[400px] mx-auto"
+          value={activeTab}
+          onValueChange={setActiveTab}
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="password">Password</TabsTrigger>
+          </TabsList>
+          <TabsContent value="account">
+            <Card>
+              <CardHeader>
+                <CardTitle>Account</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="space-y-1">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                  {usernameError && (
+                    <p className="text-sm text-red-500">{usernameError}</p>
                   )}
-                </button>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    value={email || ""}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  {emailError && (
+                    <p className="text-sm text-red-500">{emailError}</p>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSaveClick}>Save changes</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          <TabsContent value="password">
+            <Card>
+              <CardHeader>
+                <CardTitle>Password</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="space-y-1">
+                  <Label htmlFor="new">New password</Label>
+                  <div className="relative flex items-center rounded-md border focus-within:ring-1 focus-within:ring-ring px-2">
+                    <LockIcon className="h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="new"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="border-0 focus-visible:ring-0 shadow-none"
+                    />
+                    <button type="button" onClick={toggleNewPasswordVisibility}>
+                      {showNewPassword ? (
+                        <EyeOffIcon className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="confirm">Confirm password</Label>
+                  <div className="relative flex items-center rounded-md border focus-within:ring-1 focus-within:ring-ring px-2">
+                    <LockIcon className="h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="confirm"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="border-0 focus-visible:ring-0 shadow-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={toggleConfirmPasswordVisibility}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOffIcon className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <EyeIcon className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
+                  {passwordError && (
+                    <p className="text-sm text-red-500">{passwordError}</p>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={handleSaveClick}>Save password</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Password Confirmation Modal (custom, not Dialog) */}
+      {isPasswordModalOpen && (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center"
+          style={{ background: "rgba(0, 0, 0, 0.5)" }}
+          onClick={() => setIsPasswordModalOpen(false)}
+        >
+          <div
+            className="bg-background rounded-lg shadow-lg max-w-md w-full mx-auto p-6 relative flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4 w-full">
+              <h2 className="text-lg font-semibold mx-auto text-center flex-1">
+                Confirm your password
+              </h2>
+              <button
+                className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none ml-2"
+                style={{ width: "2.5rem", height: "2.5rem" }}
+                onClick={() => setIsPasswordModalOpen(false)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-muted-foreground mb-4 text-center w-full">
+              Please enter your current password to confirm changes.
+            </p>
+            <div className="space-y-4 py-2 w-full">
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Current Password</Label>
+                <div className="relative flex items-center rounded-md border focus-within:ring-1 focus-within:ring-ring px-2">
+                  <LockIcon className="h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="current-password"
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="border-0 focus-visible:ring-0 shadow-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleCurrentPasswordVisibility}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOffIcon className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <EyeIcon className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </button>
+                </div>
+                {currentPasswordError && (
+                  <p className="text-sm text-red-500">{currentPasswordError}</p>
+                )}
               </div>
-              {currentPasswordError && (
-                <p className="text-sm text-red-500">{currentPasswordError}</p>
-              )}
+            </div>
+            <div className="flex justify-end gap-2 mt-4 w-full">
+              <Button
+                variant="outline"
+                onClick={() => setIsPasswordModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handlePasswordConfirm} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Please wait
+                  </>
+                ) : (
+                  "Confirm"
+                )}
+              </Button>
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsPasswordModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handlePasswordConfirm} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Please wait
-                </>
-              ) : (
-                "Confirm"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {isAlert && (
-        <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">
+        <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0 z-70">
           <Alert variant={alertVariant}>
             <Terminal className="h-4 w-4" />
             <AlertTitle>{alertTitle}</AlertTitle>

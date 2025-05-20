@@ -180,12 +180,23 @@ export function NavUser({
           </Alert>
         </div>
       )}
-      <ProfileModal
-        open={isProfileModalOpen}
-        onOpenChange={setIsProfileModalOpen}
-        userData={userData}
-        onProfileUpdate={handleProfileUpdate}
-      />
+      {/* Custom modal implementation */}
+      {isProfileModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={() => setIsProfileModalOpen(false)}
+          style={{ background: "rgba(0, 0, 0, 0.5)" }}
+        >
+          <div className="relative z-60" onClick={(e) => e.stopPropagation()}>
+            <ProfileModal
+              open={isProfileModalOpen}
+              onOpenChange={setIsProfileModalOpen}
+              userData={userData}
+              onProfileUpdate={handleProfileUpdate}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }
