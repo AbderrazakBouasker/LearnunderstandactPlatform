@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/table";
 import { FeedbackDetailModal } from "@/components/feedback-detail-modal";
 import { FormDetailModal } from "@/components/form-detail-modal";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 export type Feedback = {
   _id: string;
@@ -68,6 +68,12 @@ export function DataTableFeedback({
     null
   );
   const [alertTitle, setAlertTitle] = React.useState<string | null>(null);
+
+  // Add state for controlling modals
+  const [feedbackDetailOpen, setFeedbackDetailOpen] = React.useState(false);
+  const [formDetailOpen, setFormDetailOpen] = React.useState(false);
+  const [selectedFeedback, setSelectedFeedback] =
+    React.useState<Feedback | null>(null);
 
   // Add emoji mapping for opinion values
   const opinionEmojis: Record<string, string> = {
@@ -261,22 +267,22 @@ export function DataTableFeedback({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    View feedback details
-                  </DropdownMenuItem>
-                </DialogTrigger>
-                <FeedbackDetailModal details={feedback} />
-              </Dialog>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    View form details
-                  </DropdownMenuItem>
-                </DialogTrigger>
-                <FormDetailModal formId={feedback.formId} />
-              </Dialog>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setSelectedFeedback(feedback);
+                  setFeedbackDetailOpen(true);
+                }}
+              >
+                View feedback details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setSelectedFeedback(feedback);
+                  setFormDetailOpen(true);
+                }}
+              >
+                View form details
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
@@ -517,6 +523,18 @@ export function DataTableFeedback({
           </div>
         </div>
       </div>
+
+      {/* Add controlled dialogs outside of the table rendering */}
+      <Dialog open={feedbackDetailOpen} onOpenChange={setFeedbackDetailOpen}>
+        {selectedFeedback && <FeedbackDetailModal details={selectedFeedback} />}
+      </Dialog>
+
+      <Dialog open={formDetailOpen} onOpenChange={setFormDetailOpen}>
+        {selectedFeedback && (
+          <FormDetailModal formId={selectedFeedback.formId} />
+        )}
+      </Dialog>
+
       {isAlert && (
         <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">
           <Alert variant={alertVariant}>
