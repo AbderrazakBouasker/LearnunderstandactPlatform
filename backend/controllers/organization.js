@@ -297,6 +297,12 @@ export const deleteMemberFromOrganization = async (req, res) => {
     );
     await organization.save();
 
+    // Also remove the organization from the user's organization list
+    if (user.organization.includes(identifier)) {
+      user.organization = user.organization.filter((org) => org !== identifier);
+      await user.save();
+    }
+
     res.status(200).json("User removed from organization successfully");
   } catch (error) {
     logger.error("Error removing user from organization", {

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, Loader2, UserIcon, Trash2 } from "lucide-react";
+import { X, Loader2, UserIcon, Trash2, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -21,6 +21,7 @@ import {
   AlertDialogDescription,
   AlertDialogOverlay,
 } from "@/components/ui/alert-dialog";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface Member {
   user: {
@@ -73,6 +74,14 @@ export function OrganizationMembersModal({
   const [removingUser, setRemovingUser] = useState<string | null>(null);
   const [confirmUser, setConfirmUser] = useState<Member | null>(null);
 
+  // Alert state for notifications and errors
+  const [alert, setAlert] = useState<{
+    title: string;
+    description: string;
+    variant: "default" | "destructive";
+    open: boolean;
+  }>({ title: "", description: "", variant: "default", open: false });
+
   // Check if current user is admin in this org
   const isCurrentUserAdmin =
     orgData?.members.some(
@@ -93,13 +102,21 @@ export function OrganizationMembersModal({
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch organization data");
+          const data = await response.json();
+          throw new Error(data?.error || "Failed to fetch organization data");
         }
 
         const data = await response.json();
         setOrgData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
+        setAlert({
+          title: "Error",
+          description: err instanceof Error ? err.message : "An error occurred",
+          variant: "destructive",
+          open: true,
+        });
+        // eslint-disable-next-line no-console
         console.error("Error fetching organization data:", err);
       } finally {
         setIsLoading(false);
@@ -123,8 +140,9 @@ export function OrganizationMembersModal({
           body: JSON.stringify({ username }),
         }
       );
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error("Failed to remove member");
+        throw new Error(data?.error || "Failed to remove member");
       }
       setOrgData((prev) =>
         prev
@@ -134,8 +152,20 @@ export function OrganizationMembersModal({
             }
           : prev
       );
+      setAlert({
+        title: "Success",
+        description: "User removed from organization successfully",
+        variant: "default",
+        open: true,
+      });
     } catch (err) {
-      // Optionally show error
+      setAlert({
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to remove member",
+        variant: "destructive",
+        open: true,
+      });
       // eslint-disable-next-line no-console
       console.error(err);
     } finally {
@@ -143,6 +173,16 @@ export function OrganizationMembersModal({
       setConfirmUser(null);
     }
   };
+
+  // Auto-close alert after 3 seconds
+  useEffect(() => {
+    if (alert.open) {
+      const timeout = setTimeout(() => {
+        setAlert((prev) => ({ ...prev, open: false }));
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [alert.open]);
 
   return (
     <div className="bg-background rounded-lg shadow-lg max-w-2xl w-full mx-auto p-6 relative flex flex-col items-center justify-center">
@@ -296,6 +336,17 @@ export function OrganizationMembersModal({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      )}
+
+      {/* Alert notification for errors and responses */}
+      {alert.open && (
+        <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">
+          <Alert variant={alert.variant}>
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>{alert.title}</AlertTitle>
+            <AlertDescription>{alert.description}</AlertDescription>
+          </Alert>
+        </div>
       )}
     </div>
   );
