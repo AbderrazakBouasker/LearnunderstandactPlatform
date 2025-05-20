@@ -69,10 +69,11 @@ export function DataTableFeedback({
   );
   const [alertTitle, setAlertTitle] = React.useState<string | null>(null);
 
-  // Modified modal states
+  // Add state for controlling modals
   const [feedbackDetailOpen, setFeedbackDetailOpen] = React.useState(false);
   const [formDetailOpen, setFormDetailOpen] = React.useState(false);
-  const [selectedFeedback, setSelectedFeedback] = React.useState<Feedback | null>(null);
+  const [selectedFeedback, setSelectedFeedback] =
+    React.useState<Feedback | null>(null);
 
   // Add emoji mapping for opinion values
   const opinionEmojis: Record<string, string> = {
@@ -523,35 +524,16 @@ export function DataTableFeedback({
         </div>
       </div>
 
-      {/* Custom modal implementation for feedback details */}
-      {feedbackDetailOpen && selectedFeedback && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setFeedbackDetailOpen(false)}
-        >
-          <div className="relative z-60" onClick={(e) => e.stopPropagation()}>
-            <FeedbackDetailModal 
-              details={selectedFeedback} 
-              onClose={() => setFeedbackDetailOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+      {/* Add controlled dialogs outside of the table rendering */}
+      <Dialog open={feedbackDetailOpen} onOpenChange={setFeedbackDetailOpen}>
+        {selectedFeedback && <FeedbackDetailModal details={selectedFeedback} />}
+      </Dialog>
 
-      {/* Custom modal implementation for form details */}
-      {formDetailOpen && selectedFeedback && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setFormDetailOpen(false)}
-        >
-          <div className="relative z-60" onClick={(e) => e.stopPropagation()}>
-            <FormDetailModal 
-              formId={selectedFeedback.formId}
-              onClose={() => setFormDetailOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+      <Dialog open={formDetailOpen} onOpenChange={setFormDetailOpen}>
+        {selectedFeedback && (
+          <FormDetailModal formId={selectedFeedback.formId} />
+        )}
+      </Dialog>
 
       {isAlert && (
         <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">

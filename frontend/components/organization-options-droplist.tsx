@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
 import { OrganizationMembersModal } from "./organization-members-modal";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 
 export function OrganizationOptionsDroplist({
@@ -35,25 +35,11 @@ export function OrganizationOptionsDroplist({
   };
 }) {
   const [openMembersModal, setOpenMembersModal] = useState(false);
-
-  // Prevent background scroll and pointer events when modal is open
-  useEffect(() => {
-    if (openMembersModal) {
-      document.body.style.overflow = "hidden";
-      document.body.style.pointerEvents = "none";
-    } else {
-      document.body.style.overflow = "";
-      document.body.style.pointerEvents = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.pointerEvents = "";
-    };
-  }, [openMembersModal]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
             <span className="sr-only">Open menu</span>
@@ -65,9 +51,9 @@ export function OrganizationOptionsDroplist({
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
-                setOpenMembersModal(true);
+              onClick={() => {
+                setDropdownOpen(false); // Close dropdown
+                setTimeout(() => setOpenMembersModal(true), 100); // Open modal after dropdown closes
               }}
             >
               Members
@@ -85,18 +71,16 @@ export function OrganizationOptionsDroplist({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Modal overlay and centering, like shadcn dialog */}
+      {/* Simplified modal portal without pointer-events manipulation */}
       {openMembersModal &&
         createPortal(
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-            style={{ pointerEvents: "auto" }}
             onClick={() => setOpenMembersModal(false)}
           >
             <div
               className="relative z-60 w-full max-w-2xl mx-auto"
               onClick={(e) => e.stopPropagation()}
-              style={{ pointerEvents: "auto" }}
             >
               <OrganizationMembersModal
                 organization={organization}

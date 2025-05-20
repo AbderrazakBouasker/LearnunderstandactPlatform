@@ -22,6 +22,26 @@ import {
   AlertDialogOverlay,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { ArrowUpDown, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  VisibilityState,
+} from "@tanstack/react-table";
 
 interface Member {
   user: {
@@ -81,6 +101,14 @@ export function OrganizationMembersModal({
     variant: "default" | "destructive";
     open: boolean;
   }>({ title: "", description: "", variant: "default", open: false });
+
+  // Table state
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  // Pagination state
+  const [rowSelection, setRowSelection] = useState({});
 
   // Check if current user is admin in this org
   const isCurrentUserAdmin =
@@ -184,6 +212,134 @@ export function OrganizationMembersModal({
     }
   }, [alert.open]);
 
+  // Table columns
+  const columns: ColumnDef<Member>[] = [
+    {
+      id: "avatar",
+      header: "",
+      cell: () => (
+        <div className="bg-muted h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground">
+          <UserIcon className="h-4 w-4" />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "user.username",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          User
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const member = row.original;
+        return (
+          <span className="font-medium">
+            {member.user.username}
+            {member.user._id === userData._id && (
+              <span className="ml-2 text-xs text-muted-foreground">(You)</span>
+            )}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "user.email",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Email
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => row.original.user.email,
+    },
+    {
+      accessorKey: "role",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Role
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <Badge
+          variant={row.original.role === "admin" ? "default" : "outline"}
+          className="capitalize"
+        >
+          {row.original.role}
+        </Badge>
+      ),
+    },
+    ...(isCurrentUserAdmin
+      ? [
+          {
+            id: "action",
+            header: "Action",
+            cell: ({ row }: { row: { original: Member } }) => {
+              const member = row.original;
+              return member.user._id !== userData._id ? (
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  disabled={removingUser === member.user.username}
+                  onClick={() => setConfirmUser(member)}
+                  title="Remove member"
+                >
+                  {removingUser === member.user.username ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </Button>
+              ) : null;
+            },
+            enableSorting: false,
+            enableHiding: false,
+          },
+        ]
+      : []),
+  ];
+
+  // Table instance
+  const table = useReactTable({
+    data: orgData?.members || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    globalFilterFn: (row, columnId, filterValue) => {
+      // Search in all fields
+      const member = row.original as Member;
+      const value =
+        member.user.username + " " + member.user.email + " " + member.role;
+      return value.toLowerCase().includes(String(filterValue).toLowerCase());
+    },
+    onGlobalFilterChange: setGlobalFilter,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+      globalFilter,
+    },
+  });
+
   return (
     <div className="bg-background rounded-lg shadow-lg max-w-2xl w-full mx-auto p-6 relative flex flex-col items-center justify-center">
       {/* Header */}
@@ -206,90 +362,113 @@ export function OrganizationMembersModal({
       <p className="text-xs text-muted-foreground mb-4 text-center w-full">
         Organization ID: {organization.identifier}
       </p>
-      {/* Content */}
-      <div className="w-full">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading members...</span>
-          </div>
-        ) : error ? (
-          <div className="text-center text-red-500 py-6">
-            Error loading organization members: {error}
-          </div>
-        ) : orgData?.members && orgData.members.length > 0 ? (
-          <div className="border rounded-md overflow-auto max-h-[400px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  {isCurrentUserAdmin && <TableHead>Action</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orgData.members.map((member) => (
-                  <TableRow key={member._id}>
-                    <TableCell>
-                      <div className="bg-muted h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground">
-                        <UserIcon className="h-4 w-4" />
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {member.user.username}
-                      {member.user._id === userData._id && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          (You)
-                        </span>
+
+      {/* Search and columns - simplified like data-table-feedback */}
+      <div className="flex items-center py-2 w-full">
+        <Input
+          placeholder="Search members..."
+          value={globalFilter ?? ""}
+          onChange={(event) => setGlobalFilter(event.target.value)}
+          className="max-w-sm"
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="ml-auto">
+              Columns <ChevronDown />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {table
+              .getAllColumns()
+              .filter((column) => column.getCanHide())
+              .map((column) => {
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) =>
+                      column.toggleVisibility(!!value)
+                    }
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Table */}
+      <div className="border rounded-md overflow-auto max-h-[400px] w-full">
+        <Table className="w-full">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="break-words">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className="break-words whitespace-normal"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
                       )}
                     </TableCell>
-                    <TableCell>{member.user.email}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          member.role === "admin" ? "default" : "outline"
-                        }
-                        className="capitalize"
-                      >
-                        {member.role}
-                      </Badge>
-                    </TableCell>
-                    {isCurrentUserAdmin && (
-                      <TableCell>
-                        {member.user._id !== userData._id && (
-                          <>
-                            <Button
-                              size="icon"
-                              variant="destructive"
-                              disabled={removingUser === member.user.username}
-                              onClick={() => setConfirmUser(member)}
-                              title="Remove member"
-                            >
-                              {removingUser === member.user.username ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </>
-                        )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="text-center py-6 text-muted-foreground border rounded-md p-4">
-            No members found in this organization.
-          </div>
-        )}
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No members found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      {/* Pagination */}
+      <div className="flex items-center justify-end space-x-2 py-4 w-full">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          Next
+        </Button>
       </div>
       {/* Footer */}
-      <div className="flex justify-end gap-2 mt-6 w-full">
+      <div className="flex justify-end gap-2 mt-2 w-full">
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>
@@ -340,7 +519,7 @@ export function OrganizationMembersModal({
 
       {/* Alert notification for errors and responses */}
       {alert.open && (
-        <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">
+        <div className="fixed bottom-10 left-0 right-0 flex items-center justify-center z-50">
           <Alert variant={alert.variant}>
             <Terminal className="h-4 w-4" />
             <AlertTitle>{alert.title}</AlertTitle>
