@@ -80,13 +80,15 @@ interface OrganizationMembersModalProps {
     organizationDetails: [];
     id: string;
   };
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function OrganizationMembersModal({
   organization,
   userData,
-  onClose,
+  open,
+  onOpenChange,
 }: OrganizationMembersModalProps) {
   const [orgData, setOrgData] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -117,42 +119,45 @@ export function OrganizationMembersModal({
     ) ?? false;
 
   useEffect(() => {
-    const fetchOrganizationData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/identifier/${organization.identifier}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
+    if (open) {
+      const fetchOrganizationData = async () => {
+        try {
+          setIsLoading(true);
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/identifier/${organization.identifier}`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+            }
+          );
+
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data?.error || "Failed to fetch organization data");
           }
-        );
 
-        if (!response.ok) {
           const data = await response.json();
-          throw new Error(data?.error || "Failed to fetch organization data");
+          setOrgData(data);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "An error occurred");
+          setAlert({
+            title: "Error",
+            description:
+              err instanceof Error ? err.message : "An error occurred",
+            variant: "destructive",
+            open: true,
+          });
+          // eslint-disable-next-line no-console
+          console.error("Error fetching organization data:", err);
+        } finally {
+          setIsLoading(false);
         }
+      };
 
-        const data = await response.json();
-        setOrgData(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-        setAlert({
-          title: "Error",
-          description: err instanceof Error ? err.message : "An error occurred",
-          variant: "destructive",
-          open: true,
-        });
-        // eslint-disable-next-line no-console
-        console.error("Error fetching organization data:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrganizationData();
-  }, [organization.identifier]);
+      fetchOrganizationData();
+    }
+  }, [organization.identifier, open]);
 
   // Remove member handler
   const handleRemoveMember = async (username: string) => {
@@ -340,186 +345,196 @@ export function OrganizationMembersModal({
     },
   });
 
+  // If modal is not open, don't render anything
+  if (!open) return null;
+
   return (
-    <div className="bg-background rounded-lg shadow-lg max-w-2xl w-full mx-auto p-6 relative flex flex-col items-center justify-center">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 w-full">
-        <h2 className="text-lg font-semibold mx-auto text-center flex-1">
-          Organization Members
-        </h2>
-        <button
-          className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none ml-2"
-          style={{ width: "2.5rem", height: "2.5rem" }}
-          onClick={onClose}
-          aria-label="Close"
-        >
-          ×
-        </button>
-      </div>
-      <p className="text-muted-foreground mb-4 text-center w-full">
-        Manage members of {organization.name} .
-      </p>
-      <p className="text-xs text-muted-foreground mb-4 text-center w-full">
-        Organization ID: {organization.identifier}
-      </p>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={() => onOpenChange(false)} // Close when clicking the overlay
+    >
+      <div
+        className="bg-background rounded-lg shadow-lg max-w-2xl w-full mx-auto p-6 relative flex flex-col items-center justify-center"
+        onClick={(e) => e.stopPropagation()} // Prevent clicks on the modal content from closing it
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4 w-full">
+          <h2 className="text-lg font-semibold mx-auto text-center flex-1">
+            Organization Members
+          </h2>
+          <button
+            className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none ml-2"
+            style={{ width: "2.5rem", height: "2.5rem" }}
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+        <p className="text-muted-foreground mb-4 text-center w-full">
+          Manage members of {organization.name} .
+        </p>
+        <p className="text-xs text-muted-foreground mb-4 text-center w-full">
+          Organization ID: {organization.identifier}
+        </p>
 
-      {/* Search and columns - simplified like data-table-feedback */}
-      <div className="flex items-center py-2 w-full">
-        <Input
-          placeholder="Search members..."
-          value={globalFilter ?? ""}
-          onChange={(event) => setGlobalFilter(event.target.value)}
-          className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Table */}
-      <div className="border rounded-md overflow-auto max-h-[400px] w-full">
-        <Table className="w-full">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="break-words">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="break-words whitespace-normal"
+        {/* Search and columns - simplified like data-table-feedback */}
+        <div className="flex items-center py-2 w-full">
+          <Input
+            placeholder="Search members..."
+            value={globalFilter ?? ""}
+            onChange={(event) => setGlobalFilter(event.target.value)}
+            className="max-w-sm"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Table */}
+        <div className="border rounded-md overflow-auto max-h-[400px] w-full">
+          <Table className="w-full">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="break-words">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No members found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      {/* Pagination */}
-      <div className="flex items-center justify-end space-x-2 py-4 w-full">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
-      </div>
-      {/* Footer */}
-      <div className="flex justify-end gap-2 mt-2 w-full">
-        <Button variant="outline" onClick={onClose}>
-          Close
-        </Button>
-      </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        className="break-words whitespace-normal"
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No members found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        {/* Pagination */}
+        <div className="flex items-center justify-end space-x-2 py-4 w-full">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
 
-      {/* AlertDialog for confirmation */}
-      {confirmUser && (
-        <AlertDialog
-          open={!!confirmUser}
-          onOpenChange={(open) => !open && setConfirmUser(null)}
-        >
-          <AlertDialogOverlay />
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remove member</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to remove{" "}
-                <span className="font-semibold">
-                  {confirmUser.user.username}
-                </span>{" "}
-                from the organization?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setConfirmUser(null)}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                asChild
-                disabled={removingUser === confirmUser.user.username}
-              >
-                <Button
-                  variant="destructive"
-                  onClick={() => handleRemoveMember(confirmUser.user.username)}
+        {/* AlertDialog for confirmation */}
+        {confirmUser && (
+          <AlertDialog
+            open={!!confirmUser}
+            onOpenChange={(open) => !open && setConfirmUser(null)}
+          >
+            <AlertDialogOverlay />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove member</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to remove{" "}
+                  <span className="font-semibold">
+                    {confirmUser.user.username}
+                  </span>{" "}
+                  from the organization?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setConfirmUser(null)}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  asChild
                   disabled={removingUser === confirmUser.user.username}
                 >
-                  {removingUser === confirmUser.user.username ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Remove"
-                  )}
-                </Button>
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+                  <Button
+                    variant="destructive"
+                    onClick={() =>
+                      handleRemoveMember(confirmUser.user.username)
+                    }
+                    disabled={removingUser === confirmUser.user.username}
+                  >
+                    {removingUser === confirmUser.user.username ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Remove"
+                    )}
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
 
       {/* Alert notification for errors and responses */}
       {alert.open && (
-        <div className="fixed bottom-10 left-0 right-0 flex items-center justify-center z-50">
+        <div
+          className="fixed bottom-10 left-0 right-0 flex items-center justify-center z-50"
+          onClick={(e) => e.stopPropagation()} // Prevent alert clicks from closing the modal
+        >
           <Alert variant={alert.variant}>
             <Terminal className="h-4 w-4" />
             <AlertTitle>{alert.title}</AlertTitle>
@@ -527,6 +542,8 @@ export function OrganizationMembersModal({
           </Alert>
         </div>
       )}
+
+      {/* AlertDialog should remain outside this click hierarchy */}
     </div>
   );
 }

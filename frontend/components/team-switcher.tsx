@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { ChevronsUpDown, Plus } from "lucide-react";
+import { ChevronsUpDown, Plus, Settings } from "lucide-react";
 import { OrganizationCreateModal } from "./organization-create-modal";
-import { OrganizationOptionsDroplist } from "./organization-options-droplist";
+import { OrganizationMembersModal } from "./organization-members-modal";
 
 import {
   DropdownMenu,
@@ -20,6 +20,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 interface Member {
   user: string;
@@ -62,6 +63,8 @@ export function TeamSwitcher({
   const { isMobile } = useSidebar();
   const [activeTeam, setActiveTeam] = React.useState(teams[0]);
   const [isOrgModalOpen, setIsOrgModalOpen] = React.useState(false);
+  const [isMembersModalOpen, setIsMembersModalOpen] = React.useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
   // Call onOrganizationChange with initial team on mount
   React.useEffect(() => {
@@ -71,15 +74,24 @@ export function TeamSwitcher({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array ensures this only runs once on mount
 
+  // Handle opening the members modal
+  const handleOpenMembersModal = React.useCallback((team: any) => {
+    // Close the dropdown first
+    setIsDropdownOpen(false);
+    // Set the active team to the selected one
+    setActiveTeam(team);
+    // Open the members modal after a short delay to ensure dropdown has closed
+    setTimeout(() => setIsMembersModalOpen(true), 100);
+  }, []);
+
   if (!activeTeam) {
     return null;
   }
-  // console.log(teams);
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
@@ -122,16 +134,27 @@ export function TeamSwitcher({
                   {team.name}
                   <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
                 </DropdownMenuItem>
-                <OrganizationOptionsDroplist
-                  organization={team}
-                  userData={userData}
-                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 p-0 mr-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenMembersModal(team);
+                  }}
+                >
+                  <span className="sr-only">Team settings</span>
+                  <Settings className="h-4 w-4" />
+                </Button>
               </div>
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="gap-2 p-2"
-              onClick={() => setIsOrgModalOpen(true)}
+              onClick={() => {
+                setIsDropdownOpen(false);
+                setTimeout(() => setIsOrgModalOpen(true), 100);
+              }}
             >
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <Plus className="size-4" />
@@ -147,6 +170,14 @@ export function TeamSwitcher({
         userData={userData}
         open={isOrgModalOpen}
         onOpenChange={setIsOrgModalOpen}
+      />
+
+      {/* Organization Members Modal */}
+      <OrganizationMembersModal
+        organization={activeTeam}
+        userData={userData}
+        open={isMembersModalOpen}
+        onOpenChange={setIsMembersModalOpen}
       />
     </SidebarMenu>
   );
