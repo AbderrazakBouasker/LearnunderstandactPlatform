@@ -116,6 +116,8 @@ export function OrganizationSettingsModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [editedOrgName, setEditedOrgName] = useState(organization.name);
   const [isEditingOrg, setIsEditingOrg] = useState(false);
+  const [isQuittingOrg, setIsQuittingOrg] = useState(false);
+  const [isQuitDialogOpen, setIsQuitDialogOpen] = useState(false);
 
   // Alert state for notifications and errors
   const [alert, setAlert] = useState<{
@@ -134,6 +136,14 @@ export function OrganizationSettingsModal({
   const [rowSelection, setRowSelection] = useState({});
 
   // Check if current user is admin in this org
+  const isCurrentUserAdminOrSubadmin =
+    orgData?.members.some(
+      (m) =>
+        m.user._id === userData._id &&
+        (m.role === "admin" || m.role === "subadmin")
+    ) ?? false;
+
+  // Keep the original admin check for organization-level admin operations
   const isCurrentUserAdmin =
     orgData?.members.some(
       (m) => m.user._id === userData._id && m.role === "admin"
@@ -357,6 +367,53 @@ export function OrganizationSettingsModal({
     }
   };
 
+  // Handle quitting organization (for non-admin users)
+  const handleQuitOrganization = async () => {
+    setIsQuittingOrg(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/member/remove`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username: userData.username }),
+        }
+      );
+
+      if (response.ok) {
+        setAlert({
+          title: "Success",
+          description: "You have left the organization successfully",
+          variant: "default",
+          open: true,
+        });
+
+        // Close dialogs
+        setIsQuitDialogOpen(false);
+
+        // Wait a moment before redirecting to show the success message
+        setTimeout(() => {
+          onOpenChange(false);
+          // Redirect to admin dashboard or refresh the page to update the team list
+          window.location.href = "/admin";
+        }, 2000);
+      } else {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to leave the organization");
+      }
+    } catch (err) {
+      setAlert({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An error occurred",
+        variant: "destructive",
+        open: true,
+      });
+    } finally {
+      setIsQuittingOrg(false);
+    }
+  };
+
   // Table columns
   const columns: ColumnDef<Member>[] = [
     {
@@ -426,14 +483,19 @@ export function OrganizationSettingsModal({
         </Badge>
       ),
     },
-    ...(isCurrentUserAdmin
+    ...(isCurrentUserAdminOrSubadmin
       ? [
           {
             id: "action",
             header: "Action",
             cell: ({ row }: { row: { original: Member } }) => {
               const member = row.original;
-              return member.user._id !== userData._id ? (
+              // Don't allow removing yourself or removing admins if you're a subadmin
+              const canRemoveMember =
+                member.user._id !== userData._id &&
+                !(member.role === "admin" && !isCurrentUserAdmin);
+
+              return canRemoveMember ? (
                 <Button
                   size="icon"
                   variant="destructive"
@@ -548,7 +610,7 @@ export function OrganizationSettingsModal({
                 className="max-w-sm"
               />
 
-              {isCurrentUserAdmin && (
+              {isCurrentUserAdminOrSubadmin && (
                 <Button
                   variant="outline"
                   className="ml-2 gap-1"
@@ -716,27 +778,47 @@ export function OrganizationSettingsModal({
                 </div>
               </div>
 
-              {isCurrentUserAdmin && (
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Danger Zone</h3>
-                  <div className="border border-red-200 rounded-md p-4 bg-red-50 dark:bg-red-900/10">
-                    <h4 className="font-medium text-red-600 dark:text-red-400">
-                      Delete Organization
-                    </h4>
-                    <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1 mb-3">
-                      Once you delete an organization, there is no going back.
-                      Please be certain.
-                    </p>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setIsDeleteDialogOpen(true)}
-                    >
-                      Delete {organization.name}
-                    </Button>
-                  </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Danger Zone</h3>
+                <div className="border border-red-200 rounded-md p-4 bg-red-50 dark:bg-red-900/10">
+                  {isCurrentUserAdmin ? (
+                    // Admin sees Delete Organization option
+                    <>
+                      <h4 className="font-medium text-red-600 dark:text-red-400">
+                        Delete Organization
+                      </h4>
+                      <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1 mb-3">
+                        Once you delete an organization, there is no going back.
+                        Please be certain.
+                      </p>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                      >
+                        Delete {organization.name}
+                      </Button>
+                    </>
+                  ) : (
+                    // Non-admins see Quit Organization option
+                    <>
+                      <h4 className="font-medium text-red-600 dark:text-red-400">
+                        Quit Organization
+                      </h4>
+                      <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1 mb-3">
+                        You will lose access to this organization's resources.
+                      </p>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setIsQuitDialogOpen(true)}
+                      >
+                        Leave {organization.name}
+                      </Button>
+                    </>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
@@ -836,6 +918,46 @@ export function OrganizationSettingsModal({
                       </>
                     ) : (
                       "Delete Organization"
+                    )}
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+
+        {/* Quit Organization Confirmation Dialog */}
+        {isQuitDialogOpen && (
+          <AlertDialog
+            open={isQuitDialogOpen}
+            onOpenChange={setIsQuitDialogOpen}
+          >
+            <AlertDialogOverlay />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Leave Organization</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to leave{" "}
+                  <span className="font-semibold">{organization.name}</span>?
+                  You will lose access to all resources associated with this
+                  organization.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <Button
+                    variant="destructive"
+                    onClick={handleQuitOrganization}
+                    disabled={isQuittingOrg}
+                  >
+                    {isQuittingOrg ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Leaving...
+                      </>
+                    ) : (
+                      "Leave Organization"
                     )}
                   </Button>
                 </AlertDialogAction>

@@ -26,7 +26,7 @@ const OrganizationSchema = new mongoose.Schema(
         },
         role: {
           type: String,
-          enum: ["admin", "user"],
+          enum: ["admin", "subadmin", "user"],
           default: "user",
         },
       },
