@@ -97,6 +97,8 @@ export function OrganizationSettingsModal({
   const [removingUser, setRemovingUser] = useState<string | null>(null);
   const [confirmUser, setConfirmUser] = useState<Member | null>(null);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  // Add a trigger state to track when members are added
+  const [memberAddedTrigger, setMemberAddedTrigger] = useState(0);
 
   // Alert state for notifications and errors
   const [alert, setAlert] = useState<{
@@ -159,7 +161,7 @@ export function OrganizationSettingsModal({
 
       fetchOrganizationData();
     }
-  }, [organization.identifier, open]);
+  }, [organization.identifier, open, memberAddedTrigger]); // Add memberAddedTrigger to dependencies
 
   // Remove member handler
   const handleRemoveMember = async (username: string) => {
@@ -547,13 +549,17 @@ export function OrganizationSettingsModal({
           organization={organization}
           open={isAddMemberModalOpen}
           onOpenChange={setIsAddMemberModalOpen}
-          onMemberAdded={(newMember) => {
-            // Refresh the member list when a new member is added
-            if (orgData) {
-              setOrgData((prev) =>
-                prev ? { ...prev, members: [...prev.members, newMember] } : prev
-              );
-            }
+          onMemberAdded={() => {
+            // When a member is added, increment the trigger to cause a refetch
+            setMemberAddedTrigger((prev) => prev + 1);
+
+            // Show success alert to user
+            setAlert({
+              title: "Success",
+              description: "Member added successfully",
+              variant: "default",
+              open: true,
+            });
           }}
         />
       </div>

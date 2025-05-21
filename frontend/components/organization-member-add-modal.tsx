@@ -118,9 +118,15 @@ export function OrganizationMemberAddModal({
       setAlertVariant("default");
       setIsAlert(true);
 
-      // If callback provided, pass the new member data
-      if (onMemberAdded && data.member) {
-        onMemberAdded(data.member);
+      // FIXED: Always call onMemberAdded callback on success, even if data.member doesn't exist
+      if (onMemberAdded) {
+        // If data.member exists, pass it, otherwise just call the callback with no argument
+        if (data.member) {
+          onMemberAdded(data.member);
+        } else {
+          // Call without data to trigger the refetch
+          onMemberAdded();
+        }
       }
 
       // Reset form after success
