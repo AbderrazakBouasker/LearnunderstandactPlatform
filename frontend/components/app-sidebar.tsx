@@ -131,6 +131,7 @@ export function AppSidebar({
       <SidebarContent>
         <NavProjects
           projects={data.management}
+          UserData={userData}
           buttonClicked={handleButtonClick}
         />
         <NavSecondary items={data.navSecondary} className="mt-auto" />

@@ -23,10 +23,36 @@ import {
   SidebarMenuItem,
   // useSidebar,
 } from "@/components/ui/sidebar";
+interface Member {
+  user: string;
+  role: string;
+  _id: string;
+}
+
+interface OrganizationDetail {
+  _id: string;
+  name: string;
+  identifier: string;
+  members: Member[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface UserData {
+  _id: string;
+  username: string;
+  email: string;
+  organization: string[];
+  createdAt: string;
+  organizationDetails: OrganizationDetail[]; // Should be OrganizationDetail[]
+  id: string;
+}
 
 export function NavProjects({
   projects,
   buttonClicked,
+  UserData,
 }: {
   projects: {
     name: string;
@@ -34,6 +60,7 @@ export function NavProjects({
     icon: LucideIcon;
   }[];
   buttonClicked: (button: string) => void;
+  UserData: UserData; // Should specify the type here
 }) {
   // const { isMobile } = useSidebar();
 

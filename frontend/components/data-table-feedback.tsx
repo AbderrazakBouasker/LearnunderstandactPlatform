@@ -44,6 +44,32 @@ import { FeedbackDetailModal } from "@/components/feedback-detail-modal";
 import { FormDetailModal } from "@/components/form-detail-modal";
 import { Dialog } from "@/components/ui/dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+interface Member {
+  user: string;
+  role: string;
+  _id: string;
+}
+
+interface OrganizationDetail {
+  _id: string;
+  name: string;
+  identifier: string;
+  members: Member[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface UserData {
+  _id: string;
+  username: string;
+  email: string;
+  organization: string[];
+  createdAt: string;
+  organizationDetails: OrganizationDetail[]; // Should be OrganizationDetail[]
+  id: string;
+}
+
 export type Feedback = {
   _id: string;
   formId: string;
@@ -55,8 +81,10 @@ export type Feedback = {
 
 export function DataTableFeedback({
   selectedOrganization,
+  userData,
 }: {
   selectedOrganization: string;
+  userData: UserData;
 }) {
   const [data, setData] = React.useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -165,6 +193,31 @@ export function DataTableFeedback({
       }, 3000);
     }
   };
+
+  // Function to check if user is admin or subadmin in the current organization
+  const isAdminOrSubAdmin = React.useMemo(() => {
+    if (!userData || !userData.organizationDetails) return false;
+
+    // Find the current organization in user's organization details
+    const currentOrg = userData.organizationDetails.find(
+      (org) => org.identifier === selectedOrganization
+    );
+
+    if (!currentOrg) return false;
+
+    // Find the current user's membership in the organization
+    const userMembership = currentOrg.members.find((member) =>
+      typeof member.user === "object"
+        ? member.user._id === userData._id
+        : member.user === userData._id
+    );
+
+    // Check if user has admin or subadmin role
+    return (
+      userMembership &&
+      (userMembership.role === "admin" || userMembership.role === "subadmin")
+    );
+  }, [userData, selectedOrganization]);
 
   const columns: ColumnDef<Feedback>[] = [
     // {
@@ -283,15 +336,21 @@ export function DataTableFeedback({
               >
                 View form details
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => {
-                  handleDeleteFeedback(feedback._id);
-                }}
-              >
-                Delete
-              </DropdownMenuItem>
+
+              {/* Only show delete option for admins and subadmins */}
+              {isAdminOrSubAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => {
+                      handleDeleteFeedback(feedback._id);
+                    }}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         );

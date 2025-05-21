@@ -186,11 +186,13 @@ export default function Page() {
                     <Feedback
                       selectedOrganization={selectedOrganization}
                       key={`feedback-${selectedOrganization}`}
+                      userData={userData}
                     />
                   ) : activeButton === "Forms" ? (
                     <Form
                       selectedOrganization={selectedOrganization}
                       key={`form-${selectedOrganization}`}
+                      userData={userData}
                     />
                   ) : null}
                 </>
