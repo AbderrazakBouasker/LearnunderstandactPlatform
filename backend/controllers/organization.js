@@ -147,12 +147,30 @@ export const updateOrganization = async (req, res) => {
 export const deleteOrganization = async (req, res) => {
   try {
     const { identifier } = req.params;
+
+    // First find the organization to get its members
+    const organization = await Organization.findOne({ identifier });
+
+    if (!organization) {
+      return res.status(204).json({ error: "Organization not found" });
+    }
+
+    // Update all members to remove this organization from their list
+    for (const member of organization.members) {
+      const user = await User.findById(member.user);
+      if (user) {
+        user.organization = user.organization.filter(
+          (org) => org !== identifier
+        );
+        await user.save();
+      }
+    }
+
+    // Now delete the organization
     const deletedOrganization = await Organization.findOneAndDelete({
       identifier,
     });
-    if (!deletedOrganization) {
-      return res.status(204).json({ error: "Organization not found" });
-    }
+
     res.status(200).json("Organization Deleted Successfully");
   } catch (error) {
     logger.error("Error deleting organization", {

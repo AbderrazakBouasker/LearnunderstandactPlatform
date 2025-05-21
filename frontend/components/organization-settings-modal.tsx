@@ -1,5 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { X, Loader2, UserIcon, Trash2, Terminal, UserPlus } from "lucide-react";
+import {
+  X,
+  Loader2,
+  UserIcon,
+  Trash2,
+  Terminal,
+  UserPlus,
+  Settings,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -43,6 +51,8 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import { OrganizationMemberAddModal } from "./organization-member-add-modal";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 
 interface Member {
   user: {
@@ -99,6 +109,11 @@ export function OrganizationSettingsModal({
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   // Add a trigger state to track when members are added
   const [memberAddedTrigger, setMemberAddedTrigger] = useState(0);
+  // Add missing activeTab state
+  const [activeTab, setActiveTab] = useState("members");
+  // Add missing delete dialog states
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Alert state for notifications and errors
   const [alert, setAlert] = useState<{
@@ -220,6 +235,52 @@ export function OrganizationSettingsModal({
       return () => clearTimeout(timeout);
     }
   }, [alert.open]);
+
+  // Add handler for organization deletion
+  const handleDeleteOrganization = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/delete`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        setAlert({
+          title: "Success",
+          description: "Organization deleted successfully",
+          variant: "default",
+          open: true,
+        });
+
+        // Close dialogs
+        setIsDeleteDialogOpen(false);
+
+        // Wait a moment before redirecting to show the success message
+        setTimeout(() => {
+          onOpenChange(false);
+          // Redirect to admin dashboard or refresh the page to update the team list
+          window.location.href = "/admin";
+        }, 2000);
+      } else {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete organization");
+      }
+    } catch (err) {
+      setAlert({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An error occurred",
+        variant: "destructive",
+        open: true,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Table columns
   const columns: ColumnDef<Member>[] = [
@@ -364,7 +425,7 @@ export function OrganizationSettingsModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-4 w-full">
           <h2 className="text-lg font-semibold mx-auto text-center flex-1">
-            Organization Members
+            Organization Settings
           </h2>
           <button
             className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none ml-2"
@@ -376,130 +437,204 @@ export function OrganizationSettingsModal({
           </button>
         </div>
         <p className="text-muted-foreground mb-4 text-center w-full">
-          Manage members of {organization.name} .
-        </p>
-        <p className="text-xs text-muted-foreground mb-4 text-center w-full">
-          Organization ID: {organization.identifier}
+          Manage {organization.name}
         </p>
 
-        {/* Search and columns - with add member button */}
-        <div className="flex items-center py-2 w-full">
-          <Input
-            placeholder="Search members..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="max-w-sm"
-          />
+        {/* Tabs */}
+        <Tabs
+          defaultValue="members"
+          className="w-full"
+          value={activeTab}
+          onValueChange={setActiveTab}
+        >
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="members" className="flex items-center gap-1">
+              <UserIcon className="h-4 w-4" />
+              Members
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-1">
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
 
-          {isCurrentUserAdmin && (
-            <Button
-              variant="outline"
-              className="ml-2 gap-1"
-              onClick={() => setIsAddMemberModalOpen(true)}
-            >
-              <UserPlus className="h-4 w-4" />
-              Add Member
-            </Button>
-          )}
+          {/* Members Tab Content */}
+          <TabsContent value="members" className="space-y-4">
+            <p className="text-xs text-muted-foreground mb-4 w-full">
+              Organization ID: {organization.identifier}
+            </p>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns <ChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            {/* Search and columns - with add member button */}
+            <div className="flex items-center py-2 w-full">
+              <Input
+                placeholder="Search members..."
+                value={globalFilter ?? ""}
+                onChange={(event) => setGlobalFilter(event.target.value)}
+                className="max-w-sm"
+              />
 
-        {/* Table */}
-        <div className="border rounded-md overflow-auto max-h-[400px] w-full">
-          <Table className="w-full">
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="break-words">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className="break-words whitespace-normal"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No members found.
-                  </TableCell>
-                </TableRow>
+              {isCurrentUserAdmin && (
+                <Button
+                  variant="outline"
+                  className="ml-2 gap-1"
+                  onClick={() => setIsAddMemberModalOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add Member
+                </Button>
               )}
-            </TableBody>
-          </Table>
-        </div>
-        {/* Pagination */}
-        <div className="flex items-center justify-end space-x-2 py-4 w-full">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
 
-        {/* AlertDialog for confirmation */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="ml-auto">
+                    Columns <ChevronDown />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => {
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) =>
+                            column.toggleVisibility(!!value)
+                          }
+                        >
+                          {column.id}
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Table */}
+            <div className="border rounded-md overflow-auto max-h-[400px] w-full">
+              <Table className="w-full">
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id} className="break-words">
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className="break-words whitespace-normal"
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        No members found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-end space-x-2 py-4 w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Next
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Settings Tab Content */}
+          <TabsContent value="settings" className="space-y-4">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">
+                  Organization Information
+                </h3>
+                <div className="grid gap-1">
+                  <Label htmlFor="org-name">Organization Name</Label>
+                  <Input
+                    id="org-name"
+                    value={organization.name}
+                    disabled={!isCurrentUserAdmin}
+                    readOnly
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="org-id">Organization ID</Label>
+                  <Input id="org-id" value={organization.identifier} readOnly />
+                </div>
+                <div className="grid gap-1">
+                  <Label htmlFor="org-plan">Plan</Label>
+                  <Input id="org-plan" value={organization.plan} readOnly />
+                </div>
+              </div>
+
+              {isCurrentUserAdmin && (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Danger Zone</h3>
+                  <div className="border border-red-200 rounded-md p-4 bg-red-50 dark:bg-red-900/10">
+                    <h4 className="font-medium text-red-600 dark:text-red-400">
+                      Delete Organization
+                    </h4>
+                    <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1 mb-3">
+                      Once you delete an organization, there is no going back.
+                      Please be certain.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                      Delete {organization.name}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* AlertDialog for confirmation - outside tabs */}
         {confirmUser && (
           <AlertDialog
             open={!!confirmUser}
@@ -544,7 +679,7 @@ export function OrganizationSettingsModal({
           </AlertDialog>
         )}
 
-        {/* Member Add Modal */}
+        {/* Member Add Modal - outside tabs */}
         <OrganizationMemberAddModal
           organization={organization}
           open={isAddMemberModalOpen}
@@ -562,6 +697,45 @@ export function OrganizationSettingsModal({
             });
           }}
         />
+
+        {/* Delete Organization Confirmation Dialog */}
+        {isDeleteDialogOpen && (
+          <AlertDialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+          >
+            <AlertDialogOverlay />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Organization</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the
+                  <span className="font-semibold"> {organization.name} </span>
+                  organization and remove all associated data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction asChild>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteOrganization}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete Organization"
+                    )}
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Alert notification for errors and responses */}
