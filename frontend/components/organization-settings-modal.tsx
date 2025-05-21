@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, Loader2, UserIcon, Trash2, Terminal } from "lucide-react";
+import { X, Loader2, UserIcon, Trash2, Terminal, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Table,
@@ -42,6 +42,7 @@ import {
   ColumnFiltersState,
   VisibilityState,
 } from "@tanstack/react-table";
+import { OrganizationMemberAddModal } from "./organization-member-add-modal";
 
 interface Member {
   user: {
@@ -95,6 +96,7 @@ export function OrganizationSettingsModal({
   const [error, setError] = useState<string | null>(null);
   const [removingUser, setRemovingUser] = useState<string | null>(null);
   const [confirmUser, setConfirmUser] = useState<Member | null>(null);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
 
   // Alert state for notifications and errors
   const [alert, setAlert] = useState<{
@@ -378,7 +380,7 @@ export function OrganizationSettingsModal({
           Organization ID: {organization.identifier}
         </p>
 
-        {/* Search and columns - simplified like data-table-feedback */}
+        {/* Search and columns - with add member button */}
         <div className="flex items-center py-2 w-full">
           <Input
             placeholder="Search members..."
@@ -386,6 +388,18 @@ export function OrganizationSettingsModal({
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="max-w-sm"
           />
+
+          {isCurrentUserAdmin && (
+            <Button
+              variant="outline"
+              className="ml-2 gap-1"
+              onClick={() => setIsAddMemberModalOpen(true)}
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Member
+            </Button>
+          )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="ml-auto">
@@ -527,12 +541,27 @@ export function OrganizationSettingsModal({
             </AlertDialogContent>
           </AlertDialog>
         )}
+
+        {/* Member Add Modal */}
+        <OrganizationMemberAddModal
+          organization={organization}
+          open={isAddMemberModalOpen}
+          onOpenChange={setIsAddMemberModalOpen}
+          onMemberAdded={(newMember) => {
+            // Refresh the member list when a new member is added
+            if (orgData) {
+              setOrgData((prev) =>
+                prev ? { ...prev, members: [...prev.members, newMember] } : prev
+              );
+            }
+          }}
+        />
       </div>
 
       {/* Alert notification for errors and responses */}
       {alert.open && (
         <div
-          className="fixed bottom-10 left-0 right-0 flex items-center justify-center z-50"
+          className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0"
           onClick={(e) => e.stopPropagation()} // Prevent alert clicks from closing the modal
         >
           <Alert variant={alert.variant}>

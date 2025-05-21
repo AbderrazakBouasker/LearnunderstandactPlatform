@@ -220,13 +220,13 @@ export const addMemberToOrganizationByEmail = async (req, res) => {
     const { email } = req.body;
 
     // Find the organization
-    const organization = await Organization.findOne({ email });
+    const organization = await Organization.findOne({ identifier });
     if (!organization) {
       return res.status(404).json({ error: "Organization not found" });
     }
 
     // Find the user by username
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
