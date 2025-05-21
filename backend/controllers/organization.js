@@ -115,7 +115,7 @@ export const getOrganizationByIdentifier = async (req, res) => {
 export const updateOrganization = async (req, res) => {
   try {
     const { identifier } = req.params;
-    const { name, members } = req.body;
+    const { name, members, plan } = req.body;
     const organization = await Organization.findOne({ identifier });
 
     if (!organization) {
@@ -128,6 +128,10 @@ export const updateOrganization = async (req, res) => {
 
     if (members !== undefined) {
       organization.members = members;
+    }
+
+    if (plan !== undefined) {
+      organization.plan = plan;
     }
 
     await organization.save();

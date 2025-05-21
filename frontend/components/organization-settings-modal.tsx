@@ -114,6 +114,8 @@ export function OrganizationSettingsModal({
   // Add missing delete dialog states
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editedOrgName, setEditedOrgName] = useState(organization.name);
+  const [isEditingOrg, setIsEditingOrg] = useState(false);
 
   // Alert state for notifications and errors
   const [alert, setAlert] = useState<{
@@ -279,6 +281,79 @@ export function OrganizationSettingsModal({
       });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  // Update editedOrgName when organization changes
+  useEffect(() => {
+    setEditedOrgName(organization.name);
+  }, [organization.name]);
+
+  // Handle organization edit
+  const handleEditOrganization = async () => {
+    if (!isCurrentUserAdmin) return;
+
+    setIsEditingOrg(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/edit`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ name: editedOrgName }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update organization data locally
+        if (orgData) {
+          setOrgData({
+            ...orgData,
+            name: editedOrgName,
+          });
+        }
+
+        setAlert({
+          title: "Success",
+          description: "Organization updated successfully",
+          variant: "default",
+          open: true,
+        });
+
+        // Wait a moment before reloading to show the success message
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        // Handle specific error status codes
+        switch (response.status) {
+          case 404:
+            throw new Error(
+              "Organization not found. It may have been deleted."
+            );
+          case 403:
+            throw new Error(
+              "You don't have permission to update this organization."
+            );
+          default:
+            throw new Error(data.error || "Failed to update organization");
+        }
+      }
+    } catch (err) {
+      setAlert({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An error occurred",
+        variant: "destructive",
+        open: true,
+      });
+
+      // Log error to console for debugging
+      console.error("Error updating organization:", err);
+    } finally {
+      setIsEditingOrg(false);
     }
   };
 
@@ -592,20 +667,52 @@ export function OrganizationSettingsModal({
                 </h3>
                 <div className="grid gap-1">
                   <Label htmlFor="org-name">Organization Name</Label>
-                  <Input
-                    id="org-name"
-                    value={organization.name}
-                    disabled={!isCurrentUserAdmin}
-                    readOnly
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="org-name"
+                      value={editedOrgName}
+                      onChange={(e) => setEditedOrgName(e.target.value)}
+                      disabled={!isCurrentUserAdmin || isEditingOrg}
+                      className="flex-1"
+                    />
+                    {isCurrentUserAdmin && (
+                      <Button
+                        onClick={handleEditOrganization}
+                        disabled={
+                          isEditingOrg ||
+                          editedOrgName === organization.name ||
+                          !editedOrgName.trim()
+                        }
+                      >
+                        {isEditingOrg ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Save"
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div className="grid gap-1">
                   <Label htmlFor="org-id">Organization ID</Label>
-                  <Input id="org-id" value={organization.identifier} readOnly />
+                  <Input
+                    id="org-id"
+                    value={organization.identifier}
+                    readOnly
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Organization ID cannot be changed
+                  </p>
                 </div>
                 <div className="grid gap-1">
                   <Label htmlFor="org-plan">Plan</Label>
-                  <Input id="org-plan" value={organization.plan} readOnly />
+                  <Input
+                    id="org-plan"
+                    value={organization.plan}
+                    readOnly
+                    disabled
+                  />
                 </div>
               </div>
 
