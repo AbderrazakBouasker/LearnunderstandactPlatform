@@ -15,8 +15,8 @@ const OrganizationSchema = new mongoose.Schema(
     },
     plan: {
       type: String,
-      enum: ["free", "pro", "enterprise"],
-      default: "free",
+      enum: ["Free", "Pro", "Enterprise"],
+      default: "Free",
     },
     members: [
       {

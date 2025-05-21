@@ -65,6 +65,7 @@ interface OrganizationDetail {
   _id: string;
   name: string;
   identifier: string;
+  plan: string;
   members: Member[];
   createdAt: string;
   updatedAt: string;

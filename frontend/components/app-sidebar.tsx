@@ -26,6 +26,7 @@ interface OrganizationDetail {
   _id: string;
   name: string;
   identifier: string;
+  plan: string;
   members: Member[];
   createdAt: string;
   updatedAt: string;
@@ -103,7 +104,7 @@ export function AppSidebar({
           name: org.name,
           logo: Command,
           identifier: org.identifier,
-          plan: "Enterprise",
+          plan: org.plan,
         }))
       : [
           {
