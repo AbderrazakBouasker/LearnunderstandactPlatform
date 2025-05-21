@@ -118,6 +118,7 @@ export function OrganizationSettingsModal({
   const [isEditingOrg, setIsEditingOrg] = useState(false);
   const [isQuittingOrg, setIsQuittingOrg] = useState(false);
   const [isQuitDialogOpen, setIsQuitDialogOpen] = useState(false);
+  const [changingRoleFor, setChangingRoleFor] = useState<string | null>(null);
 
   // Alert state for notifications and errors
   const [alert, setAlert] = useState<{
@@ -414,6 +415,68 @@ export function OrganizationSettingsModal({
     }
   };
 
+  // Handle role change (promotion/demotion)
+  const handleRoleToggle = async (username: string) => {
+    if (!orgData || !isCurrentUserAdmin) return;
+
+    setChangingRoleFor(username);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/member/change-role`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to change member role");
+      }
+
+      // Update local data with the new role
+      setOrgData((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          members: prev.members.map((member) => {
+            if (member.user.username === username) {
+              // Toggle role between user and subadmin
+              const newRole = member.role === "user" ? "subadmin" : "user";
+              return {
+                ...member,
+                role: newRole,
+              };
+            }
+            return member;
+          }),
+        };
+      });
+
+      setAlert({
+        title: "Success",
+        description: "Member role updated successfully",
+        variant: "default",
+        open: true,
+      });
+    } catch (err) {
+      setAlert({
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to change member role",
+        variant: "destructive",
+        open: true,
+      });
+      console.error("Error changing role:", err);
+    } finally {
+      setChangingRoleFor(null);
+    }
+  };
+
   // Table columns
   const columns: ColumnDef<Member>[] = [
     {
@@ -476,7 +539,13 @@ export function OrganizationSettingsModal({
       ),
       cell: ({ row }) => (
         <Badge
-          variant={row.original.role === "admin" ? "default" : "outline"}
+          variant={
+            row.original.role === "admin"
+              ? "default"
+              : row.original.role === "subadmin"
+              ? "secondary"
+              : "outline"
+          }
           className="capitalize"
         >
           {row.original.role}
@@ -490,26 +559,58 @@ export function OrganizationSettingsModal({
             header: "Action",
             cell: ({ row }: { row: { original: Member } }) => {
               const member = row.original;
-              // Don't allow removing yourself or removing admins if you're a subadmin
-              const canRemoveMember =
+              // Don't allow actions on yourself or on admins if you're not an admin
+              const canActOnMember =
                 member.user._id !== userData._id &&
                 !(member.role === "admin" && !isCurrentUserAdmin);
 
-              return canRemoveMember ? (
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  disabled={removingUser === member.user.username}
-                  onClick={() => setConfirmUser(member)}
-                  title="Remove member"
-                >
-                  {removingUser === member.user.username ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
+              // Only admins can change roles and only for non-admin members
+              const canChangeRole =
+                isCurrentUserAdmin &&
+                member.role !== "admin" &&
+                member.user._id !== userData._id;
+
+              return (
+                <div className="flex space-x-1">
+                  {canChangeRole && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={changingRoleFor === member.user.username}
+                      onClick={() => handleRoleToggle(member.user.username)}
+                      title={
+                        member.role === "user"
+                          ? "Promote to Subadmin"
+                          : "Demote to User"
+                      }
+                    >
+                      {changingRoleFor === member.user.username ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : member.role === "user" ? (
+                        "Promote"
+                      ) : (
+                        "Demote"
+                      )}
+                    </Button>
                   )}
-                </Button>
-              ) : null;
+
+                  {canActOnMember && (
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      disabled={removingUser === member.user.username}
+                      onClick={() => setConfirmUser(member)}
+                      title="Remove member"
+                    >
+                      {removingUser === member.user.username ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                </div>
+              );
             },
             enableSorting: false,
             enableHiding: false,

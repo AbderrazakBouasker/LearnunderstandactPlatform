@@ -335,3 +335,61 @@ export const deleteMemberFromOrganization = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+//PROMOTE DEMOTE MEMBER
+export const promoteDemoteMember = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { username } = req.body;
+
+    // Find the organization
+    const organization = await Organization.findOne({ identifier });
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    // Find the user by username
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Check if the user is a member
+    const memberIndex = organization.members.findIndex(
+      (member) => member.user && member.user.toString() === user._id.toString()
+    );
+
+    if (memberIndex === -1) {
+      return res
+        .status(400)
+        .json({ error: "User is not a member of this organization" });
+    }
+
+    // Toggle the role between user and subadmin
+    const currentRole = organization.members[memberIndex].role;
+    let newRole;
+
+    if (currentRole === "user") {
+      newRole = "subadmin";
+      organization.members[memberIndex].role = newRole;
+      await organization.save();
+      res.status(200).json("User promoted to subadmin successfully");
+    } else if (currentRole === "subadmin") {
+      newRole = "user";
+      organization.members[memberIndex].role = newRole;
+      await organization.save();
+      res.status(200).json("User demoted to user successfully");
+    } else {
+      // Handle other roles if needed (like admin)
+      return res
+        .status(400)
+        .json({ error: "Cannot change role for this user" });
+    }
+  } catch (error) {
+    logger.error("Error changing user role", {
+      error: error.message,
+      stack: error.stack,
+      requestBody: req.body,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};

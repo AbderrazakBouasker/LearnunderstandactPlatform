@@ -9,6 +9,7 @@ import {
   addMemberToOrganizationByUsername,
   addMemberToOrganizationByEmail,
   deleteMemberFromOrganization,
+  promoteDemoteMember,
 } from "../controllers/organization.js";
 import { verifyToken } from "../middleware/auth.js";
 import { rateLimiter } from "../middleware/ratelimiter.js";
@@ -61,5 +62,11 @@ router.post(
   verifyToken,
   deleteMemberFromOrganization
 );
-
+//CHANGE MEMBER ROLE
+router.post(
+  "/:identifier/member/change-role",
+  rateLimiter(1, 100),
+  verifyToken,
+  promoteDemoteMember
+);
 export default router;
