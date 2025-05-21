@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ChevronsUpDown, Plus, Settings } from "lucide-react";
 import { OrganizationCreateModal } from "./organization-create-modal";
-import { OrganizationMembersModal } from "./organization-members-modal";
+import { OrganizationSettingsModal } from "./organization-settings-modal";
 
 import {
   DropdownMenu,
@@ -173,7 +173,7 @@ export function TeamSwitcher({
       />
 
       {/* Organization Members Modal */}
-      <OrganizationMembersModal
+      <OrganizationSettingsModal
         organization={activeTeam}
         userData={userData}
         open={isMembersModalOpen}

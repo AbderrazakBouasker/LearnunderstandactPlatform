@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
-import { OrganizationMembersModal } from "./organization-members-modal";
+import { OrganizationMembersModal } from "./organization-settings-modal";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 
