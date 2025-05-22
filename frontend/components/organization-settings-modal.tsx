@@ -53,6 +53,7 @@ import {
 import { OrganizationMemberAddModal } from "./organization-member-add-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { OrganizationUpgradeStripeModal } from "./organization-upgrade-stripe-modal";
 
 interface Member {
   user: {
@@ -119,6 +120,8 @@ export function OrganizationSettingsModal({
   const [isQuittingOrg, setIsQuittingOrg] = useState(false);
   const [isQuitDialogOpen, setIsQuitDialogOpen] = useState(false);
   const [changingRoleFor, setChangingRoleFor] = useState<string | null>(null);
+  // Add state for upgrade modal
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
 
   // Alert state for notifications and errors
   const [alert, setAlert] = useState<{
@@ -651,6 +654,33 @@ export function OrganizationSettingsModal({
   // If modal is not open, don't render anything
   if (!open) return null;
 
+  // Add the implementation for the Settings tab with the upgrade button
+  const renderPlanWithUpgradeButton = () => {
+    return (
+      <div className="grid gap-1">
+        <Label htmlFor="org-plan">Plan</Label>
+        <div className="flex gap-2">
+          <Input
+            id="org-plan"
+            value={organization.plan}
+            readOnly
+            disabled
+            className="flex-1"
+          />
+          {isCurrentUserAdminOrSubadmin &&
+            (organization.plan === "Free" || organization.plan === "Pro") && (
+              <Button
+                onClick={() => setIsUpgradeModalOpen(true)}
+                variant="outline"
+              >
+                Upgrade
+              </Button>
+            )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
@@ -868,15 +898,8 @@ export function OrganizationSettingsModal({
                     Organization ID cannot be changed
                   </p>
                 </div>
-                <div className="grid gap-1">
-                  <Label htmlFor="org-plan">Plan</Label>
-                  <Input
-                    id="org-plan"
-                    value={organization.plan}
-                    readOnly
-                    disabled
-                  />
-                </div>
+                {/* Replace the plan input with our new function */}
+                {renderPlanWithUpgradeButton()}
               </div>
 
               <div className="space-y-2">
@@ -1066,6 +1089,14 @@ export function OrganizationSettingsModal({
             </AlertDialogContent>
           </AlertDialog>
         )}
+
+        {/* Add the Upgrade Modal */}
+        <OrganizationUpgradeStripeModal
+          open={isUpgradeModalOpen}
+          onOpenChange={setIsUpgradeModalOpen}
+          organization={organization}
+          username={userData.username}
+        />
       </div>
 
       {/* Alert notification for errors and responses */}
