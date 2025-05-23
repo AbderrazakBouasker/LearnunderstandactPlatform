@@ -851,20 +851,24 @@ export function OrganizationSettingsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" // Added padding here for small screens
       onClick={() => onOpenChange(false)} // Close when clicking the overlay
     >
       <div
-        className="bg-background rounded-lg shadow-lg max-w-2xl w-full mx-auto p-6 relative flex flex-col items-center justify-center"
+        className="bg-background rounded-lg shadow-lg max-w-2xl w-full mx-auto p-6 relative flex flex-col max-h-[calc(100vh-40px)] overflow-y-auto" // Added max-h and overflow-y
         onClick={(e) => e.stopPropagation()} // Prevent clicks on the modal content from closing it
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4 w-full">
-          <h2 className="text-lg font-semibold mx-auto text-center flex-1">
+        <div className="flex items-center relative mb-4 w-full h-10">
+          {" "}
+          {/* Adjusted: Removed justify-between, added relative and min-height (e.g. h-10 or rely on button height) */}
+          <h2 className="text-lg font-semibold text-center absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            {" "}
+            {/* Adjusted: Absolute centering, removed mx-auto & flex-1 */}
             Organization Settings
           </h2>
           <button
-            className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none ml-2"
+            className="text-gray-500 hover:text-gray-700 text-3xl font-bold leading-none ml-auto" // Adjusted: Added ml-auto, removed explicit ml-2
             style={{ width: "2.5rem", height: "2.5rem" }}
             onClick={() => onOpenChange(false)}
             aria-label="Close"
