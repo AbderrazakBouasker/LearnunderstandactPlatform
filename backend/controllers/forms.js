@@ -1,4 +1,5 @@
 import Form from "../models/Form.js";
+import Organization from "../models/Organization.js";
 import logger from "../logger.js";
 
 //CREATE
@@ -70,7 +71,19 @@ export const getForm = async (req, res) => {
     if (!form) {
       return res.status(404).json({ error: "Form not found" });
     }
-    res.status(200).json(form);
+
+    // Fetch the organization details using the identifier from the form
+    const organization = await Organization.findOne({
+      identifier: form.organization,
+    });
+
+    // Create a response object with form data and organization domains
+    const responseData = {
+      ...form.toObject(),
+      organizationDomains: organization ? organization.domains : [],
+    };
+
+    res.status(200).json(responseData);
   } catch (error) {
     // Log the error with additional context
     logger.error("Error retrieving form by ID", {
