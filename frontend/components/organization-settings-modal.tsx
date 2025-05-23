@@ -99,6 +99,13 @@ interface OrganizationMembersModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const PLAN_DOMAIN_LIMITS = {
+  Free: 1,
+  Pro: 2,
+  Enterprise: 3, // Assuming Enterprise has a limit of 3 as per request
+  // Add other plans if they exist
+};
+
 export function OrganizationSettingsModal({
   organization,
   userData,
@@ -157,6 +164,11 @@ export function OrganizationSettingsModal({
     orgData?.members.some(
       (m) => m.user._id === userData._id && m.role === "admin"
     ) ?? false;
+
+  const currentPlanLimit =
+    PLAN_DOMAIN_LIMITS[organization.plan as keyof typeof PLAN_DOMAIN_LIMITS] ??
+    0;
+  const canAddMoreDomains = domains.length < currentPlanLimit;
 
   useEffect(() => {
     if (open) {
@@ -386,6 +398,16 @@ export function OrganizationSettingsModal({
   // Domain management functions
   const handleAddDomain = async () => {
     if (!newDomain.trim() || !isCurrentUserAdminOrSubadmin) return;
+
+    if (!canAddMoreDomains) {
+      setAlert({
+        title: "Limit Reached",
+        description: `Your current plan (${organization.plan}) allows a maximum of ${currentPlanLimit} domain(s). Please upgrade to add more.`,
+        variant: "destructive",
+        open: true,
+      });
+      return;
+    }
 
     setIsAddingDomain(true);
     try {
@@ -790,6 +812,10 @@ export function OrganizationSettingsModal({
           Domains where your forms can be embedded. If empty, forms cannot be
           embedded anywhere.
         </p>
+        <p className="text-xs text-muted-foreground">
+          Your current plan ({organization.plan}) allows up to{" "}
+          {currentPlanLimit} domain(s). You have added {domains.length}.
+        </p>
 
         {isCurrentUserAdminOrSubadmin && (
           <div className="flex gap-2 items-center mb-2">
@@ -798,11 +824,13 @@ export function OrganizationSettingsModal({
               value={newDomain}
               onChange={(e) => setNewDomain(e.target.value)}
               className="flex-1"
-              disabled={isAddingDomain}
+              disabled={isAddingDomain || !canAddMoreDomains}
             />
             <Button
               onClick={handleAddDomain}
-              disabled={!newDomain.trim() || isAddingDomain}
+              disabled={
+                !newDomain.trim() || isAddingDomain || !canAddMoreDomains
+              }
               variant="outline"
             >
               {isAddingDomain ? (
@@ -812,6 +840,20 @@ export function OrganizationSettingsModal({
               )}
             </Button>
           </div>
+        )}
+        {!canAddMoreDomains && isCurrentUserAdminOrSubadmin && (
+          <p className="text-sm text-red-500">
+            You have reached the maximum number of domains for your plan.
+            {organization.plan !== "Enterprise" && ( // Assuming Enterprise is the highest tier shown here
+              <Button
+                variant="link"
+                className="p-1 h-auto"
+                onClick={() => setIsUpgradeModalOpen(true)}
+              >
+                Upgrade plan
+              </Button>
+            )}
+          </p>
         )}
 
         <div className="border rounded-md p-2 min-h-[100px] max-h-[200px] overflow-y-auto">

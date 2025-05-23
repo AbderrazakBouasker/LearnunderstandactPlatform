@@ -57,6 +57,7 @@ export function OrganizationUpgradeStripeModal({
         { name: "Advanced analytics", included: true },
         { name: "Custom integrations", included: false },
         { name: "Dedicated account manager", included: false },
+        { name: "Can embed forms on 2 domains", included: false },
       ],
     },
     Enterprise: {
@@ -70,6 +71,7 @@ export function OrganizationUpgradeStripeModal({
         { name: "SLA guarantees", included: true },
         { name: "Custom deployment options", included: true },
         { name: "Advanced security features", included: true },
+        { name: "Can embed forms on 3 domains", included: true },
       ],
     },
   };
