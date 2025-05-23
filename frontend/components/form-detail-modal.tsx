@@ -83,6 +83,12 @@ export function FormDetailModal({ formId }: { formId: string }) {
   if (isLoading) {
     return (
       <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Loading</DialogTitle>
+          <DialogDescription className="sr-only">
+            Loading form details.
+          </DialogDescription>
+        </DialogHeader>
         <p className="text-center py-8">Loading form details...</p>
       </DialogContent>
     );
@@ -91,6 +97,12 @@ export function FormDetailModal({ formId }: { formId: string }) {
   if (error || !formData) {
     return (
       <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Error</DialogTitle>
+          <DialogDescription className="sr-only">
+            Error loading form details.
+          </DialogDescription>
+        </DialogHeader>
         <p className="text-center text-red-500 py-8">
           {error || "Could not load form details"}
         </p>

@@ -120,3 +120,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Add this animation */
+@keyframes colorChange {
+  0% {
+    color: hsl(var(--foreground));
+  } /* Assuming --foreground is your ShadCN black */
+  50% {
+    color: #8b5cf6;
+  } /* Purple color */
+  100% {
+    color: hsl(var(--foreground));
+  }
+}
+
+.animate-color-change-hover:hover {
+  animation: colorChange 3s infinite;
+}

@@ -1,121 +1,134 @@
 import Image from "next/image";
-import Script from "next/script";
+import Navbar from "@/components/navbar";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <iframe
-          src="http://luapp/embed/form/6821c57c09e9c97679d2ba9a"
-          width="100%"
-          height="500px"
-          style={{ border: "none", borderRadius: "8px" }}
-        ></iframe>
+    <div className="flex flex-col min-h-screen font-[family-name:var(--font-geist-sans)]">
+      <Navbar />
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <section className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-20 px-4 sm:px-8 text-center">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6">
+              Understand Your Users, Act on Insights
+            </h1>
+            <p className="text-lg sm:text-xl mb-8">
+              LUA Platform helps you collect valuable feedback, understand user
+              needs, and make data-driven decisions to improve your products and
+              services.
+            </p>
+            <Link href="/admin/register" passHref legacyBehavior>
+              <Button
+                size="lg"
+                className="bg-white text-indigo-600 hover:bg-gray-100"
+              >
+                <a>Get Started for Free</a>
+              </Button>
+            </Link>
+          </div>
+        </section>
 
-        <Script
-          src="http://luapp/embed/widget/embed.js"
-          data-formid="68137eb7e151cb9289fcee46"
-          data-button-text="Give Feedback"
-          data-button-position="bottom-right"
-          data-button-style-background-color="#383838"
-          data-iframe-width="50%"
-          data-iframe-height="400px"
-          data-iframe-frameborder="0"
-          data-iframe-allowtransparency="true"
-          data-iframe-style='{"borderRadius":"20px", "boxShadow":"0 4px 14px rgba(0, 0, 0, 0.15)"}'
-          data-modal-style-backdrop-filter="blur(10px)"
-          strategy="lazyOnload"
-        ></Script>
+        {/* Features Section */}
+        <section className="py-16 px-4 sm:px-8">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-semibold text-center mb-12">
+              Why Choose LUA Platform?
+            </h2>
+            <div className="grid md:grid-cols-3 gap-8 text-center">
+              <div className="p-6 shadow-lg rounded-lg">
+                <Image
+                  src="/file.svg"
+                  alt="Create Forms"
+                  width={48}
+                  height={48}
+                  className="mx-auto mb-4"
+                />
+                <h3 className="text-xl font-semibold mb-2">
+                  Create & Share Forms
+                </h3>
+                <p className="text-gray-600">
+                  Easily build custom feedback forms and share them via direct
+                  links or embed them on your website.
+                </p>
+              </div>
+              <div className="p-6 shadow-lg rounded-lg">
+                <Image
+                  src="/window.svg"
+                  alt="Collect Feedback"
+                  width={48}
+                  height={48}
+                  className="mx-auto mb-4"
+                />
+                <h3 className="text-xl font-semibold mb-2">
+                  Collect & Analyze
+                </h3>
+                <p className="text-gray-600">
+                  Gather responses in real-time and use our tools to monitor and
+                  analyze the feedback effectively.
+                </p>
+              </div>
+              <div className="p-6 shadow-lg rounded-lg">
+                <Image
+                  src="/globe.svg"
+                  alt="Team Collaboration"
+                  width={48}
+                  height={48}
+                  className="mx-auto mb-4"
+                />
+                <h3 className="text-xl font-semibold mb-2">
+                  Collaborate & Grow
+                </h3>
+                <p className="text-gray-600">
+                  Invite team members to your organization, manage feedback
+                  together, and choose a plan that scales with you.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <h5 className="text-2xl sm:text-4xl font-semibold tracking-[-.01em] text-center sm:text-left">
-          Welcome to LUA Platform for feedbacks
-        </h5>
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get a link to one of our feedback forms.
-          </li>
-          <li className="tracking-[-.01em]">Fill the form and submit it.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+        {/* Call to Action Section */}
+        <section className="bg-gray-100 py-20 px-4 sm:px-8 text-center">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-semibold mb-6">
+              Ready to Elevate Your Feedback Game?
+            </h2>
+            <p className="text-lg sm:text-xl mb-8 text-gray-700">
+              Join thousands of businesses improving their customer experience
+              with LUA Platform.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/admin/register" passHref legacyBehavior>
+                <Button size="lg">
+                  <a>Sign Up Now</a>
+                </Button>
+              </Link>
+              <Link href="/pricing" passHref legacyBehavior>
+                {/* Assuming you have a pricing page */}
+                <Button size="lg" variant="outline">
+                  <a>View Plans</a>
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      <footer className="text-center p-8 text-gray-600 border-t">
+        <p>
+          &copy; {new Date().getFullYear()} LUA Platform. All rights reserved.
+        </p>
+        <div className="mt-2">
+          <Link href="/privacy" legacyBehavior>
+            <a className="hover:underline mx-2">Privacy Policy</a>
+          </Link>
+          |
+          <Link href="/terms" legacyBehavior>
+            <a className="hover:underline mx-2">Terms of Service</a>
+          </Link>
+        </div>
       </footer>
     </div>
   );
