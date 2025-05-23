@@ -11,6 +11,7 @@ interface OrganizationDetail {
   name: string;
   identifier: string;
   plan: string;
+  domains: string[];
   members: Member[];
   createdAt: string;
   updatedAt: string;

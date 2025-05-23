@@ -19,7 +19,7 @@ type UserData = {
   email?: string;
   organization?: string[];
   createdAt?: string;
-  organizationDetails?: any[];
+  organizationDetails?: [];
   id?: string;
 } | null;
 

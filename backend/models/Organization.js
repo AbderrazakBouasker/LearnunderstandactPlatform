@@ -31,6 +31,11 @@ const OrganizationSchema = new mongoose.Schema(
         },
       },
     ],
+    domains: [
+      {
+        type: String,
+      },
+    ],
   },
   { timestamps: true }
 );
