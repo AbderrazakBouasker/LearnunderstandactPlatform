@@ -7,6 +7,7 @@ import {
   Terminal,
   UserPlus,
   Settings,
+  PlusCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -54,6 +55,7 @@ import { OrganizationMemberAddModal } from "./organization-member-add-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { OrganizationUpgradeStripeModal } from "./organization-upgrade-stripe-modal";
+import { X as XIcon } from "lucide-react";
 
 interface Member {
   user: {
@@ -74,6 +76,7 @@ interface Organization {
   createdAt: string;
   updatedAt: string;
   __v: number;
+  domains?: string[]; // Add domains property
 }
 
 interface OrganizationMembersModalProps {
@@ -108,11 +111,8 @@ export function OrganizationSettingsModal({
   const [removingUser, setRemovingUser] = useState<string | null>(null);
   const [confirmUser, setConfirmUser] = useState<Member | null>(null);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
-  // Add a trigger state to track when members are added
   const [memberAddedTrigger, setMemberAddedTrigger] = useState(0);
-  // Add missing activeTab state
   const [activeTab, setActiveTab] = useState("members");
-  // Add missing delete dialog states
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editedOrgName, setEditedOrgName] = useState(organization.name);
@@ -120,8 +120,13 @@ export function OrganizationSettingsModal({
   const [isQuittingOrg, setIsQuittingOrg] = useState(false);
   const [isQuitDialogOpen, setIsQuitDialogOpen] = useState(false);
   const [changingRoleFor, setChangingRoleFor] = useState<string | null>(null);
-  // Add state for upgrade modal
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
+  // State variables for domain management
+  const [domains, setDomains] = useState<string[]>([]);
+  const [newDomain, setNewDomain] = useState("");
+  const [isAddingDomain, setIsAddingDomain] = useState(false);
+  const [isDeletingDomain, setIsDeletingDomain] = useState<string | null>(null);
 
   // Alert state for notifications and errors
   const [alert, setAlert] = useState<{
@@ -174,6 +179,13 @@ export function OrganizationSettingsModal({
 
           const data = await response.json();
           setOrgData(data);
+
+          // Initialize domains from organization data
+          if (data.domains) {
+            setDomains(data.domains);
+          } else {
+            setDomains([]); // Ensure domains is an empty array if not present
+          }
         } catch (err) {
           setError(err instanceof Error ? err.message : "An error occurred");
           setAlert({
@@ -368,6 +380,94 @@ export function OrganizationSettingsModal({
       console.error("Error updating organization:", err);
     } finally {
       setIsEditingOrg(false);
+    }
+  };
+
+  // Domain management functions
+  const handleAddDomain = async () => {
+    if (!newDomain.trim() || !isCurrentUserAdminOrSubadmin) return;
+
+    setIsAddingDomain(true);
+    try {
+      const updatedDomains = [...domains, newDomain.trim()];
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/edit`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ domains: updatedDomains }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setDomains(updatedDomains);
+        setNewDomain("");
+        setAlert({
+          title: "Success",
+          description: "Domain added successfully",
+          variant: "default",
+          open: true,
+        });
+      } else {
+        throw new Error(data.error || "Failed to add domain");
+      }
+    } catch (err) {
+      setAlert({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An error occurred",
+        variant: "destructive",
+        open: true,
+      });
+      console.error("Error adding domain:", err);
+    } finally {
+      setIsAddingDomain(false);
+    }
+  };
+
+  const handleRemoveDomain = async (domainToRemove: string) => {
+    if (!isCurrentUserAdminOrSubadmin) return;
+
+    setIsDeletingDomain(domainToRemove);
+    try {
+      const updatedDomains = domains.filter((d) => d !== domainToRemove);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/edit`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ domains: updatedDomains }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setDomains(updatedDomains);
+        setAlert({
+          title: "Success",
+          description: "Domain removed successfully",
+          variant: "default",
+          open: true,
+        });
+      } else {
+        throw new Error(data.error || "Failed to remove domain");
+      }
+    } catch (err) {
+      setAlert({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An error occurred",
+        variant: "destructive",
+        open: true,
+      });
+      console.error("Error removing domain:", err);
+    } finally {
+      setIsDeletingDomain(null);
     }
   };
 
@@ -681,6 +781,74 @@ export function OrganizationSettingsModal({
     );
   };
 
+  // Add domain management UI
+  const renderDomainSection = () => {
+    return (
+      <div className="space-y-2 mt-6">
+        <h3 className="text-lg font-medium">Allowed Embed Domains</h3>
+        <p className="text-sm text-muted-foreground">
+          Domains where your forms can be embedded. If empty, forms can be
+          embedded anywhere.
+        </p>
+
+        {isCurrentUserAdminOrSubadmin && (
+          <div className="flex gap-2 items-center mb-2">
+            <Input
+              placeholder="example.com"
+              value={newDomain}
+              onChange={(e) => setNewDomain(e.target.value)}
+              className="flex-1"
+              disabled={isAddingDomain}
+            />
+            <Button
+              onClick={handleAddDomain}
+              disabled={!newDomain.trim() || isAddingDomain}
+              variant="outline"
+            >
+              {isAddingDomain ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <PlusCircle className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        )}
+
+        <div className="border rounded-md p-2 min-h-[100px] max-h-[200px] overflow-y-auto">
+          {domains.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {domains.map((domain) => (
+                <div
+                  key={domain}
+                  className="bg-muted text-muted-foreground px-2 py-1 rounded-md text-sm flex items-center gap-1"
+                >
+                  {domain}
+                  {isCurrentUserAdminOrSubadmin && (
+                    <button
+                      onClick={() => handleRemoveDomain(domain)}
+                      className="text-muted-foreground hover:text-red-500 focus:outline-none"
+                      disabled={isDeletingDomain === domain}
+                    >
+                      {isDeletingDomain === domain ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <XIcon className="h-3 w-3" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">
+              No domains added. Forms can be embedded on any website.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
@@ -900,6 +1068,8 @@ export function OrganizationSettingsModal({
                 </div>
                 {/* Replace the plan input with our new function */}
                 {renderPlanWithUpgradeButton()}
+
+                {renderDomainSection()}
               </div>
 
               <div className="space-y-2">

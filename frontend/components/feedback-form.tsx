@@ -15,6 +15,7 @@ export function FeedbackForm({
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("An unknown error occurred");
   const [loading, setLoading] = useState(true);
+  const [isDomainAllowed, setIsDomainAllowed] = useState(true); // New state for domain check
 
   useEffect(() => {
     const fetchForm = async () => {
@@ -22,8 +23,6 @@ export function FeedbackForm({
         const apiUrl = process.env.NEXT_PUBLIC_BACKEND_BASE_URL
           ? `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/form/${formid}`
           : `/api/form/${formid}`;
-
-        console.log("Fetching form data from:", apiUrl);
 
         const response = await fetch(apiUrl, {
           method: "GET",
@@ -34,6 +33,23 @@ export function FeedbackForm({
         if (response.ok) {
           const data = await response.json();
           setFormData(data);
+
+          // Domain check for embedded forms
+          if (isEmbedded) {
+            const organizationDomains = data.organizationDomains as
+              | string[]
+              | undefined;
+            if (organizationDomains && organizationDomains.length > 0) {
+              const currentHostname = window.location.hostname;
+              if (!organizationDomains.includes(currentHostname)) {
+                setIsDomainAllowed(false);
+                setErrorMessage(
+                  "This form cannot be embedded on the current domain. Please contact the form owner for assistance."
+                );
+                setError(true); // Set error to true to prevent form rendering
+              }
+            }
+          }
         } else {
           setError(true);
           setErrorMessage(
@@ -52,7 +68,7 @@ export function FeedbackForm({
     };
 
     fetchForm();
-  }, [formid]);
+  }, [formid, isEmbedded]);
 
   if (loading) {
     return (
@@ -70,6 +86,17 @@ export function FeedbackForm({
           </div>
           <Skeleton className="h-10 w-1/3" />
         </div>
+      </div>
+    );
+  }
+
+  // If domain is not allowed, show specific message
+  if (!isDomainAllowed) {
+    return (
+      // Adjusted container for better display in various contexts, including dialogs
+      <div className="flex w-full flex-col items-center justify-center p-6 text-center md:p-10">
+        <h1 className="text-2xl font-bold">Embedding Not Allowed</h1>
+        <p className="text-muted-foreground mt-2">{errorMessage}</p>
       </div>
     );
   }
@@ -92,8 +119,10 @@ export function FeedbackForm({
         </div>
       ) : (
         <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-          <div className="w-full max-w-sm">
-            <h1 className="text-2xl font-bold">Form Not Found</h1>
+          <div className="w-full max-w-sm text-center">
+            <h1 className="text-2xl font-bold">
+              {isDomainAllowed ? "Form Not Found" : "Embedding Not Allowed"}
+            </h1>
             <p className="text-muted-foreground">{errorMessage}</p>
           </div>
         </div>
