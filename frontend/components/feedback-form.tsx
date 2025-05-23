@@ -34,20 +34,29 @@ export function FeedbackForm({
           const data = await response.json();
           setFormData(data);
 
-          // Domain check for embedded forms
           if (isEmbedded) {
             const organizationDomains = data.organizationDomains as
               | string[]
               | undefined;
+
+            // Default to not allowed for embedded forms
+            let currentDomainAllowed = false;
             if (organizationDomains && organizationDomains.length > 0) {
               const currentHostname = window.location.hostname;
-              if (!organizationDomains.includes(currentHostname)) {
-                setIsDomainAllowed(false);
-                setErrorMessage(
-                  "This form cannot be embedded on the current domain. Please contact the form owner for assistance."
-                );
-                setError(true); // Set error to true to prevent form rendering
+              if (organizationDomains.includes(currentHostname)) {
+                currentDomainAllowed = true;
               }
+            }
+            // If organizationDomains is empty or undefined, currentDomainAllowed remains false.
+
+            if (!currentDomainAllowed) {
+              setIsDomainAllowed(false);
+              setErrorMessage(
+                "This form cannot be embedded on the current domain. Please contact the form owner for assistance."
+              );
+              setError(true);
+            } else {
+              setIsDomainAllowed(true); // Explicitly set to true if allowed
             }
           }
         } else {

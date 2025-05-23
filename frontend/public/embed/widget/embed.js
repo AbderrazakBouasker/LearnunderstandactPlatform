@@ -176,7 +176,6 @@
     button.innerText = "Loading...";
     button.disabled = true;
 
-    // Clear previous modal content (iframe or error message)
     modal.innerHTML = "";
 
     try {
@@ -201,14 +200,45 @@
         );
       }
 
-      let isAllowed = true;
+      let isAllowed = false; // Default to not allowed
       if (
+        parentHostname &&
+        organizationDomains &&
+        organizationDomains.length > 0 // Check if domains list is not empty
+      ) {
+        if (organizationDomains.includes(parentHostname)) {
+          isAllowed = true;
+        }
+      } else if (organizationDomains && organizationDomains.length === 0) {
+        // Explicitly disallow if the list is empty
+        isAllowed = false;
+        console.log("Embedding disallowed: Organization domain list is empty.");
+      }
+      // If organizationDomains is undefined or null, it implies no restriction was set from backend,
+      // which might be a different state than an explicitly empty list.
+      // For this logic: empty list = disallow all. undefined/null = could be allow all (if that's desired default)
+      // However, to strictly follow "if its empty it shouldn't open in any domain":
+      if (organizationDomains && organizationDomains.length === 0) {
+        isAllowed = false;
+      } else if (
         parentHostname &&
         organizationDomains &&
         organizationDomains.length > 0
       ) {
-        if (!organizationDomains.includes(parentHostname)) {
-          isAllowed = false;
+        isAllowed = organizationDomains.includes(parentHostname);
+      } else {
+        // If organizationDomains is null/undefined OR parentHostname couldn't be determined,
+        // and the list isn't explicitly empty, this branch is hit.
+        // To be safe and adhere to "empty list = disallow", if organizationDomains is not a populated array, disallow.
+        isAllowed = false;
+        if (!organizationDomains || organizationDomains.length === 0) {
+          console.log(
+            "Embedding disallowed: Organization domain list is effectively empty or not configured for embedding."
+          );
+        } else {
+          console.log(
+            "Embedding disallowed: Could not determine parent hostname or other issue."
+          );
         }
       }
 
@@ -234,6 +264,11 @@
         modal.appendChild(iframe);
       } else {
         const errorDiv = document.createElement("div");
+        console.log(
+          parentHostname
+            ? `Embedding not allowed for domain: ${parentHostname}`
+            : "Embedding not allowed: parent hostname not determined or domain list empty."
+        );
         errorDiv.id = "feedback-modal-error";
         errorDiv.innerHTML = `
           <h3>Embedding Not Allowed</h3>

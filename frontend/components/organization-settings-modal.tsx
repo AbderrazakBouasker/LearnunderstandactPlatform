@@ -787,7 +787,7 @@ export function OrganizationSettingsModal({
       <div className="space-y-2 mt-6">
         <h3 className="text-lg font-medium">Allowed Embed Domains</h3>
         <p className="text-sm text-muted-foreground">
-          Domains where your forms can be embedded. If empty, forms can be
+          Domains where your forms can be embedded. If empty, forms cannot be
           embedded anywhere.
         </p>
 
@@ -841,7 +841,7 @@ export function OrganizationSettingsModal({
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-8">
-              No domains added. Forms can be embedded on any website.
+              No domains added. Forms cannot be embedded anywhere.
             </p>
           )}
         </div>
