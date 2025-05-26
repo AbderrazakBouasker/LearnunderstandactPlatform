@@ -18,6 +18,7 @@ import formRoutes from "./routes/form.js";
 import feedbackRoutes from "./routes/feedback.js";
 import organizationRoutes from "./routes/organization.js";
 import stripeRoutes from "./routes/stripe.js";
+import statsRoutes from "./routes/stats.js";
 import logger from "./logger.js";
 import { requestLogger, errorLogger } from "./logging-examples.js";
 
@@ -98,6 +99,7 @@ app.use("/api/form", formRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/organization", organizationRoutes);
 app.use("/api/stripe", stripeRoutes);
+app.use("/api/stats", statsRoutes);
 
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));

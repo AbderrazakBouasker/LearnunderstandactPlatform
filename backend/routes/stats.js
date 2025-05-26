@@ -2,8 +2,6 @@ import express from "express";
 import {
   getFeedbackCountOverTime,
   getTotalFeedbackByForm,
-  getSumOfOpinionsByFeedback,
-  getOpinionCountsByFeedback,
   getOpinionCountsByForm,
 } from "../controllers/stats.js";
 import { verifyToken } from "../middleware/auth.js";
@@ -33,22 +31,6 @@ router.get(
   rateLimiter(1, 100),
   verifyToken,
   getTotalFeedbackByForm
-);
-
-// Route to get the sum of opinions grouped by feedback for an organization
-router.get(
-  "/:organization/opinion-sum-by-feedback",
-  rateLimiter(1, 100),
-  verifyToken,
-  getSumOfOpinionsByFeedback
-);
-
-// Route to get the count of opinions grouped by feedback for an organization
-router.get(
-  "/:organization/opinion-counts-by-feedback",
-  rateLimiter(1, 100),
-  verifyToken,
-  getOpinionCountsByFeedback
 );
 
 // Route to get the count of opinions grouped by form for an organization
