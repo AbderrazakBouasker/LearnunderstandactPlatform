@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Feedback } from "@/components/feedback";
 import { Form } from "@/components/form";
+import { Dashboard } from "@/components/dashboard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
@@ -50,7 +51,7 @@ export default function Page() {
   const handleOrganizationChange = (organization: string) => {
     setSelectedOrganization(organization);
     if (!activeButton) {
-      setActiveButton("Feedbacks");
+      setActiveButton("Dashboard");
     }
   };
 
@@ -165,9 +166,7 @@ export default function Page() {
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
                   <BreadcrumbItem>
-                    <BreadcrumbLink href="#">
-                      {activeButton || "Home"}
-                    </BreadcrumbLink>
+                    <BreadcrumbLink>{activeButton || "Home"}</BreadcrumbLink>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
@@ -182,7 +181,13 @@ export default function Page() {
                 </div>
               ) : (
                 <>
-                  {activeButton === "Feedbacks" ? (
+                  {activeButton === "Dashboard" ? (
+                    <Dashboard
+                      selectedOrganization={selectedOrganization}
+                      key={`dashboard-${selectedOrganization}`}
+                      userData={userData}
+                    />
+                  ) : activeButton === "Feedbacks" ? (
                     <Feedback
                       selectedOrganization={selectedOrganization}
                       key={`feedback-${selectedOrganization}`}
