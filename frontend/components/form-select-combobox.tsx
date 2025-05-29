@@ -60,10 +60,10 @@ export function FormSelectCombobox({
               {items.map((item) => (
                 <CommandItem
                   key={item.value}
-                  value={item.value}
-                  onSelect={(currentValue) => {
+                  value={item.label} // Use label for search functionality
+                  onSelect={() => {
                     onValueChange(
-                      currentValue === selectedValue ? null : currentValue
+                      item.value === selectedValue ? null : item.value
                     );
                     setOpen(false);
                   }}

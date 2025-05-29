@@ -1,6 +1,7 @@
 import express from "express";
 import {
-  getFeedbackCountOverTime,
+  getFeedbackCountOverTimeByOrg,
+  getFeedbackCountOverTimeByForm,
   getTotalFeedbackByForm,
   getOpinionCountsByForm,
 } from "../controllers/stats.js";
@@ -14,7 +15,7 @@ router.get(
   "/:organization/feedback-count",
   rateLimiter(1, 100),
   verifyToken,
-  getFeedbackCountOverTime
+  getFeedbackCountOverTimeByOrg
 );
 
 // Route to get feedback count over time for a specific form
@@ -22,7 +23,7 @@ router.get(
   "/form/:formId/feedback-count",
   rateLimiter(1, 100),
   verifyToken,
-  getFeedbackCountOverTime
+  getFeedbackCountOverTimeByForm
 );
 
 // Route to get total feedback count grouped by form for an organization
@@ -33,9 +34,9 @@ router.get(
   getTotalFeedbackByForm
 );
 
-// Route to get the count of opinions grouped by form for an organization
+// Route to get the count of opinions for a specific form
 router.get(
-  "/:organization/opinion-counts-by-form",
+  "/form/:formId/opinion-counts",
   rateLimiter(1, 100),
   verifyToken,
   getOpinionCountsByForm
