@@ -1,5 +1,6 @@
 import Feedback from "../models/Feedback.js";
 import Form from "../models/Form.js";
+import Insight from "../models/Insight.js";
 import logger from "../logger.js";
 // Changed import to use @google/genai and GoogleGenAI class
 import { GoogleGenAI } from "@google/genai";
@@ -32,12 +33,12 @@ const analyzeFeedbackWithGenAI = async (feedbackContent) => {
   try {
     // Model name can be adjusted as needed, e.g., "gemini-1.5-flash", "gemini-1.5-pro-latest"
     const modelName = process.env.AI_MODEL;
-    console.log(modelName);
+    // console.log(modelName);
     const generationConfig = {
       responseMimeType: "application/json", // Request JSON output
     };
     delete feedbackContent.opinion;
-    console.log("Feedback content to analyze:", feedbackContent);
+    // console.log("Feedback content to analyze:", feedbackContent);
     const requestPayloadContents = [
       {
         role: "user",
@@ -80,7 +81,7 @@ const analyzeFeedbackWithGenAI = async (feedbackContent) => {
     const textResponse = result.text; // Changed from result.response.text()
 
     // Print the raw response to console
-    console.log("GenAI Analysis Response:", textResponse);
+    // console.log("GenAI Analysis Response:", textResponse);
 
     // Parse the response as JSON
     try {
@@ -149,26 +150,31 @@ export const createFeedback = async (req, res) => {
     const analysisResult = await analyzeFeedbackWithGenAI(feedbackToAnalyze);
 
     if (analysisResult) {
-      console.log(
-        "Feedback Analysis Result:",
-        JSON.stringify(analysisResult, null, 2)
-      );
+      // console.log(
+      //   "Feedback Analysis Result:",
+      //   JSON.stringify(analysisResult, null, 2)
+      // );
 
-      // Optionally: Create an Insight record based on the analysis
-      // This would require importing the Insight model and creating a new document
-      // e.g., import Insight from '../models/Insight.js';
-      // const newInsight = new Insight({
-      //   feedbackId: newFeedback._id,
-      //   formId: newFeedback.formId,
-      //   formTitle: newFeedback.formTitle,
-      //   sentiment: analysisResult.sentiment,
-      //   keywords: analysisResult.keywords,
-      // });
-      // await newInsight.save();
-      // logger.info("Insight created from GenAI analysis", { insightId: newInsight._id });
+      // Create an Insight record based on the analysis
+      const newInsight = new Insight({
+        feedbackId: newFeedback._id,
+        formId: newFeedback.formId,
+        formTitle: newFeedback.formTitle,
+        formDescription: newFeedback.formDescription,
+        sentiment: analysisResult.sentiment,
+        feedbackDescription: analysisResult.feedbackDescription,
+        keywords: analysisResult.keywords,
+      });
+      await newInsight.save();
+      console.log(newInsight);
+      logger.info("Insight created from GenAI analysis", {
+        insightId: newInsight._id,
+      });
     }
 
-    res.status(201).json(newFeedback);
+    res.status(201).json({
+      message: "Feedback and Insight created successfully",
+    });
   } catch (error) {
     // Log the error with additional context
     logger.error("Error creating feedback", {
