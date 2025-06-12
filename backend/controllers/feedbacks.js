@@ -1,6 +1,13 @@
 import Feedback from "../models/Feedback.js";
 import Form from "../models/Form.js";
 import logger from "../logger.js";
+// Changed import to use @google/genai and GoogleGenAI class
+import { GoogleGenAI } from "@google/genai";
+import { model } from "mongoose";
+
+// Initialize Google GenAI
+// Ensure GOOGLE_AI_API_KEY is set in your environment variables
+const genAIClient = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
 // Helper function to map HTML types to JavaScript types
 const mapHtmlTypeToJsType = (htmlType) => {
@@ -18,6 +25,81 @@ const mapHtmlTypeToJsType = (htmlType) => {
     time: "string",
   };
   return typeMapping[htmlType] || "string";
+};
+
+// Function to analyze feedback sentiment and keywords using Google GenAI
+const analyzeFeedbackWithGenAI = async (feedbackContent) => {
+  try {
+    // Model name can be adjusted as needed, e.g., "gemini-1.5-flash", "gemini-1.5-pro-latest"
+    const modelName = process.env.AI_MODEL;
+    console.log(modelName);
+    const generationConfig = {
+      responseMimeType: "application/json", // Request JSON output
+    };
+    delete feedbackContent.opinion;
+    console.log("Feedback content to analyze:", feedbackContent);
+    const requestPayloadContents = [
+      {
+        role: "user",
+        parts: [
+          {
+            text: `
+              Analyze the following customer feedback that include the form title , the form description and the form fields filled by the customer to determine:
+              1. The overall sentiment (very dissatisfied, dissatisfied, neutral, satisfied, or very satisfied)
+              2. A description or summary of the topic of the feedback as concluded from the fields filled by the customer
+              2. A list of key topics/keywords (maximum 5) mentioned in the feedback
+
+              Respond in JSON format with the following structure:
+              {
+                "sentiment": "one of: very dissatisfied, dissatisfied, neutral, satisfied, very satisfied",
+                "feedbackDescription": "description or summary of the feedback of the customer",
+                "keywords": ["keyword1", "keyword2", "etc"]
+              }
+
+              Feedback: "${feedbackContent}"
+            `,
+          },
+        ],
+      },
+    ];
+
+    const result = await genAIClient.models.generateContent({
+      model: modelName,
+      config: generationConfig,
+      contents: requestPayloadContents,
+    });
+
+    // Corrected: Access text() directly from the result object if result.response is undefined.
+    // This assumes 'result' itself is the response object containing the text method for @google/genai.
+    // If 'result' is undefined or does not have .text(), further inspection of 'result' structure is needed.
+    if (!result) {
+      logger.error("GenAI call returned undefined result");
+      return null;
+    }
+
+    const textResponse = result.text; // Changed from result.response.text()
+
+    // Print the raw response to console
+    console.log("GenAI Analysis Response:", textResponse);
+
+    // Parse the response as JSON
+    try {
+      const jsonResponse = JSON.parse(textResponse);
+      return jsonResponse;
+    } catch (parseError) {
+      logger.error("Error parsing GenAI response", {
+        error: parseError.message,
+        response: textResponse,
+      });
+      return null;
+    }
+  } catch (error) {
+    logger.error("Error analyzing feedback with GenAI", {
+      error: error.message,
+      stack: error.stack,
+    });
+    return null;
+  }
 };
 
 //CREATE
@@ -59,6 +141,33 @@ export const createFeedback = async (req, res) => {
       fields,
     });
     await newFeedback.save();
+
+    // Analyze the feedback using Google GenAI
+    const feedbackToAnalyze =
+      `Form Title: ${form.title}, Form Description: ${form.description}, Fields: ` +
+      fields.map((field) => `${field.label}: ${field.value}`).join(" ");
+    const analysisResult = await analyzeFeedbackWithGenAI(feedbackToAnalyze);
+
+    if (analysisResult) {
+      console.log(
+        "Feedback Analysis Result:",
+        JSON.stringify(analysisResult, null, 2)
+      );
+
+      // Optionally: Create an Insight record based on the analysis
+      // This would require importing the Insight model and creating a new document
+      // e.g., import Insight from '../models/Insight.js';
+      // const newInsight = new Insight({
+      //   feedbackId: newFeedback._id,
+      //   formId: newFeedback.formId,
+      //   formTitle: newFeedback.formTitle,
+      //   sentiment: analysisResult.sentiment,
+      //   keywords: analysisResult.keywords,
+      // });
+      // await newInsight.save();
+      // logger.info("Insight created from GenAI analysis", { insightId: newInsight._id });
+    }
+
     res.status(201).json(newFeedback);
   } catch (error) {
     // Log the error with additional context

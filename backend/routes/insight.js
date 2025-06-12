@@ -1,5 +1,6 @@
 import express from "express";
 import { verifyToken } from "../middleware/auth.js";
+import { rateLimiter } from "../middleware/ratelimiter.js";
 import {
   getAllInsights,
   getInsightById,

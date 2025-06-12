@@ -14,6 +14,10 @@ const insightSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    formDescription: {
+      type: String,
+      required: true,
+    },
     sentiment: {
       type: String,
       enum: [
@@ -23,6 +27,10 @@ const insightSchema = mongoose.Schema(
         "satisfied",
         "very satisfied",
       ],
+      required: true,
+    },
+    feedbackDescription: {
+      type: String,
       required: true,
     },
     keywords: {
