@@ -28,7 +28,7 @@ interface UserData {
   id: string;
 }
 
-export function Feedback({
+export function Insight({
   selectedOrganization,
   userData,
 }: {

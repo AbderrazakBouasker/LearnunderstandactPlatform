@@ -73,6 +73,11 @@ const data = {
       url: "#",
       icon: Send,
     },
+    {
+      name: "Insights",
+      url: "#",
+      icon: Command,
+    },
   ],
 };
 

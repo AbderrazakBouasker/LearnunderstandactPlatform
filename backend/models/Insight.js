@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import Organization from "./Organization";
 
 const insightSchema = mongoose.Schema(
   {
