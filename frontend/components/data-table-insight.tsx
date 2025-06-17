@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-// import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -44,6 +43,8 @@ import { FeedbackDetailModal } from "@/components/feedback-detail-modal";
 import { FormDetailModal } from "@/components/form-detail-modal";
 import { Dialog } from "@/components/ui/dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { InsightDetailModal } from "@/components/insight-detail-modal";
+
 interface Member {
   user: string;
   role: string;
@@ -72,13 +73,18 @@ interface UserData {
   id: string;
 }
 
-export type Feedback = {
+export type Insight = {
   _id: string;
+  feedbackId: string;
   formId: string;
+  organization: string;
   formTitle: string;
   formDescription: string;
-  opinion: string;
-  fields: [];
+  sentiment: string;
+  feedbackDescription: string;
+  keywords: string[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export function DataTableInsight({
@@ -88,7 +94,7 @@ export function DataTableInsight({
   selectedOrganization: string;
   userData: UserData;
 }) {
-  const [data, setData] = React.useState<Feedback[]>([]);
+  const [data, setData] = React.useState<Insight[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isAlert, setIsAlert] = React.useState<boolean>(false);
   const [alertVariant, setAlertVariant] = React.useState<
@@ -102,11 +108,15 @@ export function DataTableInsight({
   // Add state for controlling modals
   const [feedbackDetailOpen, setFeedbackDetailOpen] = React.useState(false);
   const [formDetailOpen, setFormDetailOpen] = React.useState(false);
-  const [selectedFeedback, setSelectedFeedback] =
-    React.useState<Feedback | null>(null);
+  const [insightDetailOpen, setInsightDetailOpen] = React.useState(false);
+  const [selectedInsight, setSelectedInsight] = React.useState<Insight | null>(
+    null
+  );
+  const [feedbackDetails, setFeedbackDetails] = React.useState<any>(null);
+  const [isFetchingFeedback, setIsFetchingFeedback] = React.useState(false);
 
-  // Add emoji mapping for opinion values
-  const opinionEmojis: Record<string, string> = {
+  // Add emoji mapping for sentiment values
+  const sentimentEmojis: Record<string, string> = {
     "very dissatisfied": "😠",
     dissatisfied: "🙁",
     "somewhat dissatisfied": "😕",
@@ -116,10 +126,10 @@ export function DataTableInsight({
     "very satisfied": "😄",
   };
 
-  const handleDeleteFeedback = async (id: string) => {
+  const handleDeleteInsight = async (id: string) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/feedback/${id}/delete`,
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/insight/${id}/delete`,
         {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
@@ -129,15 +139,13 @@ export function DataTableInsight({
 
       if (response.ok) {
         setAlertTitle("Success");
-        setAlertDescription("Successfully deleted feedback");
+        setAlertDescription("Successfully deleted insight");
         setAlertVariant("default");
         setIsAlert(true);
         setTimeout(() => {
           setIsAlert(false);
         }, 3000);
-        setData((prevData) =>
-          prevData.filter((feedback) => feedback._id !== id)
-        );
+        setData((prevData) => prevData.filter((insight) => insight._id !== id));
       }
       if (response.status === 401) {
         setAlertTitle("Unauthorized");
@@ -159,7 +167,7 @@ export function DataTableInsight({
       }
       if (response.status === 404) {
         setAlertTitle("Not Found");
-        setAlertDescription("Feedback not found");
+        setAlertDescription("Insight not found");
         setAlertVariant("destructive");
         setIsAlert(true);
         setTimeout(() => {
@@ -185,14 +193,77 @@ export function DataTableInsight({
         }, 3000);
       }
     } catch (err) {
-      console.error("Failed to delete feedback:", err);
+      console.error("Failed to delete insight:", err);
       setAlertTitle("Error");
-      setAlertDescription("Failed to delete feedback. Please try again.");
+      setAlertDescription("Failed to delete insight. Please try again.");
       setAlertVariant("destructive");
       setIsAlert(true);
       setTimeout(() => {
         setIsAlert(false);
       }, 3000);
+    }
+  };
+
+  const fetchFeedbackDetails = async (feedbackId: string) => {
+    try {
+      setIsFetchingFeedback(true);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/feedback/${feedbackId}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const feedback = await response.json();
+        setFeedbackDetails(feedback);
+        setFeedbackDetailOpen(true);
+      } else if (response.status === 404) {
+        setAlertTitle("Not Found");
+        setAlertDescription("Feedback not found");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 401) {
+        setAlertTitle("Unauthorized");
+        setAlertDescription("Invalid or expired token");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 403) {
+        setAlertTitle("Forbidden");
+        setAlertDescription("Not authorized or missing token");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 500) {
+        setAlertTitle("Server Error");
+        setAlertDescription("An error occurred. Please try again.");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      }
+    } catch (err) {
+      console.error("Failed to fetch feedback details:", err);
+      setAlertTitle("Error");
+      setAlertDescription("Failed to load feedback details. Please try again.");
+      setAlertVariant("destructive");
+      setIsAlert(true);
+      setTimeout(() => {
+        setIsAlert(false);
+      }, 3000);
+    } finally {
+      setIsFetchingFeedback(false);
     }
   };
 
@@ -221,29 +292,7 @@ export function DataTableInsight({
     );
   }, [userData, selectedOrganization]);
 
-  const columns: ColumnDef<Feedback>[] = [
-    // {
-    //   id: "select",
-    //   header: ({ table }) => (
-    //     <Checkbox
-    //       checked={
-    //         table.getIsAllPageRowsSelected() ||
-    //         (table.getIsSomePageRowsSelected() && "indeterminate")
-    //       }
-    //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-    //       aria-label="Select all"
-    //     />
-    //   ),
-    //   cell: ({ row }) => (
-    //     <Checkbox
-    //       checked={row.getIsSelected()}
-    //       onCheckedChange={(value) => row.toggleSelected(!!value)}
-    //       aria-label="Select row"
-    //     />
-    //   ),
-    //   enableSorting: false,
-    //   enableHiding: false,
-    // },
+  const columns: ColumnDef<Insight>[] = [
     {
       accessorKey: "formTitle",
       header: ({ column }) => {
@@ -262,45 +311,71 @@ export function DataTableInsight({
       ),
     },
     {
-      accessorKey: "formDescription",
+      accessorKey: "feedbackDescription",
       header: ({ column }) => {
         return (
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Form Description
+            Feedback Description
             <ArrowUpDown />
           </Button>
         );
       },
       cell: ({ row }) => (
-        <div className="lowercase">{row.getValue("formDescription")}</div>
+        <div
+          className="max-w-xs truncate"
+          title={row.getValue("feedbackDescription")}
+        >
+          {row.getValue("feedbackDescription")}
+        </div>
       ),
     },
     {
-      accessorKey: "opinion",
+      accessorKey: "keywords",
+      header: "Keywords",
+      cell: ({ row }) => {
+        const keywords = row.getValue("keywords") as string[];
+        return (
+          <div className="flex flex-wrap gap-1 max-w-xs">
+            {keywords.slice(0, 5).map((keyword, index) => (
+              <span
+                key={index}
+                className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+              >
+                {keyword}
+              </span>
+            ))}
+            {keywords.length > 5 && (
+              <span className="text-xs text-muted-foreground">
+                +{keywords.length - 5} more
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "sentiment",
       header: ({ column }) => {
         return (
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Opinion
+            Sentiment
             <ArrowUpDown />
           </Button>
         );
       },
       cell: ({ row }) => {
-        const opinion = row.getValue("opinion") as string;
+        const sentiment = row.getValue("sentiment") as string;
         return (
-          <div
-            className="text-2xl flex items-center"
-            title={opinion} // Add tooltip for accessibility
-          >
-            {opinionEmojis[opinion.toLowerCase()] || opinion}
+          <div className="text-2xl flex items-center" title={sentiment}>
+            {sentimentEmojis[sentiment.toLowerCase()] || sentiment}
             <span className="ml-2 text-xs text-muted-foreground">
-              {opinion}
+              {sentiment}
             </span>
           </div>
         );
@@ -310,7 +385,7 @@ export function DataTableInsight({
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
-        const feedback = row.original;
+        const insight = row.original;
 
         return (
           <DropdownMenu>
@@ -324,15 +399,24 @@ export function DataTableInsight({
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
                 onSelect={() => {
-                  setSelectedFeedback(feedback);
-                  setFeedbackDetailOpen(true);
+                  setSelectedInsight(insight);
+                  setInsightDetailOpen(true);
                 }}
               >
-                View feedback details
+                View insight details
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => {
-                  setSelectedFeedback(feedback);
+                  setSelectedInsight(insight);
+                  fetchFeedbackDetails(insight.feedbackId);
+                }}
+                disabled={isFetchingFeedback}
+              >
+                {isFetchingFeedback ? "Loading..." : "View feedback details"}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setSelectedInsight(insight);
                   setFormDetailOpen(true);
                 }}
               >
@@ -346,7 +430,7 @@ export function DataTableInsight({
                   <DropdownMenuItem
                     variant="destructive"
                     onClick={() => {
-                      handleDeleteFeedback(feedback._id);
+                      handleDeleteInsight(insight._id);
                     }}
                   >
                     Delete
@@ -361,11 +445,11 @@ export function DataTableInsight({
   ];
 
   React.useEffect(() => {
-    const fetchFeedbackData = async () => {
+    const fetchInsightData = async () => {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/feedback/organization/${selectedOrganization}`,
+          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/insight/organization/${selectedOrganization}`,
           {
             method: "GET",
             headers: { "Content-Type": "application/json" },
@@ -374,8 +458,8 @@ export function DataTableInsight({
         );
 
         if (response.ok || response.status === 204) {
-          const feedbackData = await response.json();
-          setData(feedbackData);
+          const insightData = await response.json();
+          setData(insightData);
         }
 
         if (response.status === 401) {
@@ -416,7 +500,7 @@ export function DataTableInsight({
         }
       } catch {
         setAlertTitle("Error");
-        setAlertDescription("Failed to load feedback data. Please try again.");
+        setAlertDescription("Failed to load insight data. Please try again.");
         setAlertVariant("destructive");
         setIsAlert(true);
         setTimeout(() => {
@@ -427,8 +511,8 @@ export function DataTableInsight({
       }
     };
 
-    fetchFeedbackData();
-  }, []);
+    fetchInsightData();
+  }, [selectedOrganization]);
 
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -466,9 +550,10 @@ export function DataTableInsight({
 
   if (isLoading) {
     return (
-      <div className="w-full py-10 text-center">Loading feedback data...</div>
+      <div className="w-full py-10 text-center">Loading insight data...</div>
     );
   }
+
   return (
     <>
       <div className="w-full">
@@ -586,14 +671,16 @@ export function DataTableInsight({
       </div>
 
       {/* Add controlled dialogs outside of the table rendering */}
+      <Dialog open={insightDetailOpen} onOpenChange={setInsightDetailOpen}>
+        {selectedInsight && <InsightDetailModal details={selectedInsight} />}
+      </Dialog>
+
       <Dialog open={feedbackDetailOpen} onOpenChange={setFeedbackDetailOpen}>
-        {selectedFeedback && <FeedbackDetailModal details={selectedFeedback} />}
+        {feedbackDetails && <FeedbackDetailModal details={feedbackDetails} />}
       </Dialog>
 
       <Dialog open={formDetailOpen} onOpenChange={setFormDetailOpen}>
-        {selectedFeedback && (
-          <FormDetailModal formId={selectedFeedback.formId} />
-        )}
+        {selectedInsight && <FormDetailModal formId={selectedInsight.formId} />}
       </Dialog>
 
       {isAlert && (

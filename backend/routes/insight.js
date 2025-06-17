@@ -5,6 +5,7 @@ import {
   getAllInsights,
   getInsightById,
   getInsightsByFeedbackId,
+  getInsightsByOrganization,
   getInsightsByFormId,
   deleteInsight,
 } from "../controllers/insight.js";
@@ -19,6 +20,12 @@ router.get(
   rateLimiter(1, 100),
   verifyToken,
   getInsightsByFeedbackId
+);
+router.get(
+  "/organization/:organization",
+  rateLimiter(1, 100),
+  verifyToken,
+  getInsightsByOrganization
 );
 router.get(
   "/form/:formId",
