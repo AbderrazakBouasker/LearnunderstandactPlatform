@@ -18,6 +18,37 @@ export const getAllInsights = async (req, res) => {
   }
 };
 
+//Get all by organization
+export const getInsightsByOrganization = async (req, res) => {
+  try {
+    const { organization } = req.params;
+
+    if (!organization) {
+      logger.warn("No organization ID provided");
+      return res.status(400).json({ message: "Organization ID is required" });
+    }
+
+    const insights = await Insight.find({ organization });
+
+    if (insights.length === 0) {
+      logger.info("No insights found for organization", { organization });
+      return res
+        .status(404)
+        .json({ message: "No insights found for this organization" });
+    }
+
+    res.status(200).json(insights);
+  } catch (error) {
+    // Log the error with additional context
+    logger.error("Error retrieving insights by organization", {
+      error: error.message,
+      stack: error.stack,
+      organization,
+    });
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Get insight by ID
 export const getInsightById = async (req, res) => {
   try {

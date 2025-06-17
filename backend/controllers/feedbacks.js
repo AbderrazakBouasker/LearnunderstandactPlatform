@@ -159,6 +159,7 @@ export const createFeedback = async (req, res) => {
       const newInsight = new Insight({
         feedbackId: newFeedback._id,
         formId: newFeedback.formId,
+        organization: newFeedback.organization,
         formTitle: newFeedback.formTitle,
         formDescription: newFeedback.formDescription,
         sentiment: analysisResult.sentiment,

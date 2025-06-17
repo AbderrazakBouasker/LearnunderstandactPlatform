@@ -19,6 +19,7 @@ import {
 import { Feedback } from "@/components/feedback";
 import { Form } from "@/components/form";
 import { Dashboard } from "@/components/dashboard";
+import { Insight } from "@/components/insight";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
@@ -197,6 +198,12 @@ export default function Page() {
                     <Form
                       selectedOrganization={selectedOrganization}
                       key={`form-${selectedOrganization}`}
+                      userData={userData}
+                    />
+                  ) : activeButton === "Insights" ? (
+                    <Insight
+                      selectedOrganization={selectedOrganization}
+                      key={`insight-${selectedOrganization}`}
                       userData={userData}
                     />
                   ) : null}

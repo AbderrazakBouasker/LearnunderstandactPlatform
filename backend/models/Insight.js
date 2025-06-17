@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Organization from "./Organization";
 
 const insightSchema = mongoose.Schema(
   {
@@ -8,6 +9,10 @@ const insightSchema = mongoose.Schema(
     },
     formId: {
       type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    organization: {
+      type: String,
       required: true,
     },
     formTitle: {
