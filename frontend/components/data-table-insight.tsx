@@ -220,9 +220,32 @@ export function DataTableInsight({
       );
 
       if (response.ok) {
-        const feedback = await response.json();
-        setFeedbackDetails(feedback);
-        setFeedbackDetailOpen(true);
+        const text = await response.text();
+        if (!text) {
+          setAlertTitle("Error");
+          setAlertDescription("No feedback data received");
+          setAlertVariant("destructive");
+          setIsAlert(true);
+          setTimeout(() => {
+            setIsAlert(false);
+          }, 3000);
+          return;
+        }
+
+        try {
+          const feedback = JSON.parse(text);
+          setFeedbackDetails(feedback);
+          setFeedbackDetailOpen(true);
+        } catch (parseError) {
+          console.error("Failed to parse feedback response:", parseError);
+          setAlertTitle("Error");
+          setAlertDescription("Invalid feedback data received");
+          setAlertVariant("destructive");
+          setIsAlert(true);
+          setTimeout(() => {
+            setIsAlert(false);
+          }, 3000);
+        }
       } else if (response.status === 404) {
         setAlertTitle("Not Found");
         setAlertDescription("Feedback not found");
@@ -460,13 +483,25 @@ export function DataTableInsight({
       );
 
       if (response.ok) {
-        const formsData = await response.json();
-        setForms(
-          formsData.map((form) => ({ value: form._id, label: form.title }))
-        );
+        const text = await response.text();
+        if (!text) {
+          setForms([]);
+          return;
+        }
+
+        try {
+          const formsData = JSON.parse(text);
+          setForms(
+            formsData.map((form) => ({ value: form._id, label: form.title }))
+          );
+        } catch (parseError) {
+          console.error("Failed to parse forms response:", parseError);
+          setForms([]);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch forms:", error);
+      setForms([]);
     }
   };
 
@@ -488,7 +523,26 @@ export function DataTableInsight({
       });
 
       if (response.ok) {
-        const insightData = await response.json();
+        const text = await response.text();
+        let insightData = [];
+
+        if (text) {
+          try {
+            insightData = JSON.parse(text);
+          } catch (parseError) {
+            console.error("Failed to parse insight response:", parseError);
+            setData([]);
+            setAlertTitle("Error");
+            setAlertDescription("Invalid data received from server");
+            setAlertVariant("destructive");
+            setIsAlert(true);
+            setTimeout(() => {
+              setIsAlert(false);
+            }, 3000);
+            return;
+          }
+        }
+
         setData(insightData || []);
 
         // Show alert if no insights found

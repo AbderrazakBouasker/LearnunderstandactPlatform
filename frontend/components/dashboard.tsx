@@ -61,17 +61,30 @@ export function Dashboard({
       );
 
       if (!response.ok) throw new Error(`Error: ${response.status}`);
-      const formsData = await response.json();
 
-      setForms(
-        formsData.map((form) => ({ value: form._id, label: form.title }))
-      );
+      // Check if response has content
+      const text = await response.text();
+      if (!text) {
+        setForms([]);
+        return;
+      }
 
-      if (formsData.length > 0 && !selectedForm) {
-        setSelectedForm(formsData[0]._id);
+      try {
+        const formsData = JSON.parse(text);
+        setForms(
+          formsData.map((form) => ({ value: form._id, label: form.title }))
+        );
+
+        if (formsData.length > 0 && !selectedForm) {
+          setSelectedForm(formsData[0]._id);
+        }
+      } catch (parseError) {
+        console.error("Failed to parse forms response:", parseError);
+        setForms([]);
       }
     } catch (error) {
       console.error("Failed to fetch forms:", error);
+      setForms([]);
     } finally {
       setIsLoading(false);
     }
@@ -85,21 +98,35 @@ export function Dashboard({
     try {
       setIsLoading(true);
 
+      // Helper function to safely parse JSON response
+      const safeJsonParse = async (response: Response) => {
+        const text = await response.text();
+        if (!text) return [];
+        try {
+          return JSON.parse(text);
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+          return [];
+        }
+      };
+
       // 1. Feedback count over time for organization
       const orgFeedbackResponse = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/stats/${selectedOrganization}/feedback-count?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
       );
-      if (!orgFeedbackResponse.ok)
-        throw new Error(`Error: ${orgFeedbackResponse.status}`);
-      const orgFeedbackData = await orgFeedbackResponse.json();
+      let orgFeedbackData = [];
+      if (orgFeedbackResponse.ok) {
+        orgFeedbackData = await safeJsonParse(orgFeedbackResponse);
+      }
 
       // 2. Total feedback count by form for organization
       const feedbackByFormResponse = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/stats/${selectedOrganization}/feedback-total-by-form`
       );
-      if (!feedbackByFormResponse.ok)
-        throw new Error(`Error: ${feedbackByFormResponse.status}`);
-      const feedbackByFormData = await feedbackByFormResponse.json();
+      let feedbackByFormData = [];
+      if (feedbackByFormResponse.ok) {
+        feedbackByFormData = await safeJsonParse(feedbackByFormResponse);
+      }
 
       // 3. Feedback count over time for selected form
       let formFeedbackData = [];
@@ -108,7 +135,7 @@ export function Dashboard({
           `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/stats/form/${selectedForm}/feedback-count?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
         );
         if (formFeedbackResponse.ok) {
-          formFeedbackData = await formFeedbackResponse.json();
+          formFeedbackData = await safeJsonParse(formFeedbackResponse);
         }
 
         // 4. Opinion distribution for selected form
@@ -116,14 +143,16 @@ export function Dashboard({
           `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/stats/form/${selectedForm}/opinion-counts`
         );
         if (opinionResponse.ok) {
-          const opinionData = await opinionResponse.json();
+          const opinionData = await safeJsonParse(opinionResponse);
           setOpinionDistribution(opinionData.opinionCounts || []);
+        } else {
+          setOpinionDistribution([]);
         }
       }
 
       // Update state with fetched data
       setOrganizationFeedbackTrend(
-        orgFeedbackData.map((item) => ({
+        (orgFeedbackData || []).map((item) => ({
           date: item._id,
           count: item.count,
           // Add normalized value for gradient fill
@@ -132,7 +161,7 @@ export function Dashboard({
       );
 
       setFormFeedbackTrend(
-        formFeedbackData.map((item) => ({
+        (formFeedbackData || []).map((item) => ({
           date: item._id,
           count: item.count,
           // Add normalized value for gradient fill
@@ -141,7 +170,7 @@ export function Dashboard({
       );
 
       setFeedbackByFormData(
-        feedbackByFormData.map((item, index) => ({
+        (feedbackByFormData || []).map((item, index) => ({
           name: item.formTitle || `Form ${index + 1}`,
           count: item.count,
           fill: `rgba(33, 150, 243, ${
@@ -151,6 +180,11 @@ export function Dashboard({
       );
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
+      // Reset all data to empty arrays on error
+      setOrganizationFeedbackTrend([]);
+      setFormFeedbackTrend([]);
+      setFeedbackByFormData([]);
+      setOpinionDistribution([]);
     } finally {
       setIsLoading(false);
     }
