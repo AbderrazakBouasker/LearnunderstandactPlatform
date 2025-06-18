@@ -44,6 +44,7 @@ import { FormDetailModal } from "@/components/form-detail-modal";
 import { Dialog } from "@/components/ui/dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { InsightDetailModal } from "@/components/insight-detail-modal";
+import { FormSelectCombobox } from "@/components/form-select-combobox";
 
 interface Member {
   user: string;
@@ -114,6 +115,8 @@ export function DataTableInsight({
   );
   const [feedbackDetails, setFeedbackDetails] = React.useState<any>(null);
   const [isFetchingFeedback, setIsFetchingFeedback] = React.useState(false);
+  const [forms, setForms] = React.useState([]);
+  const [selectedForm, setSelectedForm] = React.useState<string | null>(null);
 
   // Add emoji mapping for sentiment values
   const sentimentEmojis: Record<string, string> = {
@@ -444,75 +447,148 @@ export function DataTableInsight({
     },
   ];
 
-  React.useEffect(() => {
-    const fetchInsightData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/insight/organization/${selectedOrganization}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
+  // Fetch forms for the organization
+  const fetchForms = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/form/organization/${selectedOrganization}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const formsData = await response.json();
+        setForms(
+          formsData.map((form) => ({ value: form._id, label: form.title }))
         );
+      }
+    } catch (error) {
+      console.error("Failed to fetch forms:", error);
+    }
+  };
 
-        if (response.ok || response.status === 204) {
-          const insightData = await response.json();
-          setData(insightData);
-        }
+  const fetchInsightData = async () => {
+    try {
+      setIsLoading(true);
+      let url;
 
-        if (response.status === 401) {
-          setAlertTitle("Unauthorized");
-          setAlertDescription("Invalid or expired token");
-          setAlertVariant("destructive");
+      if (selectedForm) {
+        url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/insight/form/${selectedForm}`;
+      } else {
+        url = `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/insight/organization/${selectedOrganization}`;
+      }
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const insightData = await response.json();
+        setData(insightData || []);
+
+        // Show alert if no insights found
+        if (!insightData || insightData.length === 0) {
+          setAlertTitle("No Insights Found");
+          setAlertDescription(
+            selectedForm
+              ? "No insights found for the selected form."
+              : "No insights found for this organization."
+          );
+          setAlertVariant("default");
           setIsAlert(true);
           setTimeout(() => {
             setIsAlert(false);
           }, 3000);
         }
-        if (response.status === 403) {
-          setAlertTitle("Forbidden");
-          setAlertDescription("Not authorized or missing token");
-          setAlertVariant("destructive");
-          setIsAlert(true);
-          setTimeout(() => {
-            setIsAlert(false);
-          }, 3000);
-        }
-        if (response.status === 429) {
-          setAlertTitle("Too Many Requests");
-          setAlertDescription("Please wait a few minutes before trying again.");
-          setAlertVariant("destructive");
-          setIsAlert(true);
-          setTimeout(() => {
-            setIsAlert(false);
-          }, 3000);
-        }
-        if (response.status === 500) {
-          setAlertTitle("Server Error");
-          setAlertDescription("An error occurred. Please try again.");
-          setAlertVariant("destructive");
-          setIsAlert(true);
-          setTimeout(() => {
-            setIsAlert(false);
-          }, 3000);
-        }
-      } catch {
-        setAlertTitle("Error");
-        setAlertDescription("Failed to load insight data. Please try again.");
+      } else if (response.status === 404) {
+        setData([]);
+        setAlertTitle("Not Found");
+        setAlertDescription(
+          selectedForm
+            ? "No insights found for the selected form."
+            : "No insights found for this organization."
+        );
+        setAlertVariant("default");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 401) {
+        setData([]);
+        setAlertTitle("Unauthorized");
+        setAlertDescription("Invalid or expired token");
         setAlertVariant("destructive");
         setIsAlert(true);
         setTimeout(() => {
           setIsAlert(false);
         }, 3000);
-      } finally {
-        setIsLoading(false);
+      } else if (response.status === 403) {
+        setData([]);
+        setAlertTitle("Forbidden");
+        setAlertDescription("Not authorized or missing token");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 429) {
+        setData([]);
+        setAlertTitle("Too Many Requests");
+        setAlertDescription("Please wait a few minutes before trying again.");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else if (response.status === 500) {
+        setData([]);
+        setAlertTitle("Server Error");
+        setAlertDescription("An error occurred. Please try again.");
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
+      } else {
+        setData([]);
+        setAlertTitle("Error");
+        setAlertDescription(`Unexpected error: ${response.status}`);
+        setAlertVariant("destructive");
+        setIsAlert(true);
+        setTimeout(() => {
+          setIsAlert(false);
+        }, 3000);
       }
-    };
+    } catch {
+      setData([]);
+      setAlertTitle("Error");
+      setAlertDescription("Failed to load insight data. Please try again.");
+      setAlertVariant("destructive");
+      setIsAlert(true);
+      setTimeout(() => {
+        setIsAlert(false);
+      }, 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchInsightData();
+  React.useEffect(() => {
+    if (selectedOrganization) {
+      fetchForms();
+    }
   }, [selectedOrganization]);
+
+  React.useEffect(() => {
+    if (selectedOrganization) {
+      fetchInsightData();
+    }
+  }, [selectedOrganization, selectedForm]);
 
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -557,12 +633,19 @@ export function DataTableInsight({
   return (
     <>
       <div className="w-full">
-        <div className="flex items-center py-4">
+        <div className="flex items-center py-4 gap-4">
           <Input
             placeholder="Search across all columns..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="max-w-sm"
+          />
+          <FormSelectCombobox
+            items={[{ value: "", label: "All Forms" }, ...forms]}
+            selectedValue={selectedForm}
+            onValueChange={(value) =>
+              setSelectedForm(value === "" ? null : value)
+            }
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -635,9 +718,11 @@ export function DataTableInsight({
                 <TableRow>
                   <TableCell
                     colSpan={columns.length}
-                    className="h-24 text-center"
+                    className="h-24 text-center text-muted-foreground"
                   >
-                    No results.
+                    {selectedForm
+                      ? "No insights found for the selected form."
+                      : "No insights found for this organization."}
                   </TableCell>
                 </TableRow>
               )}
