@@ -553,7 +553,7 @@ export function DataTableInsight({
               ? "No insights found for the selected form."
               : "No insights found for this organization."
           );
-          setAlertVariant("default");
+          setAlertVariant("destructive");
           setIsAlert(true);
           setTimeout(() => {
             setIsAlert(false);
@@ -567,7 +567,7 @@ export function DataTableInsight({
             ? "No insights found for the selected form."
             : "No insights found for this organization."
         );
-        setAlertVariant("default");
+        setAlertVariant("destructive");
         setIsAlert(true);
         setTimeout(() => {
           setIsAlert(false);
