@@ -31,22 +31,27 @@ const analyzeClusterWithAI = async (clusterInsights, clusterLabel) => {
         parts: [
           {
             text: `
-              Analyze this cluster of user feedback: "${clusterSummary}"
+              Users are complaining about: "${clusterSummary}"
               
-              The cluster is labeled as: "${clusterLabel}"
+              Cluster theme: "${clusterLabel}"
               
-              Based on the feedback patterns, provide:
-              1. A product or UX improvement recommendation
-              2. Impact assessment (high/medium/low) 
-              3. Urgency level (immediate/soon/later)
-              4. A brief summary of the cluster theme
+              Suggest a product or UX improvement. Estimate the impact (high/medium/low) and urgency (immediate/soon/later).
+              
+              Guidelines:
+              - High impact: Affects core functionality, revenue, or user retention
+              - Medium impact: Affects user experience but not critical
+              - Low impact: Nice-to-have improvements
+              
+              - Immediate: Fix within 1-2 weeks (critical issues)
+              - Soon: Fix within 1-2 months (important improvements)
+              - Later: Fix when resources allow (minor issues)
 
               Respond in JSON format:
               {
-                "recommendation": "specific actionable recommendation",
+                "recommendation": "specific actionable recommendation with technical details",
                 "impact": "high | medium | low",
                 "urgency": "immediate | soon | later",
-                "cluster_summary": "brief description of the cluster theme"
+                "cluster_summary": "concise summary of what users are complaining about"
               }
             `,
           },
@@ -166,7 +171,7 @@ export const clusterInsightsByForm = async (req, res) => {
         let shouldCreateTicket = false;
 
         // Check if cluster meets criteria for AI analysis
-        if (clusterInsights.length >= 5 && sentimentPercentage >= 60) {
+        if (clusterInsights.length >= 5 && sentimentPercentage >= 50) {
           aiAnalysis = await analyzeClusterWithAI(
             clusterInsights,
             clusterLabel
