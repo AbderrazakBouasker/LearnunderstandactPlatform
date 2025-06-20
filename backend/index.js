@@ -20,6 +20,7 @@ import organizationRoutes from "./routes/organization.js";
 import stripeRoutes from "./routes/stripe.js";
 import statsRoutes from "./routes/stats.js";
 import insight from "./routes/insight.js";
+import clusterRoutes from "./routes/cluster.js";
 import logger from "./logger.js";
 import { requestLogger, errorLogger } from "./logging-examples.js";
 
@@ -102,6 +103,7 @@ app.use("/api/organization", organizationRoutes);
 app.use("/api/stripe", stripeRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/insight", insight);
+app.use("/api/cluster", clusterRoutes);
 
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
