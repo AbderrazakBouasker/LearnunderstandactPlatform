@@ -115,7 +115,15 @@ export const getOrganizationByIdentifier = async (req, res) => {
 export const updateOrganization = async (req, res) => {
   try {
     const { identifier } = req.params;
-    const { name, members, plan, domains } = req.body;
+    const {
+      name,
+      members,
+      plan,
+      domains,
+      recommendationThreshold,
+      ticketCreationDelay,
+      notificationThreshold,
+    } = req.body;
     const organization = await Organization.findOne({ identifier });
 
     if (!organization) {
@@ -136,6 +144,45 @@ export const updateOrganization = async (req, res) => {
 
     if (domains !== undefined) {
       organization.domains = domains;
+    }
+
+    if (recommendationThreshold !== undefined) {
+      if (
+        typeof recommendationThreshold !== "number" ||
+        recommendationThreshold < 0 ||
+        recommendationThreshold > 1
+      ) {
+        return res.status(400).json({
+          error: "Recommendation threshold must be a number between 0 and 1",
+        });
+      }
+      organization.recommendationThreshold = recommendationThreshold;
+    }
+
+    if (ticketCreationDelay !== undefined) {
+      if (
+        typeof ticketCreationDelay !== "number" ||
+        ticketCreationDelay < 1 ||
+        ticketCreationDelay > 365
+      ) {
+        return res.status(400).json({
+          error: "Ticket creation delay must be a number between 1 and 365",
+        });
+      }
+      organization.ticketCreationDelay = ticketCreationDelay;
+    }
+
+    if (notificationThreshold !== undefined) {
+      if (
+        typeof notificationThreshold !== "number" ||
+        notificationThreshold < 0 ||
+        notificationThreshold > 1
+      ) {
+        return res.status(400).json({
+          error: "Notification threshold must be a number between 0 and 1",
+        });
+      }
+      organization.notificationThreshold = notificationThreshold;
     }
 
     await organization.save();

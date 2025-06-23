@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { type } from "os";
 
 const OrganizationSchema = new mongoose.Schema(
   {
@@ -36,6 +37,24 @@ const OrganizationSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    recommendationThreshold: {
+      type: Number,
+      default: 0.5, // Default threshold for AI recommendations
+      min: 0,
+      max: 1,
+    },
+    ticketCreationDelay: {
+      type: Number,
+      default: 7, // Default delay in days before creating a ticket for insights
+      min: 1,
+      max: 365, // Maximum delay of 365 days
+    },
+    notificationThreshold: {
+      type: Number,
+      default: 0.7, // Default threshold for sending notifications
+      min: 0,
+      max: 1, // Percentage threshold for notifications
+    },
   },
   { timestamps: true }
 );
