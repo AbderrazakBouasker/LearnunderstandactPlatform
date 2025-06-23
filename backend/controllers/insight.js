@@ -9,6 +9,7 @@ import {
   clusterEmbeddings,
   determineOptimalClusters,
 } from "../services/clusteringService.js";
+import jiraService from "../services/jiraService.js";
 
 // Initialize Google GenAI
 const genAIClient = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
@@ -219,14 +220,38 @@ export const clusterInsightsByForm = async (req, res) => {
 
         await clusterAnalysis.save();
 
+        // Create Jira ticket if needed
         if (shouldCreateTicket) {
-          logger.info("Ticket should be created for cluster", {
+          logger.info("Creating Jira ticket for cluster", {
             formId,
             clusterLabel,
             impact: aiAnalysis.impact,
             urgency: aiAnalysis.urgency,
+            organization: clusterInsights[0].organization,
           });
-          // TODO: Integrate with Jira/Trello API here
+
+          const jiraResult = await jiraService.createTicket(clusterAnalysis);
+
+          if (jiraResult) {
+            // Update the cluster analysis with Jira ticket information
+            clusterAnalysis.jiraTicketId = jiraResult.ticketId;
+            clusterAnalysis.jiraTicketUrl = jiraResult.ticketUrl;
+            clusterAnalysis.jiraTicketStatus = "Open";
+            await clusterAnalysis.save();
+
+            logger.info("Jira ticket created and linked to cluster analysis", {
+              formId,
+              clusterLabel,
+              ticketId: jiraResult.ticketId,
+              ticketUrl: jiraResult.ticketUrl,
+            });
+          } else {
+            logger.warn("Failed to create Jira ticket for cluster", {
+              formId,
+              clusterLabel,
+              organization: clusterInsights[0].organization,
+            });
+          }
         }
 
         return {
@@ -237,6 +262,13 @@ export const clusterInsightsByForm = async (req, res) => {
           clusterSize: clusterInsights.length,
           analysis: aiAnalysis,
           shouldCreateTicket,
+          jiraTicket: clusterAnalysis.jiraTicketId
+            ? {
+                ticketId: clusterAnalysis.jiraTicketId,
+                ticketUrl: clusterAnalysis.jiraTicketUrl,
+                status: clusterAnalysis.jiraTicketStatus,
+              }
+            : null,
         };
       })
     );

@@ -57,6 +57,19 @@ const clusterAnalysisSchema = mongoose.Schema(
       type: Date,
       required: false,
     },
+    // Jira ticket information
+    jiraTicketId: {
+      type: String,
+      required: false,
+    },
+    jiraTicketUrl: {
+      type: String,
+      required: false,
+    },
+    jiraTicketStatus: {
+      type: String,
+      required: false,
+    },
     embeddings: {
       type: [Number],
       required: false, // We'll add this when we get transformers working

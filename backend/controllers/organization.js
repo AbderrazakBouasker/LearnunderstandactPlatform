@@ -123,6 +123,7 @@ export const updateOrganization = async (req, res) => {
       recommendationThreshold,
       ticketCreationDelay,
       notificationThreshold,
+      jiraConfig,
     } = req.body;
     const organization = await Organization.findOne({ identifier });
 
@@ -183,6 +184,20 @@ export const updateOrganization = async (req, res) => {
         });
       }
       organization.notificationThreshold = notificationThreshold;
+    }
+
+    if (jiraConfig !== undefined) {
+      // Validate Jira configuration
+      if (
+        jiraConfig.enabled &&
+        (!jiraConfig.host || !jiraConfig.username || !jiraConfig.apiToken)
+      ) {
+        return res.status(400).json({
+          error:
+            "Jira configuration requires host, username, and API token when enabled",
+        });
+      }
+      organization.jiraConfig = jiraConfig;
     }
 
     await organization.save();

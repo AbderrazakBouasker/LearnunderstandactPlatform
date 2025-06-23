@@ -22,6 +22,7 @@ import statsRoutes from "./routes/stats.js";
 import insight from "./routes/insight.js";
 import clusterRoutes from "./routes/cluster.js";
 import schedulerRoutes from "./routes/scheduler.js";
+import jiraRoutes from "./routes/jira.js";
 import logger from "./logger.js";
 import { requestLogger, errorLogger } from "./logging-examples.js";
 import clusteringScheduler from "./services/clusteringScheduler.js";
@@ -107,6 +108,7 @@ app.use("/api/stats", statsRoutes);
 app.use("/api/insight", insight);
 app.use("/api/scheduler", schedulerRoutes);
 app.use("/api/cluster", clusterRoutes);
+app.use("/api/jira", jiraRoutes);
 
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));

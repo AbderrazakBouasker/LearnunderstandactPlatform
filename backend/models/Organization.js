@@ -55,6 +55,34 @@ const OrganizationSchema = new mongoose.Schema(
       min: 0,
       max: 1, // Percentage threshold for notifications
     },
+    // Jira Integration Configuration
+    jiraConfig: {
+      host: {
+        type: String,
+        required: false,
+      },
+      username: {
+        type: String,
+        required: false,
+      },
+      apiToken: {
+        type: String,
+        required: false,
+      },
+      projectKey: {
+        type: String,
+        required: false,
+      },
+      issueType: {
+        type: String,
+        default: "Task",
+        required: false,
+      },
+      enabled: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
   { timestamps: true }
 );
