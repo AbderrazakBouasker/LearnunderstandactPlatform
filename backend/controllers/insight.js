@@ -457,7 +457,10 @@ export const getClusterAnalysisByForm = async (req, res) => {
     const clusterAnalyses = await ClusterAnalysis.find({ formId })
       .sort({ createdAt: -1 })
       .limit(10) // Get last 10 analyses
-      .populate("insightIds");
+      .populate({
+        path: "insightIds",
+        select: "-embedding", // Exclude embedding field from insights
+      });
 
     if (clusterAnalyses.length === 0) {
       logger.info("No cluster analyses found for form", { formId });
@@ -467,21 +470,17 @@ export const getClusterAnalysisByForm = async (req, res) => {
       });
     }
 
-    // Group by creation date to show latest analysis
-    const latestAnalysis = clusterAnalyses.reduce((acc, analysis) => {
-      const date = analysis.createdAt.toDateString();
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(analysis);
-      return acc;
-    }, {});
+    // Format clusters with creation dates
+    const clustersWithDates = clusterAnalyses.map((analysis) => ({
+      ...analysis.toObject(),
+      creationDate: analysis.createdAt,
+      formattedDate: analysis.createdAt.toLocaleString(),
+    }));
 
     res.status(200).json({
       formId,
       totalAnalyses: clusterAnalyses.length,
-      latestAnalysis,
-      clusters: clusterAnalyses,
+      clusters: clustersWithDates,
     });
   } catch (error) {
     logger.error("Error retrieving cluster analysis", {
