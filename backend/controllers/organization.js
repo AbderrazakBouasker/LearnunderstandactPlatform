@@ -57,7 +57,17 @@ export const getOrganizations = async (req, res) => {
     if (organizations.length === 0) {
       return res.status(204).json();
     }
-    res.status(200).json(organizations);
+
+    // Remove sensitive information from each organization
+    const safeOrganizations = organizations.map((org) => {
+      const orgObj = org.toObject();
+      if (orgObj.jiraConfig && orgObj.jiraConfig.apiToken) {
+        orgObj.jiraConfig.apiToken = "***HIDDEN***";
+      }
+      return orgObj;
+    });
+
+    res.status(200).json(safeOrganizations);
   } catch (error) {
     logger.error("Error retrieving organizations", {
       error: error.message,
@@ -78,7 +88,14 @@ export const getOrganizationById = async (req, res) => {
     if (!organization) {
       return res.status(404).json({ error: "Organization not found" });
     }
-    res.status(200).json(organization);
+
+    // Remove sensitive information
+    const safeOrganization = organization.toObject();
+    if (safeOrganization.jiraConfig && safeOrganization.jiraConfig.apiToken) {
+      safeOrganization.jiraConfig.apiToken = "***HIDDEN***";
+    }
+
+    res.status(200).json(safeOrganization);
   } catch (error) {
     logger.error("Error retrieving organization by ID", {
       error: error.message,
@@ -100,7 +117,14 @@ export const getOrganizationByIdentifier = async (req, res) => {
     if (!organization) {
       return res.status(404).json({ error: "Organization not found" });
     }
-    res.status(200).json(organization);
+
+    // Remove sensitive information
+    const safeOrganization = organization.toObject();
+    if (safeOrganization.jiraConfig && safeOrganization.jiraConfig.apiToken) {
+      safeOrganization.jiraConfig.apiToken = "***HIDDEN***";
+    }
+
+    res.status(200).json(safeOrganization);
   } catch (error) {
     logger.error("Error retrieving organization by identifier", {
       error: error.message,
@@ -228,7 +252,14 @@ export const updateOrganization = async (req, res) => {
     }
 
     await organization.save();
-    res.status(200).json(organization);
+
+    // Remove sensitive information from response
+    const safeOrganization = organization.toObject();
+    if (safeOrganization.jiraConfig && safeOrganization.jiraConfig.apiToken) {
+      safeOrganization.jiraConfig.apiToken = "***HIDDEN***";
+    }
+
+    res.status(200).json(safeOrganization);
   } catch (error) {
     logger.error("Error updating organization", {
       error: error.message,
