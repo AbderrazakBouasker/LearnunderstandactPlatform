@@ -187,17 +187,44 @@ export const updateOrganization = async (req, res) => {
     }
 
     if (jiraConfig !== undefined) {
-      // Validate Jira configuration
+      // Initialize jiraConfig if it doesn't exist
+      if (!organization.jiraConfig) {
+        organization.jiraConfig = {};
+      }
+
+      // Update only the fields that are provided
+      if (jiraConfig.host !== undefined) {
+        organization.jiraConfig.host = jiraConfig.host;
+      }
+      if (jiraConfig.username !== undefined) {
+        organization.jiraConfig.username = jiraConfig.username;
+      }
+      if (jiraConfig.apiToken !== undefined) {
+        organization.jiraConfig.apiToken = jiraConfig.apiToken;
+      }
+      if (jiraConfig.projectKey !== undefined) {
+        organization.jiraConfig.projectKey = jiraConfig.projectKey;
+      }
+      if (jiraConfig.issueType !== undefined) {
+        organization.jiraConfig.issueType = jiraConfig.issueType;
+      }
+      if (jiraConfig.enabled !== undefined) {
+        organization.jiraConfig.enabled = jiraConfig.enabled;
+      }
+
+      // Validate Jira configuration if enabled
       if (
-        jiraConfig.enabled &&
-        (!jiraConfig.host || !jiraConfig.username || !jiraConfig.apiToken)
+        organization.jiraConfig.enabled &&
+        (!organization.jiraConfig.host ||
+          !organization.jiraConfig.username ||
+          !organization.jiraConfig.apiToken ||
+          !organization.jiraConfig.projectKey)
       ) {
         return res.status(400).json({
           error:
-            "Jira configuration requires host, username, and API token when enabled",
+            "Jira configuration requires host, username, API token, and project key when enabled",
         });
       }
-      organization.jiraConfig = jiraConfig;
     }
 
     await organization.save();
