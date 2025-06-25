@@ -53,6 +53,13 @@ import {
 import { OrganizationMemberAddModal } from "./organization-member-add-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OrganizationUpgradeStripeModal } from "./organization-upgrade-stripe-modal";
 import { X as XIcon } from "lucide-react";
 
@@ -154,6 +161,7 @@ export function OrganizationSettingsModal({
   const [jiraApiToken, setJiraApiToken] = useState("");
   const [jiraProjectKey, setJiraProjectKey] = useState("");
   const [jiraIssueType, setJiraIssueType] = useState("Task");
+  const [jiraEnabled, setJiraEnabled] = useState(false);
   const [isUpdatingRecommendations, setIsUpdatingRecommendations] =
     useState(false);
   const [isUpdatingJira, setIsUpdatingJira] = useState(false);
@@ -234,12 +242,14 @@ export function OrganizationSettingsModal({
             setJiraApiToken(data.jiraConfig.apiToken ?? "");
             setJiraProjectKey(data.jiraConfig.projectKey ?? "");
             setJiraIssueType(data.jiraConfig.issueType ?? "Task");
+            setJiraEnabled(data.jiraConfig.enabled ?? false);
           } else {
             setJiraHost("");
             setJiraUsername("");
             setJiraApiToken("");
             setJiraProjectKey("");
             setJiraIssueType("Task");
+            setJiraEnabled(false);
           }
         } catch (err) {
           setError(err instanceof Error ? err.message : "An error occurred");
@@ -696,6 +706,25 @@ export function OrganizationSettingsModal({
   const handleUpdateJiraSettings = async () => {
     if (!isCurrentUserAdminOrSubadmin) return;
 
+    // Validate required fields when Jira is enabled
+    if (jiraEnabled) {
+      if (
+        !jiraHost.trim() ||
+        !jiraUsername.trim() ||
+        !jiraApiToken.trim() ||
+        !jiraProjectKey.trim()
+      ) {
+        setAlert({
+          title: "Validation Error",
+          description:
+            "All Jira fields (Host, Username, API Token, Project Key) are required when Jira integration is enabled.",
+          variant: "destructive",
+          open: true,
+        });
+        return;
+      }
+    }
+
     setIsUpdatingJira(true);
     try {
       const response = await fetch(
@@ -711,6 +740,7 @@ export function OrganizationSettingsModal({
               apiToken: jiraApiToken,
               projectKey: jiraProjectKey,
               issueType: jiraIssueType,
+              enabled: jiraEnabled,
             },
           }),
         }
@@ -1051,14 +1081,15 @@ export function OrganizationSettingsModal({
           <div className="grid gap-4">
             <div className="grid gap-1">
               <Label htmlFor="recommendation-threshold">
-                Recommendation Threshold ({recommendationThreshold})
+                Recommendation Threshold (
+                {Math.round(recommendationThreshold * 100)}%)
               </Label>
               <input
                 type="range"
                 id="recommendation-threshold"
                 min="0"
                 max="1"
-                step="0.1"
+                step="0.05"
                 value={recommendationThreshold}
                 onChange={(e) =>
                   setRecommendationThreshold(parseFloat(e.target.value))
@@ -1067,7 +1098,8 @@ export function OrganizationSettingsModal({
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground">
-                Threshold for AI recommendation confidence (0.0 - 1.0)
+                Threshold of negative feedback score for AI recommendation to be
+                made (10% - 100%)
               </p>
             </div>
 
@@ -1081,27 +1113,30 @@ export function OrganizationSettingsModal({
                 min="1"
                 max="365"
                 value={ticketCreationDelay}
-                onChange={(e) =>
-                  setTicketCreationDelay(parseInt(e.target.value) || 1)
-                }
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 1;
+                  setTicketCreationDelay(Math.min(365, Math.max(1, value)));
+                }}
                 disabled={!isCurrentUserAdminOrSubadmin}
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground">
-                Delay in days before creating tickets for insights (1-365 days)
+                Delay in days since the last one before creating a new ticket
+                for insights (1-365 days)
               </p>
             </div>
 
             <div className="grid gap-1">
               <Label htmlFor="notification-threshold">
-                Notification Threshold ({notificationThreshold})
+                Notification Threshold (
+                {Math.round(notificationThreshold * 100)}%)
               </Label>
               <input
                 type="range"
                 id="notification-threshold"
                 min="0"
                 max="1"
-                step="0.1"
+                step="0.05"
                 value={notificationThreshold}
                 onChange={(e) =>
                   setNotificationThreshold(parseFloat(e.target.value))
@@ -1110,7 +1145,8 @@ export function OrganizationSettingsModal({
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground">
-                Threshold for sending notifications (0.0 - 1.0)
+                Threshold of negative feedback score for sending notifications
+                (10% - 100%)
               </p>
             </div>
 
@@ -1138,6 +1174,26 @@ export function OrganizationSettingsModal({
           <h4 className="text-md font-medium">Jira Integration</h4>
 
           <div className="grid gap-4">
+            <div className="grid gap-1">
+              <Label htmlFor="jira-enabled">Integration Status</Label>
+              <Select
+                value={jiraEnabled ? "enabled" : "disabled"}
+                onValueChange={(value) => setJiraEnabled(value === "enabled")}
+                disabled={!isCurrentUserAdminOrSubadmin}
+              >
+                <SelectTrigger id="jira-enabled">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="enabled">Enabled</SelectItem>
+                  <SelectItem value="disabled">Disabled</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Enable or disable Jira integration for this organization
+              </p>
+            </div>
+
             <div className="grid gap-1">
               <Label htmlFor="jira-host">Jira Host</Label>
               <Input
@@ -1168,7 +1224,7 @@ export function OrganizationSettingsModal({
                 id="jira-api-token"
                 type="password"
                 placeholder="Your Jira API token"
-                value={jiraApiToken}
+                value={jiraApiToken === "***HIDDEN***" ? "" : jiraApiToken}
                 onChange={(e) => setJiraApiToken(e.target.value)}
                 disabled={!isCurrentUserAdminOrSubadmin}
               />
@@ -1198,10 +1254,12 @@ export function OrganizationSettingsModal({
                 placeholder="Task"
                 value={jiraIssueType}
                 onChange={(e) => setJiraIssueType(e.target.value)}
-                disabled={!isCurrentUserAdminOrSubadmin}
+                disabled={true}
+                readOnly
               />
               <p className="text-xs text-muted-foreground">
-                Type of issue to create in Jira (e.g., Task, Bug, Story)
+                Issue type is fixed as &quot;Task&quot; for all Jira
+                integrations
               </p>
             </div>
 

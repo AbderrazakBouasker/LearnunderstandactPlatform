@@ -125,6 +125,7 @@ export const getOrganizationByIdentifier = async (req, res) => {
     }
 
     res.status(200).json(safeOrganization);
+    // res.status(200).json(organization);
   } catch (error) {
     logger.error("Error retrieving organization by identifier", {
       error: error.message,
@@ -150,7 +151,7 @@ export const updateOrganization = async (req, res) => {
       jiraConfig,
     } = req.body;
     const organization = await Organization.findOne({ identifier });
-
+    console.log("body :", req.body);
     if (!organization) {
       return res.status(404).json({ error: "Organization not found" });
     }

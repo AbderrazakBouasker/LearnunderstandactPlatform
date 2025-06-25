@@ -1,6 +1,7 @@
 import Insight from "../models/Insight.js";
 import Feedback from "../models/Feedback.js";
 import ClusterAnalysis from "../models/ClusterAnalysis.js";
+import Organization from "../models/Organization.js";
 import mongoose from "mongoose";
 import logger from "../logger.js";
 import { GoogleGenAI } from "@google/genai";
@@ -141,6 +142,20 @@ export const clusterInsightsByForm = async (req, res) => {
       clusters[clusterId].push(insight);
     });
 
+    // Get organization data for recommendation threshold
+    let organizationData = null;
+    if (insightsWithEmbeddings.length > 0) {
+      const organizationIdentifier = insightsWithEmbeddings[0].organization;
+      organizationData = await Organization.findOne({
+        identifier: organizationIdentifier,
+      });
+    }
+
+    // Use organization's recommendation threshold or default to 50%
+    const recommendationThreshold = organizationData?.recommendationThreshold
+      ? organizationData.recommendationThreshold * 100 // Convert from 0-1 to 0-100
+      : 50;
+
     // Analyze each cluster
     const clusterAnalyses = await Promise.all(
       Object.entries(clusters).map(async ([clusterId, clusterInsights]) => {
@@ -172,7 +187,10 @@ export const clusterInsightsByForm = async (req, res) => {
         let shouldCreateTicket = false;
 
         // Check if cluster meets criteria for AI analysis
-        if (clusterInsights.length >= 5 && sentimentPercentage >= 50) {
+        if (
+          clusterInsights.length >= 5 &&
+          sentimentPercentage >= recommendationThreshold
+        ) {
           aiAnalysis = await analyzeClusterWithAI(
             clusterInsights,
             clusterLabel
@@ -185,15 +203,16 @@ export const clusterInsightsByForm = async (req, res) => {
             (aiAnalysis.urgency === "immediate" ||
               aiAnalysis.urgency === "soon")
           ) {
-            // Check if ticket was created in last 7 days
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            // Check if ticket was created within the organization's delay period
+            const ticketDelay = organizationData?.ticketCreationDelay || 7; // Default to 7 days
+            const delayDaysAgo = new Date();
+            delayDaysAgo.setDate(delayDaysAgo.getDate() - ticketDelay);
 
             const recentTicket = await ClusterAnalysis.findOne({
               formId,
               clusterLabel,
               ticketCreated: true,
-              lastTicketDate: { $gte: sevenDaysAgo },
+              lastTicketDate: { $gte: delayDaysAgo },
             });
 
             shouldCreateTicket = !recentTicket;
