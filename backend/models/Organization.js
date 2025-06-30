@@ -60,6 +60,18 @@ const OrganizationSchema = new mongoose.Schema(
       host: {
         type: String,
         required: false,
+        validate: {
+          validator: function (v) {
+            // Allow empty values or valid hostnames
+            if (!v) return true;
+            // Clean the host for validation (remove protocol if present)
+            const cleanHost = v.replace(/^https?:\/\//, "").replace(/\/$/, "");
+            // Basic hostname validation
+            return /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanHost);
+          },
+          message:
+            "Host should be a valid hostname (e.g., company.atlassian.net) without protocol",
+        },
       },
       username: {
         type: String,
@@ -81,6 +93,11 @@ const OrganizationSchema = new mongoose.Schema(
       enabled: {
         type: Boolean,
         default: false,
+      },
+      supportsPriority: {
+        type: Boolean,
+        default: true,
+        required: false,
       },
     },
   },

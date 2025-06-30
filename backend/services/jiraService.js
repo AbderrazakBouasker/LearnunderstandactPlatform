@@ -45,10 +45,21 @@ class JiraService {
         return null;
       }
 
+      // Clean the host to remove any protocol and ensure it's just the hostname
+      let cleanHost = jiraConfig.host;
+      if (cleanHost.startsWith("https://")) {
+        cleanHost = cleanHost.replace("https://", "");
+      }
+      if (cleanHost.startsWith("http://")) {
+        cleanHost = cleanHost.replace("http://", "");
+      }
+      // Remove any trailing slashes
+      cleanHost = cleanHost.replace(/\/$/, "");
+
       // Create new Jira client
       const jiraClient = new JiraApi({
         protocol: "https",
-        host: jiraConfig.host,
+        host: cleanHost,
         username: jiraConfig.username,
         password: jiraConfig.apiToken,
         apiVersion: "2",
@@ -113,9 +124,6 @@ class JiraService {
           issuetype: {
             name: config.issueType || "Task",
           },
-          priority: {
-            name: this.mapImpactToPriority(clusterAnalysis.impact),
-          },
           labels: [
             "user-feedback",
             "ai-recommendation",
@@ -126,7 +134,47 @@ class JiraService {
         },
       };
 
-      const issue = await client.addNewIssue(issueData);
+      // Add priority if impact is available and organization supports priority
+      if (clusterAnalysis.impact && config.supportsPriority !== false) {
+        issueData.fields.priority = {
+          name: this.mapImpactToPriority(clusterAnalysis.impact),
+        };
+      }
+
+      let issue;
+      try {
+        // Try to create issue with all fields
+        issue = await client.addNewIssue(issueData);
+      } catch (error) {
+        // If priority field is not available, retry without priority
+        if (
+          error.message &&
+          error.message.includes("priority") &&
+          issueData.fields.priority
+        ) {
+          logger.warn(
+            "Priority field not available in Jira configuration, retrying without priority",
+            {
+              organization: clusterAnalysis.organization,
+              projectKey: config.projectKey,
+              issueType: config.issueType,
+            }
+          );
+
+          // Remove priority and retry
+          delete issueData.fields.priority;
+          issue = await client.addNewIssue(issueData);
+
+          // Update organization setting to avoid this issue in the future
+          this.updateOrganizationPrioritySupport(
+            clusterAnalysis.organization,
+            false
+          );
+        } else {
+          // Re-throw if it's a different error
+          throw error;
+        }
+      }
 
       logger.info("Jira ticket created successfully", {
         issueKey: issue.key,
@@ -274,6 +322,30 @@ This ticket was automatically generated based on user feedback clustering and AI
       this.jiraClients.delete(organizationId);
       logger.info("Cleared Jira client cache for organization", {
         organizationId,
+      });
+    }
+  }
+
+  // Update organization priority support setting
+  async updateOrganizationPrioritySupport(organizationId, supportsPriority) {
+    try {
+      await Organization.findOneAndUpdate(
+        { identifier: organizationId },
+        { "jiraConfig.supportsPriority": supportsPriority }
+      );
+
+      // Clear cache to force reloading with new settings
+      this.clearClientCache(organizationId);
+
+      logger.info("Updated organization priority support setting", {
+        organizationId,
+        supportsPriority,
+      });
+    } catch (error) {
+      logger.error("Failed to update organization priority support setting", {
+        error: error.message,
+        organizationId,
+        supportsPriority,
       });
     }
   }

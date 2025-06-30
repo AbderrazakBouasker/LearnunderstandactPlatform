@@ -219,7 +219,16 @@ export const updateOrganization = async (req, res) => {
 
       // Update only the fields that are provided
       if (jiraConfig.host !== undefined) {
-        organization.jiraConfig.host = jiraConfig.host;
+        // Clean the host to remove protocol if provided
+        let cleanHost = jiraConfig.host;
+        if (cleanHost.startsWith("https://")) {
+          cleanHost = cleanHost.replace("https://", "");
+        }
+        if (cleanHost.startsWith("http://")) {
+          cleanHost = cleanHost.replace("http://", "");
+        }
+        cleanHost = cleanHost.replace(/\/$/, ""); // Remove trailing slash
+        organization.jiraConfig.host = cleanHost;
       }
       if (jiraConfig.username !== undefined) {
         organization.jiraConfig.username = jiraConfig.username;
@@ -235,6 +244,9 @@ export const updateOrganization = async (req, res) => {
       }
       if (jiraConfig.enabled !== undefined) {
         organization.jiraConfig.enabled = jiraConfig.enabled;
+      }
+      if (jiraConfig.supportsPriority !== undefined) {
+        organization.jiraConfig.supportsPriority = jiraConfig.supportsPriority;
       }
 
       // Validate Jira configuration if enabled
