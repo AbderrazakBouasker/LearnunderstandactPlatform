@@ -13,13 +13,20 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, Terminal } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  Terminal,
+  MoreHorizontal,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -34,6 +41,8 @@ import {
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { FormSelectCombobox } from "@/components/form-select-combobox";
 import { Badge } from "@/components/ui/badge";
+import { Dialog } from "@/components/ui/dialog";
+import { RecommendationDetailModal } from "@/components/recommendation-detail-modal";
 
 interface Member {
   user: string;
@@ -109,6 +118,12 @@ export function DataTableRecommendation({
   const [alertTitle, setAlertTitle] = React.useState<string | null>(null);
   const [forms, setForms] = React.useState<Form[]>([]);
   const [selectedForm, setSelectedForm] = React.useState<string | null>(null);
+
+  // Modal state
+  const [recommendationDetailOpen, setRecommendationDetailOpen] =
+    React.useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] =
+    React.useState<ClusterAnalysis | null>(null);
 
   const columns: ColumnDef<ClusterAnalysis>[] = [
     // Only show form title column when viewing organization-wide clusters
@@ -205,7 +220,7 @@ export function DataTableRecommendation({
                   : "destructive"
               }
             >
-              {percentage}%
+              {percentage.toFixed(2)}%
             </Badge>
           </div>
         );
@@ -277,6 +292,35 @@ export function DataTableRecommendation({
           >
             {urgency}
           </Badge>
+        );
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const cluster = row.original;
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setSelectedRecommendation(cluster);
+                  setRecommendationDetailOpen(true);
+                }}
+              >
+                View recommendation details
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     },
@@ -622,6 +666,16 @@ export function DataTableRecommendation({
           </div>
         </div>
       </div>
+
+      {/* Recommendation Detail Modal */}
+      <Dialog
+        open={recommendationDetailOpen}
+        onOpenChange={setRecommendationDetailOpen}
+      >
+        {selectedRecommendation && (
+          <RecommendationDetailModal details={selectedRecommendation} />
+        )}
+      </Dialog>
 
       {isAlert && (
         <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">
