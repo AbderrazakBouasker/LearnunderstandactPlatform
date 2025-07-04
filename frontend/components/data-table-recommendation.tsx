@@ -43,6 +43,10 @@ import { FormSelectCombobox } from "@/components/form-select-combobox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog } from "@/components/ui/dialog";
 import { RecommendationDetailModal } from "@/components/recommendation-detail-modal";
+import {
+  RecommendationInsightDetailModal,
+  Insight,
+} from "@/components/recommendation-insight-detail-modal";
 
 interface Member {
   user: string;
@@ -78,7 +82,7 @@ export type ClusterAnalysis = {
   organization: string;
   clusterLabel: string;
   clusterSummary: string;
-  insightIds: string[];
+  insightIds: Insight[];
   sentimentPercentage: number;
   clusterSize: number;
   recommendation: string;
@@ -124,6 +128,12 @@ export function DataTableRecommendation({
     React.useState(false);
   const [selectedRecommendation, setSelectedRecommendation] =
     React.useState<ClusterAnalysis | null>(null);
+  const [recommendationInsightOpen, setRecommendationInsightOpen] =
+    React.useState(false);
+  const [
+    selectedRecommendationForInsights,
+    setSelectedRecommendationForInsights,
+  ] = React.useState<ClusterAnalysis | null>(null);
 
   const columns: ColumnDef<ClusterAnalysis>[] = [
     // Only show form title column when viewing organization-wide clusters
@@ -318,6 +328,14 @@ export function DataTableRecommendation({
                 }}
               >
                 View recommendation details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setSelectedRecommendationForInsights(cluster);
+                  setRecommendationInsightOpen(true);
+                }}
+              >
+                View insights in cluster
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -674,6 +692,18 @@ export function DataTableRecommendation({
       >
         {selectedRecommendation && (
           <RecommendationDetailModal details={selectedRecommendation} />
+        )}
+      </Dialog>
+
+      {/* Recommendation Insight Detail Modal */}
+      <Dialog
+        open={recommendationInsightOpen}
+        onOpenChange={setRecommendationInsightOpen}
+      >
+        {selectedRecommendationForInsights && (
+          <RecommendationInsightDetailModal
+            cluster={selectedRecommendationForInsights}
+          />
         )}
       </Dialog>
 
