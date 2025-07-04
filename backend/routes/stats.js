@@ -4,6 +4,8 @@ import {
   getFeedbackCountOverTimeByForm,
   getTotalFeedbackByForm,
   getOpinionCountsByForm,
+  getClusterStatsByOrganization,
+  getClusterSentimentByForm,
 } from "../controllers/stats.js";
 import { verifyToken } from "../middleware/auth.js";
 import { rateLimiter } from "../middleware/ratelimiter.js";
@@ -40,6 +42,22 @@ router.get(
   rateLimiter(1, 100),
   verifyToken,
   getOpinionCountsByForm
+);
+
+// Route to get cluster statistics for an organization
+router.get(
+  "/:organization/cluster-stats",
+  rateLimiter(1, 100),
+  verifyToken,
+  getClusterStatsByOrganization
+);
+
+// Route to get cluster sentiment tracking by form over time
+router.get(
+  "/form/:formId/cluster-sentiment",
+  rateLimiter(1, 100),
+  verifyToken,
+  getClusterSentimentByForm
 );
 
 export default router;

@@ -18,6 +18,53 @@ import {
 import { FormSelectCombobox } from "@/components/form-select-combobox";
 import { FormDateSelector } from "@/components/form-date-selecter";
 
+// Type definitions
+interface FormOption {
+  value: string;
+  label: string;
+}
+
+interface ClusterStats {
+  totalClusters: number;
+  formsWithClusters: number;
+  clustersWithTickets: number;
+  highImpactClusters: number;
+  urgentClusters: number;
+  averageSentimentPercentage: number;
+  averageClusterSize: number;
+  impactBreakdown: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  urgencyBreakdown: {
+    immediate: number;
+    soon: number;
+    later: number;
+  };
+  recentClusters: number;
+}
+
+interface ClusterSentimentData {
+  date: string;
+  averageSentiment: number;
+  totalClusters: number;
+  highImpactClusters: number;
+  urgentClusters: number;
+  clustersWithTickets: number;
+  averageClusterSize: number;
+}
+
+interface UserData {
+  _id: string;
+  username: string;
+  email: string;
+  organization: string[];
+  createdAt: string;
+  organizationDetails: any[];
+  id: string;
+}
+
 export function Dashboard({
   selectedOrganization,
   userData,
@@ -35,12 +82,16 @@ export function Dashboard({
   const oneMonthAgoStr = oneMonthAgo.toISOString().split("T")[0];
 
   // State variables for data
-  const [organizationFeedbackTrend, setOrganizationFeedbackTrend] = useState(
-    []
-  );
-  const [formFeedbackTrend, setFormFeedbackTrend] = useState([]);
-  const [feedbackByFormData, setFeedbackByFormData] = useState([]);
-  const [opinionDistribution, setOpinionDistribution] = useState([]);
+  const [organizationFeedbackTrend, setOrganizationFeedbackTrend] = useState<
+    any[]
+  >([]);
+  const [formFeedbackTrend, setFormFeedbackTrend] = useState<any[]>([]);
+  const [feedbackByFormData, setFeedbackByFormData] = useState<any[]>([]);
+  const [opinionDistribution, setOpinionDistribution] = useState<any[]>([]);
+  const [clusterStats, setClusterStats] = useState<ClusterStats | null>(null);
+  const [clusterSentimentTrend, setClusterSentimentTrend] = useState<
+    ClusterSentimentData[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState<{
     startDate: string;
@@ -49,7 +100,7 @@ export function Dashboard({
     startDate: oneMonthAgoStr,
     endDate: tomorrowStr,
   });
-  const [forms, setForms] = useState([]);
+  const [forms, setForms] = useState<FormOption[]>([]);
   const [selectedForm, setSelectedForm] = useState<string | null>(null);
 
   // Fetch forms for the organization
@@ -72,7 +123,7 @@ export function Dashboard({
       try {
         const formsData = JSON.parse(text);
         setForms(
-          formsData.map((form) => ({ value: form._id, label: form.title }))
+          formsData.map((form: any) => ({ value: form._id, label: form.title }))
         );
 
         if (formsData.length > 0 && !selectedForm) {
@@ -148,11 +199,35 @@ export function Dashboard({
         } else {
           setOpinionDistribution([]);
         }
+
+        // 5. Cluster sentiment trend for selected form
+        const clusterSentimentResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/stats/form/${selectedForm}/cluster-sentiment?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
+        );
+        if (clusterSentimentResponse.ok) {
+          const clusterSentimentData = await safeJsonParse(
+            clusterSentimentResponse
+          );
+          setClusterSentimentTrend(clusterSentimentData.sentimentTrend || []);
+        } else {
+          setClusterSentimentTrend([]);
+        }
+      }
+
+      // 6. Cluster statistics for organization
+      const clusterStatsResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/stats/${selectedOrganization}/cluster-stats`
+      );
+      if (clusterStatsResponse.ok) {
+        const clusterStatsData = await safeJsonParse(clusterStatsResponse);
+        setClusterStats(clusterStatsData);
+      } else {
+        setClusterStats(null);
       }
 
       // Update state with fetched data
       setOrganizationFeedbackTrend(
-        (orgFeedbackData || []).map((item) => ({
+        (orgFeedbackData || []).map((item: any) => ({
           date: item._id,
           count: item.count,
           // Add normalized value for gradient fill
@@ -161,7 +236,7 @@ export function Dashboard({
       );
 
       setFormFeedbackTrend(
-        (formFeedbackData || []).map((item) => ({
+        (formFeedbackData || []).map((item: any) => ({
           date: item._id,
           count: item.count,
           // Add normalized value for gradient fill
@@ -170,7 +245,7 @@ export function Dashboard({
       );
 
       setFeedbackByFormData(
-        (feedbackByFormData || []).map((item, index) => ({
+        (feedbackByFormData || []).map((item: any, index: number) => ({
           name: item.formTitle || `Form ${index + 1}`,
           count: item.count,
           fill: `rgba(33, 150, 243, ${
@@ -185,6 +260,8 @@ export function Dashboard({
       setFormFeedbackTrend([]);
       setFeedbackByFormData([]);
       setOpinionDistribution([]);
+      setClusterStats(null);
+      setClusterSentimentTrend([]);
     } finally {
       setIsLoading(false);
     }
@@ -222,23 +299,6 @@ export function Dashboard({
     neutral: "#FFEE58",
     satisfied: "#66BB6A",
     "very satisfied": "#26C6DA",
-  };
-
-  // Custom tooltip for better readability
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-          <p className="font-semibold text-gray-800">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}: {entry.value}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
@@ -301,7 +361,7 @@ export function Dashboard({
                     tick={{ fill: "#666" }}
                   />
                   <YAxis tick={{ fill: "#666" }} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip />
                   <defs>
                     <linearGradient
                       id="orgGradient"
@@ -325,6 +385,59 @@ export function Dashboard({
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          {/* Cluster Statistics Overview */}
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">
+              Cluster Statistics Overview
+            </h3>
+            {clusterStats ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {clusterStats.totalClusters}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Clusters</div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">
+                    {clusterStats.formsWithClusters}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Forms with Clusters
+                  </div>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {clusterStats.highImpactClusters}
+                  </div>
+                  <div className="text-sm text-gray-600">High Impact</div>
+                </div>
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-red-600">
+                    {clusterStats.urgentClusters}
+                  </div>
+                  <div className="text-sm text-gray-600">Urgent</div>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {clusterStats.clustersWithTickets}
+                  </div>
+                  <div className="text-sm text-gray-600">With Tickets</div>
+                </div>
+                <div className="bg-teal-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-teal-600">
+                    {clusterStats.averageSentimentPercentage}%
+                  </div>
+                  <div className="text-sm text-gray-600">Avg Sentiment</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-gray-500">
+                No cluster statistics available
+              </div>
+            )}
           </div>
 
           {/* Form Feedback Trend */}
@@ -353,7 +466,7 @@ export function Dashboard({
                     tick={{ fill: "#666" }}
                   />
                   <YAxis tick={{ fill: "#666" }} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip />
                   <defs>
                     <linearGradient
                       id="formGradient"
@@ -406,13 +519,13 @@ export function Dashboard({
                       value.length > 20 ? `${value.substring(0, 18)}...` : value
                     }
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip />
                   <Bar
                     dataKey="count"
                     name="Feedback Count"
                     radius={[0, 4, 4, 0]}
                   >
-                    {feedbackByFormData.map((entry, index) => (
+                    {feedbackByFormData.map((entry: any, index: number) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={
@@ -449,12 +562,13 @@ export function Dashboard({
                     label={(entry) => `${entry.opinion}: ${entry.count}`}
                     labelLine={false}
                   >
-                    {opinionDistribution.map((entry, index) => (
+                    {opinionDistribution.map((entry: any, index: number) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={
-                          OPINION_COLORS[entry.opinion] ||
-                          BLUE_COLORS[index % BLUE_COLORS.length]
+                          OPINION_COLORS[
+                            entry.opinion as keyof typeof OPINION_COLORS
+                          ] || BLUE_COLORS[index % BLUE_COLORS.length]
                         }
                       />
                     ))}
@@ -469,6 +583,76 @@ export function Dashboard({
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Cluster Sentiment Trend */}
+          {selectedForm && clusterSentimentTrend.length > 0 && (
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                Cluster Sentiment Trend
+                <span className="text-sm font-normal text-gray-500 ml-2">
+                  {forms.find((f) => f.value === selectedForm)?.label}
+                </span>
+              </h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={clusterSentimentTrend}
+                    margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(date) =>
+                        new Date(date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        })
+                      }
+                      tick={{ fill: "#666" }}
+                    />
+                    <YAxis
+                      tick={{ fill: "#666" }}
+                      domain={[0, 100]}
+                      label={{
+                        value: "Sentiment %",
+                        angle: -90,
+                        position: "insideLeft",
+                      }}
+                    />
+                    <Tooltip />
+                    <defs>
+                      <linearGradient
+                        id="sentimentGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#26C6DA"
+                          stopOpacity={0.8}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#26C6DA"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <Area
+                      type="monotone"
+                      dataKey="averageSentiment"
+                      stroke="#26C6DA"
+                      fill="url(#sentimentGradient)"
+                      strokeWidth={2}
+                      activeDot={{ r: 6 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

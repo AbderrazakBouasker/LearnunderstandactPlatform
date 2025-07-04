@@ -38,6 +38,13 @@ export function RecommendationDetailModal({
     });
   };
 
+  // Format JIRA ticket URL to fix double protocol issue (https://https://)
+  const formatJiraUrl = (url: string) => {
+    if (!url) return "";
+    // Fix double protocol issue
+    return url.replace(/https?:\/\/https?:\/\//, "https://");
+  };
+
   const getSentimentColor = (percentage: number) => {
     if (percentage < 30) return "bg-green-100 text-green-800";
     if (percentage < 70) return "bg-yellow-100 text-yellow-800";
@@ -245,7 +252,7 @@ export function RecommendationDetailModal({
               {details.jiraTicketUrl && (
                 <div className="pt-2">
                   <a
-                    href={details.jiraTicketUrl}
+                    href={formatJiraUrl(details.jiraTicketUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 underline hover:no-underline transition-colors"
