@@ -4,6 +4,7 @@ import { rateLimiter } from "../middleware/ratelimiter.js";
 import {
   clusterInsightsByForm,
   getClusterAnalysisByForm,
+  getClusterAnalysisByOrganization,
 } from "../controllers/insight.js";
 
 const router = express.Router();
@@ -21,6 +22,13 @@ router.get(
   rateLimiter(1, 100),
   verifyToken,
   getClusterAnalysisByForm
+);
+
+router.get(
+  "/organization/:organization",
+  rateLimiter(1, 100),
+  verifyToken,
+  getClusterAnalysisByOrganization
 );
 
 export default router;

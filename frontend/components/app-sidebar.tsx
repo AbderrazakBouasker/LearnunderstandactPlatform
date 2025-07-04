@@ -78,6 +78,11 @@ const data = {
       url: "#",
       icon: Command,
     },
+    {
+      name: "Recommendation",
+      url: "#",
+      icon: LifeBuoy,
+    },
   ],
 };
 

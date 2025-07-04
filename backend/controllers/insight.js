@@ -542,3 +542,85 @@ export const getClusterAnalysisByForm = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Get cluster analysis for an organization
+export const getClusterAnalysisByOrganization = async (req, res) => {
+  try {
+    const { organization } = req.params;
+
+    if (!organization) {
+      logger.warn("No organization ID provided for cluster analysis");
+      return res.status(400).json({ message: "Organization ID is required" });
+    }
+
+    // Get recent cluster analyses for the organization
+    const clusterAnalyses = await ClusterAnalysis.find({ organization })
+      .sort({ createdAt: -1 })
+      .limit(50) // Get last 50 analyses across all forms
+      .populate({
+        path: "insightIds",
+        select: "-embedding", // Exclude embedding field from insights
+      });
+
+    if (clusterAnalyses.length === 0) {
+      logger.info("No cluster analyses found for organization", {
+        organization,
+      });
+      return res.status(404).json({
+        message:
+          "No cluster analyses found for this organization. Run clustering first.",
+      });
+    }
+
+    // Group analyses by form for better organization
+    const analysesByForm = {};
+    clusterAnalyses.forEach((analysis) => {
+      const formId = analysis.formId.toString();
+      if (!analysesByForm[formId]) {
+        analysesByForm[formId] = [];
+      }
+      analysesByForm[formId].push({
+        ...analysis.toObject(),
+        creationDate: analysis.createdAt,
+        formattedDate: analysis.createdAt.toLocaleString(),
+      });
+    });
+
+    // Calculate summary statistics
+    const totalClusters = clusterAnalyses.length;
+    const formsWithClusters = Object.keys(analysesByForm).length;
+    const clustersWithTickets = clusterAnalyses.filter(
+      (analysis) => analysis.ticketCreated
+    ).length;
+    const highImpactClusters = clusterAnalyses.filter(
+      (analysis) => analysis.impact === "high"
+    ).length;
+    const urgentClusters = clusterAnalyses.filter(
+      (analysis) => analysis.urgency === "immediate"
+    ).length;
+
+    res.status(200).json({
+      organization,
+      summary: {
+        totalClusters,
+        formsWithClusters,
+        clustersWithTickets,
+        highImpactClusters,
+        urgentClusters,
+      },
+      analysesByForm,
+      allAnalyses: clusterAnalyses.map((analysis) => ({
+        ...analysis.toObject(),
+        creationDate: analysis.createdAt,
+        formattedDate: analysis.createdAt.toLocaleString(),
+      })),
+    });
+  } catch (error) {
+    logger.error("Error retrieving cluster analysis by organization", {
+      error: error.message,
+      stack: error.stack,
+      organization: req.params.organization,
+    });
+    res.status(500).json({ message: error.message });
+  }
+};
