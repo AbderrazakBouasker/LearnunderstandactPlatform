@@ -70,6 +70,15 @@ const clusterAnalysisSchema = mongoose.Schema(
       type: String,
       required: false,
     },
+    // Email notification tracking
+    emailNotificationSent: {
+      type: Boolean,
+      default: false,
+    },
+    emailNotificationDate: {
+      type: Date,
+      required: false,
+    },
     embeddings: {
       type: [Number],
       required: false, // We'll add this when we get transformers working

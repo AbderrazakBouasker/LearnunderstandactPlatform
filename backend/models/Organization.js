@@ -37,6 +37,9 @@ const OrganizationSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    email: {
+      type: String,
+    },
     recommendationThreshold: {
       type: Number,
       default: 0.5, // Default threshold for AI recommendations

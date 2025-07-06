@@ -10,6 +10,7 @@ import {
   addMemberToOrganizationByEmail,
   deleteMemberFromOrganization,
   promoteDemoteMember,
+  sendTestEmail,
 } from "../controllers/organization.js";
 import { verifyToken } from "../middleware/auth.js";
 import { rateLimiter } from "../middleware/ratelimiter.js";
@@ -68,5 +69,12 @@ router.post(
   rateLimiter(1, 100),
   verifyToken,
   promoteDemoteMember
+);
+//SEND TEST EMAIL
+router.post(
+  "/:identifier/test-email",
+  rateLimiter(1, 100),
+  verifyToken,
+  sendTestEmail
 );
 export default router;

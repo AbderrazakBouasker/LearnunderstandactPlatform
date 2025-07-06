@@ -86,6 +86,7 @@ interface Organization {
   recommendationThreshold?: number;
   ticketCreationDelay?: number;
   notificationThreshold?: number;
+  email?: string; // Add email property for notifications
   jiraConfig?: {
     host?: string;
     username?: string;
@@ -156,6 +157,7 @@ export function OrganizationSettingsModal({
   const [recommendationThreshold, setRecommendationThreshold] = useState(0.5);
   const [ticketCreationDelay, setTicketCreationDelay] = useState(7);
   const [notificationThreshold, setNotificationThreshold] = useState(0.7);
+  const [notificationEmail, setNotificationEmail] = useState("");
   const [jiraHost, setJiraHost] = useState("");
   const [jiraUsername, setJiraUsername] = useState("");
   const [jiraApiToken, setJiraApiToken] = useState("");
@@ -234,6 +236,7 @@ export function OrganizationSettingsModal({
           setRecommendationThreshold(data.recommendationThreshold ?? 0.5);
           setTicketCreationDelay(data.ticketCreationDelay ?? 7);
           setNotificationThreshold(data.notificationThreshold ?? 0.7);
+          setNotificationEmail(data.email ?? "");
 
           // Initialize Jira settings from organization data
           if (data.jiraConfig) {
@@ -671,6 +674,7 @@ export function OrganizationSettingsModal({
             recommendationThreshold,
             ticketCreationDelay,
             notificationThreshold,
+            email: notificationEmail,
           }),
         }
       );
@@ -1147,6 +1151,22 @@ export function OrganizationSettingsModal({
               <p className="text-xs text-muted-foreground">
                 Threshold of negative feedback score for sending notifications
                 (10% - 100%)
+              </p>
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="notification-email">Notification Email</Label>
+              <Input
+                id="notification-email"
+                type="email"
+                placeholder="notifications@example.com"
+                value={notificationEmail}
+                onChange={(e) => setNotificationEmail(e.target.value)}
+                disabled={!isCurrentUserAdminOrSubadmin}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Email address for receiving notifications
               </p>
             </div>
 

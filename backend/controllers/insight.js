@@ -11,6 +11,7 @@ import {
   determineOptimalClusters,
 } from "../services/clusteringService.js";
 import jiraService from "../services/jiraService.js";
+import emailService from "../services/emailService.js";
 
 // Initialize Google GenAI
 const genAIClient = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
@@ -273,6 +274,67 @@ export const clusterInsightsByForm = async (req, res) => {
           }
         }
 
+        // Send email notification if sentiment threshold is exceeded
+        const notificationThreshold =
+          organizationData?.notificationThreshold || 0.7; // Default to 70%
+        const sentimentThresholdExceeded =
+          sentimentPercentage >= notificationThreshold * 100;
+
+        if (sentimentThresholdExceeded && organizationData?.email) {
+          logger.info("Sending cluster notification email", {
+            formId,
+            clusterLabel,
+            sentimentPercentage,
+            notificationThreshold: notificationThreshold * 100,
+            organization: clusterInsights[0].organization,
+          });
+
+          const clusterData = {
+            clusterLabel,
+            clusterSize: clusterInsights.length,
+            recommendation: aiAnalysis?.recommendation,
+            impact: aiAnalysis?.impact,
+            urgency: aiAnalysis?.urgency,
+            jiraTicket: clusterAnalysis.jiraTicketId
+              ? {
+                  ticketId: clusterAnalysis.jiraTicketId,
+                  ticketUrl: clusterAnalysis.jiraTicketUrl,
+                  status: clusterAnalysis.jiraTicketStatus,
+                }
+              : null,
+          };
+
+          const emailSent = await emailService.sendClusterNotificationEmail(
+            organizationData.email,
+            organizationData.name,
+            clusterData,
+            sentimentPercentage
+          );
+
+          if (emailSent) {
+            // Update cluster analysis to track email notification
+            clusterAnalysis.emailNotificationSent = true;
+            clusterAnalysis.emailNotificationDate = new Date();
+            await clusterAnalysis.save();
+
+            logger.info("Cluster notification email sent successfully", {
+              formId,
+              clusterLabel,
+              organizationEmail: organizationData.email,
+            });
+          }
+        } else if (sentimentThresholdExceeded && !organizationData?.email) {
+          logger.warn(
+            "Sentiment threshold exceeded but no organization email configured",
+            {
+              formId,
+              clusterLabel,
+              sentimentPercentage,
+              organization: clusterInsights[0].organization,
+            }
+          );
+        }
+
         return {
           clusterId,
           clusterLabel,
@@ -281,6 +343,7 @@ export const clusterInsightsByForm = async (req, res) => {
           clusterSize: clusterInsights.length,
           analysis: aiAnalysis,
           shouldCreateTicket,
+          emailNotificationSent: clusterAnalysis.emailNotificationSent || false,
           jiraTicket: clusterAnalysis.jiraTicketId
             ? {
                 ticketId: clusterAnalysis.jiraTicketId,

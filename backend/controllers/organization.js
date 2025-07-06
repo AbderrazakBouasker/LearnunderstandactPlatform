@@ -1,6 +1,7 @@
 import Organization from "../models/Organization.js";
 import logger from "../logger.js";
 import User from "../models/User.js";
+import emailService from "../services/emailService.js";
 
 // CREATE
 export const createOrganization = async (req, res) => {
@@ -145,6 +146,7 @@ export const updateOrganization = async (req, res) => {
       members,
       plan,
       domains,
+      email,
       recommendationThreshold,
       ticketCreationDelay,
       notificationThreshold,
@@ -170,6 +172,10 @@ export const updateOrganization = async (req, res) => {
 
     if (domains !== undefined) {
       organization.domains = domains;
+    }
+
+    if (email !== undefined) {
+      organization.email = email;
     }
 
     if (recommendationThreshold !== undefined) {
@@ -526,6 +532,50 @@ export const promoteDemoteMember = async (req, res) => {
       error: error.message,
       stack: error.stack,
       requestBody: req.body,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Send test email to organization
+export const sendTestEmail = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { testEmail } = req.body;
+
+    // Find organization
+    const organization = await Organization.findOne({ identifier });
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    // Use provided test email or organization email
+    const emailToSend = testEmail || organization.email;
+
+    if (!emailToSend) {
+      return res.status(400).json({
+        error: "No email provided and organization has no email configured",
+      });
+    }
+
+    // Send test email
+    const emailSent = await emailService.sendTestEmail(emailToSend);
+
+    if (emailSent) {
+      res.status(200).json({
+        message: "Test email sent successfully",
+        email: emailToSend,
+      });
+    } else {
+      res.status(500).json({
+        error: "Failed to send test email",
+      });
+    }
+  } catch (error) {
+    logger.error("Error sending test email", {
+      error: error.message,
+      stack: error.stack,
+      identifier: req.params.identifier,
     });
     res.status(500).json({ error: error.message });
   }
