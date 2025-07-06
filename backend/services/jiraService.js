@@ -45,21 +45,10 @@ class JiraService {
         return null;
       }
 
-      // Clean the host to remove any protocol and ensure it's just the hostname
-      let cleanHost = jiraConfig.host;
-      if (cleanHost.startsWith("https://")) {
-        cleanHost = cleanHost.replace("https://", "");
-      }
-      if (cleanHost.startsWith("http://")) {
-        cleanHost = cleanHost.replace("http://", "");
-      }
-      // Remove any trailing slashes
-      cleanHost = cleanHost.replace(/\/$/, "");
-
-      // Create new Jira client
+      // The host now comes with protocol from the Organization model
+      // Use the host directly since it's already properly formatted
       const jiraClient = new JiraApi({
-        protocol: "https",
-        host: cleanHost,
+        host: jiraConfig.host, // Already includes protocol from Organization model
         username: jiraConfig.username,
         password: jiraConfig.apiToken,
         apiVersion: "2",

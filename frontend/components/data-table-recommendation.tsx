@@ -122,6 +122,7 @@ export function DataTableRecommendation({
   const [alertTitle, setAlertTitle] = React.useState<string | null>(null);
   const [forms, setForms] = React.useState<Form[]>([]);
   const [selectedForm, setSelectedForm] = React.useState<string | null>(null);
+  const [formsLoaded, setFormsLoaded] = React.useState(false);
 
   // Modal state
   const [recommendationDetailOpen, setRecommendationDetailOpen] =
@@ -347,6 +348,7 @@ export function DataTableRecommendation({
   // Fetch forms for the organization
   const fetchForms = React.useCallback(async () => {
     try {
+      setFormsLoaded(false);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/form/organization/${selectedOrganization}`,
         {
@@ -357,12 +359,26 @@ export function DataTableRecommendation({
       );
 
       if (response.ok) {
-        const formsData = await response.json();
-        setForms(formsData);
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const formsData = await response.json();
+          setForms(formsData);
+        } else {
+          // Handle non-JSON response
+          setForms([]);
+        }
+      } else if (response.status === 404) {
+        // No forms found for this organization
+        setForms([]);
+      } else {
+        // Other error responses
+        setForms([]);
       }
     } catch (error) {
       console.error("Failed to fetch forms:", error);
       setForms([]);
+    } finally {
+      setFormsLoaded(true);
     }
   }, [selectedOrganization]);
 
@@ -408,21 +424,36 @@ export function DataTableRecommendation({
       }
 
       if (response.ok) {
-        const clusterData = await response.json();
-        let clustersToSet;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const clusterData = await response.json();
+          let clustersToSet;
 
-        // Handle different response structures
-        if (selectedForm) {
-          // Response from form endpoint: { formId, totalAnalyses, clusters }
-          clustersToSet = clusterData.clusters || clusterData;
+          // Handle different response structures
+          if (selectedForm) {
+            // Response from form endpoint: { formId, totalAnalyses, clusters }
+            clustersToSet = clusterData.clusters || clusterData;
+          } else {
+            // Response from organization endpoint: { organization, summary, analysesByForm, allAnalyses }
+            clustersToSet = clusterData.allAnalyses || clusterData;
+            // Enrich with form titles for organization-wide view
+            clustersToSet = enrichClustersWithFormTitles(clustersToSet, forms);
+          }
+
+          setData(Array.isArray(clustersToSet) ? clustersToSet : []);
         } else {
-          // Response from organization endpoint: { organization, summary, analysesByForm, allAnalyses }
-          clustersToSet = clusterData.allAnalyses || clusterData;
-          // Enrich with form titles for organization-wide view
-          clustersToSet = enrichClustersWithFormTitles(clustersToSet, forms);
+          // Handle non-JSON response (empty response)
+          setData([]);
+          setAlertTitle("No Data Available");
+          setAlertDescription(
+            "No cluster analysis data is available at this time."
+          );
+          setAlertVariant("default");
+          setIsAlert(true);
+          setTimeout(() => {
+            setIsAlert(false);
+          }, 5000);
         }
-
-        setData(clustersToSet);
       } else if (response.status === 404) {
         setData([]);
         setAlertTitle("No Clusters Found");
@@ -472,8 +503,26 @@ export function DataTableRecommendation({
     } catch (error) {
       console.error("Failed to fetch cluster data:", error);
       setData([]);
-      setAlertTitle("Error");
-      setAlertDescription("Failed to fetch cluster data. Please try again.");
+
+      // Handle specific error types
+      if (error instanceof SyntaxError && error.message.includes("JSON")) {
+        setAlertTitle("Data Format Error");
+        setAlertDescription(
+          "The server returned an invalid response format. Please try again."
+        );
+      } else if (
+        error instanceof TypeError &&
+        error.message.includes("fetch")
+      ) {
+        setAlertTitle("Network Error");
+        setAlertDescription(
+          "Unable to connect to the server. Please check your connection."
+        );
+      } else {
+        setAlertTitle("Error");
+        setAlertDescription("Failed to fetch cluster data. Please try again.");
+      }
+
       setAlertVariant("destructive");
       setIsAlert(true);
       setTimeout(() => {
@@ -486,25 +535,25 @@ export function DataTableRecommendation({
 
   React.useEffect(() => {
     if (selectedOrganization) {
+      setFormsLoaded(false);
       fetchForms();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedOrganization]);
 
   React.useEffect(() => {
+    // Only fetch cluster data when we have the necessary dependencies
     if (selectedOrganization) {
-      fetchClusterData();
+      if (selectedForm) {
+        // Form-specific view - can fetch immediately
+        fetchClusterData();
+      } else if (formsLoaded) {
+        // Organization-wide view - wait for forms to be loaded first
+        fetchClusterData();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedOrganization, forms]);
-
-  React.useEffect(() => {
-    // When form selection changes, fetch cluster data
-    if (selectedOrganization) {
-      fetchClusterData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedForm, selectedOrganization, forms]);
+  }, [selectedOrganization, selectedForm, formsLoaded]);
 
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [sorting, setSorting] = React.useState<SortingState>([]);

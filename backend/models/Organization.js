@@ -73,7 +73,17 @@ const OrganizationSchema = new mongoose.Schema(
             return /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(cleanHost);
           },
           message:
-            "Host should be a valid hostname (e.g., company.atlassian.net) without protocol",
+            "Host should be a valid hostname (e.g., company.atlassian.net) with or without protocol",
+        },
+        set: function (v) {
+          // Clean and normalize the host value
+          if (!v) return v;
+
+          // Remove any existing protocol and trailing slashes
+          let cleanHost = v.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
+          // Add https:// protocol back
+          return `https://${cleanHost}`;
         },
       },
       username: {
