@@ -164,6 +164,7 @@ export function OrganizationSettingsModal({
   const [jiraProjectKey, setJiraProjectKey] = useState("");
   const [jiraIssueType, setJiraIssueType] = useState("Task");
   const [jiraEnabled, setJiraEnabled] = useState(false);
+  const [hasExistingJiraToken, setHasExistingJiraToken] = useState(false); // Flag to track if there's an existing token
   const [isUpdatingRecommendations, setIsUpdatingRecommendations] =
     useState(false);
   const [isUpdatingJira, setIsUpdatingJira] = useState(false);
@@ -242,7 +243,9 @@ export function OrganizationSettingsModal({
           if (data.jiraConfig) {
             setJiraHost(data.jiraConfig.host ?? "");
             setJiraUsername(data.jiraConfig.username ?? "");
-            setJiraApiToken(data.jiraConfig.apiToken ?? "");
+            // Always keep API token state empty, but track if there's an existing one
+            setJiraApiToken("");
+            setHasExistingJiraToken(!!data.jiraConfig.apiToken); // Set flag if there's any token (including "HIDDEN")
             setJiraProjectKey(data.jiraConfig.projectKey ?? "");
             setJiraIssueType(data.jiraConfig.issueType ?? "Task");
             setJiraEnabled(data.jiraConfig.enabled ?? false);
@@ -250,6 +253,7 @@ export function OrganizationSettingsModal({
             setJiraHost("");
             setJiraUsername("");
             setJiraApiToken("");
+            setHasExistingJiraToken(false); // No existing token
             setJiraProjectKey("");
             setJiraIssueType("Task");
             setJiraEnabled(false);
@@ -712,11 +716,14 @@ export function OrganizationSettingsModal({
 
     // Validate required fields when Jira is enabled
     if (jiraEnabled) {
+      // Use the flag to check if there's an existing token
+      const hasNewApiToken = jiraApiToken.trim() !== "";
+
       if (
         !jiraHost.trim() ||
         !jiraUsername.trim() ||
-        !jiraApiToken.trim() ||
-        !jiraProjectKey.trim()
+        !jiraProjectKey.trim() ||
+        (!hasExistingJiraToken && !hasNewApiToken)
       ) {
         setAlert({
           title: "Validation Error",
@@ -731,6 +738,27 @@ export function OrganizationSettingsModal({
 
     setIsUpdatingJira(true);
     try {
+      // Build jiraConfig object - only include apiToken if user has entered a new value
+      const jiraConfig: {
+        host: string;
+        username: string;
+        projectKey: string;
+        issueType: string;
+        enabled: boolean;
+        apiToken?: string;
+      } = {
+        host: jiraHost,
+        username: jiraUsername,
+        projectKey: jiraProjectKey,
+        issueType: jiraIssueType,
+        enabled: jiraEnabled,
+      };
+
+      // Only include apiToken if the user has entered a value (not empty)
+      if (jiraApiToken.trim() !== "") {
+        jiraConfig.apiToken = jiraApiToken;
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/edit`,
         {
@@ -738,14 +766,7 @@ export function OrganizationSettingsModal({
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
-            jiraConfig: {
-              host: jiraHost,
-              username: jiraUsername,
-              apiToken: jiraApiToken,
-              projectKey: jiraProjectKey,
-              issueType: jiraIssueType,
-              enabled: jiraEnabled,
-            },
+            jiraConfig,
           }),
         }
       );
@@ -1243,13 +1264,19 @@ export function OrganizationSettingsModal({
               <Input
                 id="jira-api-token"
                 type="password"
-                placeholder="Your Jira API token"
-                value={jiraApiToken === "***HIDDEN***" ? "" : jiraApiToken}
+                placeholder={
+                  hasExistingJiraToken
+                    ? "Hidden API Key - Leave empty to keep current"
+                    : "Your Jira API token"
+                }
+                value={jiraApiToken}
                 onChange={(e) => setJiraApiToken(e.target.value)}
                 disabled={!isCurrentUserAdminOrSubadmin}
               />
               <p className="text-xs text-muted-foreground">
-                Generate an API token from your Jira account settings
+                {hasExistingJiraToken
+                  ? "API token is configured and hidden for security. Enter a new value to update it, or leave empty to keep current."
+                  : "Generate an API token from your Jira account settings"}
               </p>
             </div>
 

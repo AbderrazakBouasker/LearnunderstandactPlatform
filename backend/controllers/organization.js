@@ -2,6 +2,7 @@ import Organization from "../models/Organization.js";
 import logger from "../logger.js";
 import User from "../models/User.js";
 import emailService from "../services/emailService.js";
+import jiraService from "../services/jiraService.js";
 
 // CREATE
 export const createOrganization = async (req, res) => {
@@ -225,16 +226,8 @@ export const updateOrganization = async (req, res) => {
 
       // Update only the fields that are provided
       if (jiraConfig.host !== undefined) {
-        // Clean the host to remove protocol if provided
-        let cleanHost = jiraConfig.host;
-        if (cleanHost.startsWith("https://")) {
-          cleanHost = cleanHost.replace("https://", "");
-        }
-        if (cleanHost.startsWith("http://")) {
-          cleanHost = cleanHost.replace("http://", "");
-        }
-        cleanHost = cleanHost.replace(/\/$/, ""); // Remove trailing slash
-        organization.jiraConfig.host = cleanHost;
+        // Let the Organization model's setter handle the host cleaning/formatting
+        organization.jiraConfig.host = jiraConfig.host;
       }
       if (jiraConfig.username !== undefined) {
         organization.jiraConfig.username = jiraConfig.username;
@@ -271,6 +264,14 @@ export const updateOrganization = async (req, res) => {
     }
 
     await organization.save();
+
+    // Clear Jira client cache if Jira config was updated
+    if (jiraConfig !== undefined) {
+      jiraService.clearClientCache(identifier);
+      logger.info("Cleared Jira client cache after config update", {
+        organizationId: identifier,
+      });
+    }
 
     // Remove sensitive information from response
     const safeOrganization = organization.toObject();

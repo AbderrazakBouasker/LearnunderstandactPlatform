@@ -45,26 +45,32 @@ class JiraService {
         return null;
       }
 
-      // The host now comes with protocol from the Organization model
-      // Use the host directly since it's already properly formatted
+      // The host comes with protocol from the Organization model
+      // Strip the protocol since jira-client expects just the hostname
+      const hostWithoutProtocol = jiraConfig.host
+        .replace(/^https?:\/\//, "")
+        .replace(/\/$/, "");
+
       const jiraClient = new JiraApi({
-        host: jiraConfig.host, // Already includes protocol from Organization model
+        host: hostWithoutProtocol, // Remove protocol as jira-client adds it automatically
         username: jiraConfig.username,
         password: jiraConfig.apiToken,
         apiVersion: "2",
         strictSSL: true,
       });
 
-      // Cache the client
+      // Cache the client with cleaned hostname
       this.jiraClients.set(organizationId, {
         client: jiraClient,
         config: jiraConfig,
         organization: organization,
+        cleanHost: hostWithoutProtocol, // Store cleaned hostname for URL construction
       });
 
       logger.info("Jira client created for organization", {
         organizationId,
-        host: jiraConfig.host,
+        host: hostWithoutProtocol, // Log the cleaned hostname
+        originalHost: jiraConfig.host, // Log the original for debugging
       });
 
       return this.jiraClients.get(organizationId);
@@ -94,7 +100,7 @@ class JiraService {
         return null;
       }
 
-      const { client, config } = jiraConnection;
+      const { client, config, cleanHost } = jiraConnection;
 
       if (!config.projectKey) {
         logger.error("Cannot create Jira ticket - project key not configured", {
@@ -132,6 +138,15 @@ class JiraService {
 
       let issue;
       try {
+        // Log the issue data for debugging
+        logger.info("Creating Jira issue with data", {
+          organizationId: clusterAnalysis.organization,
+          projectKey: config.projectKey,
+          issueType: config.issueType || "Task",
+          summary: issueData.fields.summary,
+          hasPriority: !!issueData.fields.priority,
+        });
+
         // Try to create issue with all fields
         issue = await client.addNewIssue(issueData);
       } catch (error) {
@@ -160,7 +175,7 @@ class JiraService {
             false
           );
         } else {
-          // Re-throw if it's a different error
+          // Re-throw the error for proper handling in the outer catch
           throw error;
         }
       }
@@ -174,17 +189,52 @@ class JiraService {
 
       return {
         ticketId: issue.key,
-        ticketUrl: `https://${config.host}/browse/${issue.key}`,
+        ticketUrl: `https://${cleanHost}/browse/${issue.key}`,
         issue: issue,
       };
     } catch (error) {
-      logger.error("Failed to create Jira ticket", {
+      // Parse the error message to provide better insights
+      let errorDetails = {
         error: error.message,
         stack: error.stack,
         clusterLabel: clusterAnalysis.clusterLabel,
         formId: clusterAnalysis.formId,
         organization: clusterAnalysis.organization,
-      });
+      };
+
+      // Add specific guidance based on error type
+      if (error.message && error.message.includes("permission")) {
+        errorDetails.errorType = "PERMISSION_ERROR";
+        errorDetails.troubleshooting = [
+          "This was working before, so likely a temporary issue",
+          "Try refreshing the API token",
+          "Check if Jira project permissions changed recently",
+          "Verify if the user account is still active",
+        ];
+      } else if (error.message && error.message.includes("project")) {
+        errorDetails.errorType = "PROJECT_ERROR";
+        errorDetails.troubleshooting = [
+          "Check if project key is still valid",
+          "Verify project still exists and is accessible",
+          "Ensure issue type is available in the project",
+        ];
+      } else if (error.message && error.message.includes("authentication")) {
+        errorDetails.errorType = "AUTH_ERROR";
+        errorDetails.troubleshooting = [
+          "API token may have expired",
+          "Generate a new API token",
+          "Verify username is correct",
+        ];
+      } else {
+        errorDetails.errorType = "UNKNOWN_ERROR";
+        errorDetails.troubleshooting = [
+          "Check Jira server status",
+          "Verify network connectivity",
+          "Review Jira logs for more details",
+        ];
+      }
+
+      logger.error("Failed to create Jira ticket", errorDetails);
       return null;
     }
   }
@@ -289,18 +339,74 @@ This ticket was automatically generated based on user feedback clustering and AI
         };
       }
 
-      const { client } = jiraConnection;
+      const { client, config } = jiraConnection;
+
+      // Test basic connection
       const serverInfo = await client.getServerInfo();
+
+      // Test project access and permissions
+      let projectAccessible = false;
+      let createPermission = false;
+      let projectInfo = null;
+
+      try {
+        // Check if project exists and is accessible
+        projectInfo = await client.getProject(config.projectKey);
+        projectAccessible = true;
+
+        // Check create permission by getting user permissions for the project
+        const permissions = await client.getPermissions({
+          projectKey: config.projectKey,
+        });
+
+        // Check if user has CREATE_ISSUES permission
+        createPermission =
+          permissions.permissions?.CREATE_ISSUES?.havePermission || false;
+      } catch (projError) {
+        logger.warn("Project access test failed", {
+          organizationId,
+          projectKey: config.projectKey,
+          error: projError.message,
+        });
+      }
 
       return {
         success: true,
         message: "Connection successful",
-        serverInfo,
+        serverInfo: {
+          version: serverInfo.version,
+          buildNumber: serverInfo.buildNumber,
+          serverTitle: serverInfo.serverTitle,
+        },
+        projectAccess: {
+          accessible: projectAccessible,
+          projectKey: config.projectKey,
+          projectName: projectInfo?.name || "Unknown",
+          createPermission: createPermission,
+        },
+        recommendations: projectAccessible
+          ? createPermission
+            ? []
+            : [
+                "User lacks CREATE_ISSUES permission",
+                "Contact Jira admin to grant proper permissions",
+                "Ensure user is in appropriate project role",
+              ]
+          : [
+              "Project not accessible or doesn't exist",
+              "Verify project key is correct",
+              "Check if user has project access",
+            ],
       };
     } catch (error) {
       return {
         success: false,
         message: error.message,
+        recommendations: [
+          "Check API token validity",
+          "Verify Jira host URL",
+          "Ensure network connectivity to Jira instance",
+        ],
       };
     }
   }
