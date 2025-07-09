@@ -41,6 +41,10 @@ const insightSchema = mongoose.Schema(
       type: [String],
       required: true,
     },
+    embedding: {
+      type: [Number],
+      required: false, // Will be populated when clustering is implemented
+    },
   },
   { timestamps: true }
 );

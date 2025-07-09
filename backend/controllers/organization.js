@@ -1,6 +1,8 @@
 import Organization from "../models/Organization.js";
 import logger from "../logger.js";
 import User from "../models/User.js";
+import emailService from "../services/emailService.js";
+import jiraService from "../services/jiraService.js";
 
 // CREATE
 export const createOrganization = async (req, res) => {
@@ -57,7 +59,17 @@ export const getOrganizations = async (req, res) => {
     if (organizations.length === 0) {
       return res.status(204).json();
     }
-    res.status(200).json(organizations);
+
+    // Remove sensitive information from each organization
+    const safeOrganizations = organizations.map((org) => {
+      const orgObj = org.toObject();
+      if (orgObj.jiraConfig && orgObj.jiraConfig.apiToken) {
+        orgObj.jiraConfig.apiToken = "***HIDDEN***";
+      }
+      return orgObj;
+    });
+
+    res.status(200).json(safeOrganizations);
   } catch (error) {
     logger.error("Error retrieving organizations", {
       error: error.message,
@@ -78,7 +90,14 @@ export const getOrganizationById = async (req, res) => {
     if (!organization) {
       return res.status(404).json({ error: "Organization not found" });
     }
-    res.status(200).json(organization);
+
+    // Remove sensitive information
+    const safeOrganization = organization.toObject();
+    if (safeOrganization.jiraConfig && safeOrganization.jiraConfig.apiToken) {
+      safeOrganization.jiraConfig.apiToken = "***HIDDEN***";
+    }
+
+    res.status(200).json(safeOrganization);
   } catch (error) {
     logger.error("Error retrieving organization by ID", {
       error: error.message,
@@ -100,7 +119,15 @@ export const getOrganizationByIdentifier = async (req, res) => {
     if (!organization) {
       return res.status(404).json({ error: "Organization not found" });
     }
-    res.status(200).json(organization);
+
+    // Remove sensitive information
+    const safeOrganization = organization.toObject();
+    if (safeOrganization.jiraConfig && safeOrganization.jiraConfig.apiToken) {
+      safeOrganization.jiraConfig.apiToken = "***HIDDEN***";
+    }
+
+    res.status(200).json(safeOrganization);
+    // res.status(200).json(organization);
   } catch (error) {
     logger.error("Error retrieving organization by identifier", {
       error: error.message,
@@ -115,9 +142,19 @@ export const getOrganizationByIdentifier = async (req, res) => {
 export const updateOrganization = async (req, res) => {
   try {
     const { identifier } = req.params;
-    const { name, members, plan, domains } = req.body;
+    const {
+      name,
+      members,
+      plan,
+      domains,
+      email,
+      recommendationThreshold,
+      ticketCreationDelay,
+      notificationThreshold,
+      jiraConfig,
+    } = req.body;
     const organization = await Organization.findOne({ identifier });
-
+    console.log("body :", req.body);
     if (!organization) {
       return res.status(404).json({ error: "Organization not found" });
     }
@@ -138,8 +175,111 @@ export const updateOrganization = async (req, res) => {
       organization.domains = domains;
     }
 
+    if (email !== undefined) {
+      organization.email = email;
+    }
+
+    if (recommendationThreshold !== undefined) {
+      if (
+        typeof recommendationThreshold !== "number" ||
+        recommendationThreshold < 0 ||
+        recommendationThreshold > 1
+      ) {
+        return res.status(400).json({
+          error: "Recommendation threshold must be a number between 0 and 1",
+        });
+      }
+      organization.recommendationThreshold = recommendationThreshold;
+    }
+
+    if (ticketCreationDelay !== undefined) {
+      if (
+        typeof ticketCreationDelay !== "number" ||
+        ticketCreationDelay < 1 ||
+        ticketCreationDelay > 365
+      ) {
+        return res.status(400).json({
+          error: "Ticket creation delay must be a number between 1 and 365",
+        });
+      }
+      organization.ticketCreationDelay = ticketCreationDelay;
+    }
+
+    if (notificationThreshold !== undefined) {
+      if (
+        typeof notificationThreshold !== "number" ||
+        notificationThreshold < 0 ||
+        notificationThreshold > 1
+      ) {
+        return res.status(400).json({
+          error: "Notification threshold must be a number between 0 and 1",
+        });
+      }
+      organization.notificationThreshold = notificationThreshold;
+    }
+
+    if (jiraConfig !== undefined) {
+      // Initialize jiraConfig if it doesn't exist
+      if (!organization.jiraConfig) {
+        organization.jiraConfig = {};
+      }
+
+      // Update only the fields that are provided
+      if (jiraConfig.host !== undefined) {
+        // Let the Organization model's setter handle the host cleaning/formatting
+        organization.jiraConfig.host = jiraConfig.host;
+      }
+      if (jiraConfig.username !== undefined) {
+        organization.jiraConfig.username = jiraConfig.username;
+      }
+      if (jiraConfig.apiToken !== undefined) {
+        organization.jiraConfig.apiToken = jiraConfig.apiToken;
+      }
+      if (jiraConfig.projectKey !== undefined) {
+        organization.jiraConfig.projectKey = jiraConfig.projectKey;
+      }
+      if (jiraConfig.issueType !== undefined) {
+        organization.jiraConfig.issueType = jiraConfig.issueType;
+      }
+      if (jiraConfig.enabled !== undefined) {
+        organization.jiraConfig.enabled = jiraConfig.enabled;
+      }
+      if (jiraConfig.supportsPriority !== undefined) {
+        organization.jiraConfig.supportsPriority = jiraConfig.supportsPriority;
+      }
+
+      // Validate Jira configuration if enabled
+      if (
+        organization.jiraConfig.enabled &&
+        (!organization.jiraConfig.host ||
+          !organization.jiraConfig.username ||
+          !organization.jiraConfig.apiToken ||
+          !organization.jiraConfig.projectKey)
+      ) {
+        return res.status(400).json({
+          error:
+            "Jira configuration requires host, username, API token, and project key when enabled",
+        });
+      }
+    }
+
     await organization.save();
-    res.status(200).json(organization);
+
+    // Clear Jira client cache if Jira config was updated
+    if (jiraConfig !== undefined) {
+      jiraService.clearClientCache(identifier);
+      logger.info("Cleared Jira client cache after config update", {
+        organizationId: identifier,
+      });
+    }
+
+    // Remove sensitive information from response
+    const safeOrganization = organization.toObject();
+    if (safeOrganization.jiraConfig && safeOrganization.jiraConfig.apiToken) {
+      safeOrganization.jiraConfig.apiToken = "***HIDDEN***";
+    }
+
+    res.status(200).json(safeOrganization);
   } catch (error) {
     logger.error("Error updating organization", {
       error: error.message,
@@ -393,6 +533,50 @@ export const promoteDemoteMember = async (req, res) => {
       error: error.message,
       stack: error.stack,
       requestBody: req.body,
+    });
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Send test email to organization
+export const sendTestEmail = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { testEmail } = req.body;
+
+    // Find organization
+    const organization = await Organization.findOne({ identifier });
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    // Use provided test email or organization email
+    const emailToSend = testEmail || organization.email;
+
+    if (!emailToSend) {
+      return res.status(400).json({
+        error: "No email provided and organization has no email configured",
+      });
+    }
+
+    // Send test email
+    const emailSent = await emailService.sendTestEmail(emailToSend);
+
+    if (emailSent) {
+      res.status(200).json({
+        message: "Test email sent successfully",
+        email: emailToSend,
+      });
+    } else {
+      res.status(500).json({
+        error: "Failed to send test email",
+      });
+    }
+  } catch (error) {
+    logger.error("Error sending test email", {
+      error: error.message,
+      stack: error.stack,
+      identifier: req.params.identifier,
     });
     res.status(500).json({ error: error.message });
   }

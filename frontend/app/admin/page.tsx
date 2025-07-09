@@ -20,6 +20,7 @@ import { Feedback } from "@/components/feedback";
 import { Form } from "@/components/form";
 import { Dashboard } from "@/components/dashboard";
 import { Insight } from "@/components/insight";
+import { Recommendation } from "@/components/recommendation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
@@ -204,6 +205,12 @@ export default function Page() {
                     <Insight
                       selectedOrganization={selectedOrganization}
                       key={`insight-${selectedOrganization}`}
+                      userData={userData}
+                    />
+                  ) : activeButton === "Recommendation" ? (
+                    <Recommendation
+                      selectedOrganization={selectedOrganization}
+                      key={`recommendation-${selectedOrganization}`}
                       userData={userData}
                     />
                   ) : null}

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
-import { OrganizationMembersModal } from "./organization-settings-modal";
+import { OrganizationSettingsModal } from "./organization-settings-modal";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -82,10 +82,11 @@ export function OrganizationOptionsDroplist({
               className="relative z-60 w-full max-w-2xl mx-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <OrganizationMembersModal
+              <OrganizationSettingsModal
                 organization={organization}
                 userData={userData}
-                onClose={() => setOpenMembersModal(false)}
+                open={openMembersModal}
+                onOpenChange={setOpenMembersModal}
               />
             </div>
           </div>,

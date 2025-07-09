@@ -5,6 +5,7 @@ import logger from "../logger.js";
 // Changed import to use @google/genai and GoogleGenAI class
 import { GoogleGenAI } from "@google/genai";
 import { model } from "mongoose";
+import { generateEmbedding } from "../services/clusteringService.js";
 
 // Initialize Google GenAI
 // Ensure GOOGLE_AI_API_KEY is set in your environment variables
@@ -103,6 +104,54 @@ const analyzeFeedbackWithGenAI = async (feedbackContent) => {
   }
 };
 
+// Helper function to trigger automatic clustering
+const triggerAutomaticClustering = async (formId) => {
+  try {
+    // Count total insights for this form
+    const feedbacks = await Feedback.find({ formId });
+    const feedbackIds = feedbacks.map((feedback) => feedback._id);
+    const totalInsights = await Insight.countDocuments({
+      feedbackId: { $in: feedbackIds },
+    });
+
+    // Trigger clustering every 5 insights
+    if (totalInsights > 0 && totalInsights % 5 === 0) {
+      logger.info("Auto-triggering clustering", {
+        formId,
+        totalInsights,
+        trigger: "every_5_insights",
+      });
+
+      // Import the clustering function dynamically to avoid circular imports
+      const { clusterInsightsByForm } = await import("./insight.js");
+
+      // Create a mock request/response for the clustering function
+      const mockReq = { params: { formId } };
+      const mockRes = {
+        status: (code) => ({
+          json: (data) => {
+            logger.info("Auto-clustering completed", {
+              formId,
+              statusCode: code,
+              clustersFound: data.clusters?.length || 0,
+            });
+          },
+        }),
+      };
+
+      // Call clustering function
+      await clusterInsightsByForm(mockReq, mockRes);
+    }
+  } catch (error) {
+    logger.error("Error in automatic clustering trigger", {
+      error: error.message,
+      formId,
+      stack: error.stack,
+    });
+    // Don't throw - automatic clustering failure shouldn't break feedback creation
+  }
+};
+
 //CREATE
 export const createFeedback = async (req, res) => {
   try {
@@ -155,6 +204,31 @@ export const createFeedback = async (req, res) => {
       //   JSON.stringify(analysisResult, null, 2)
       // );
 
+      // Generate embedding for the feedback description and keywords
+      const textToEmbed = `${
+        analysisResult.feedbackDescription
+      } ${analysisResult.keywords.join(" ")}`;
+      let embedding = null;
+
+      try {
+        const rawEmbedding = await generateEmbedding(textToEmbed);
+        // Convert Float32Array to regular array of numbers
+        embedding = Array.isArray(rawEmbedding)
+          ? rawEmbedding
+          : Array.from(rawEmbedding);
+
+        logger.info("Generated embedding for insight", {
+          feedbackId: newFeedback._id,
+          embeddingLength: embedding.length,
+          embeddingType: typeof embedding[0],
+        });
+      } catch (embeddingError) {
+        logger.warn("Failed to generate embedding, continuing without it", {
+          error: embeddingError.message,
+          feedbackId: newFeedback._id,
+        });
+      }
+
       // Create an Insight record based on the analysis
       const newInsight = new Insight({
         feedbackId: newFeedback._id,
@@ -165,12 +239,17 @@ export const createFeedback = async (req, res) => {
         sentiment: analysisResult.sentiment,
         feedbackDescription: analysisResult.feedbackDescription,
         keywords: analysisResult.keywords,
+        embedding: embedding, // Add the embedding
       });
       await newInsight.save();
       console.log(newInsight);
       logger.info("Insight created from GenAI analysis", {
         insightId: newInsight._id,
+        hasEmbedding: !!embedding,
       });
+
+      // Trigger automatic clustering if applicable
+      await triggerAutomaticClustering(formId);
     }
 
     res.status(201).json({

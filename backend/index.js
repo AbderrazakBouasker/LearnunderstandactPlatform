@@ -20,8 +20,12 @@ import organizationRoutes from "./routes/organization.js";
 import stripeRoutes from "./routes/stripe.js";
 import statsRoutes from "./routes/stats.js";
 import insight from "./routes/insight.js";
+import clusterRoutes from "./routes/cluster.js";
+import schedulerRoutes from "./routes/scheduler.js";
+import jiraRoutes from "./routes/jira.js";
 import logger from "./logger.js";
 import { requestLogger, errorLogger } from "./logging-examples.js";
+import clusteringScheduler from "./services/clusteringScheduler.js";
 
 import { register } from "./controllers/auth.js";
 import { createFeedback } from "./controllers/feedbacks.js";
@@ -102,6 +106,9 @@ app.use("/api/organization", organizationRoutes);
 app.use("/api/stripe", stripeRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/insight", insight);
+app.use("/api/scheduler", schedulerRoutes);
+app.use("/api/cluster", clusterRoutes);
+app.use("/api/jira", jiraRoutes);
 
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
@@ -126,6 +133,25 @@ if (import.meta.url === `file://${process.argv[1]}`) {
           environment: process.env.NODE_ENV || "development",
           swaggerDocsUrl: `http://localhost:${PORT}/api-docs`,
         });
+
+        // Start the clustering scheduler
+        if (process.env.INSIGHT_CLUSTERING_TIMER) {
+          try {
+            clusteringScheduler.start();
+            logger.info("Clustering scheduler initialized", {
+              timer: process.env.INSIGHT_CLUSTERING_TIMER,
+            });
+          } catch (error) {
+            logger.error("Failed to start clustering scheduler", {
+              error: error.message,
+              stack: error.stack,
+            });
+          }
+        } else {
+          logger.info(
+            "Clustering scheduler disabled (no INSIGHT_CLUSTERING_TIMER set)"
+          );
+        }
       });
     })
     .catch((error) => {

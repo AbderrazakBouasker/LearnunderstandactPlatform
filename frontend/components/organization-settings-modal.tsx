@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import {
-  X,
   Loader2,
   UserIcon,
   Trash2,
@@ -54,6 +53,13 @@ import {
 import { OrganizationMemberAddModal } from "./organization-member-add-modal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OrganizationUpgradeStripeModal } from "./organization-upgrade-stripe-modal";
 import { X as XIcon } from "lucide-react";
 
@@ -77,6 +83,18 @@ interface Organization {
   updatedAt: string;
   __v: number;
   domains?: string[]; // Add domains property
+  recommendationThreshold?: number;
+  ticketCreationDelay?: number;
+  notificationThreshold?: number;
+  email?: string; // Add email property for notifications
+  jiraConfig?: {
+    host?: string;
+    username?: string;
+    apiToken?: string;
+    projectKey?: string;
+    issueType?: string;
+    enabled?: boolean;
+  };
 }
 
 interface OrganizationMembersModalProps {
@@ -134,6 +152,22 @@ export function OrganizationSettingsModal({
   const [newDomain, setNewDomain] = useState("");
   const [isAddingDomain, setIsAddingDomain] = useState(false);
   const [isDeletingDomain, setIsDeletingDomain] = useState<string | null>(null);
+
+  // State variables for recommendation settings
+  const [recommendationThreshold, setRecommendationThreshold] = useState(0.5);
+  const [ticketCreationDelay, setTicketCreationDelay] = useState(7);
+  const [notificationThreshold, setNotificationThreshold] = useState(0.7);
+  const [notificationEmail, setNotificationEmail] = useState("");
+  const [jiraHost, setJiraHost] = useState("");
+  const [jiraUsername, setJiraUsername] = useState("");
+  const [jiraApiToken, setJiraApiToken] = useState("");
+  const [jiraProjectKey, setJiraProjectKey] = useState("");
+  const [jiraIssueType, setJiraIssueType] = useState("Task");
+  const [jiraEnabled, setJiraEnabled] = useState(false);
+  const [hasExistingJiraToken, setHasExistingJiraToken] = useState(false); // Flag to track if there's an existing token
+  const [isUpdatingRecommendations, setIsUpdatingRecommendations] =
+    useState(false);
+  const [isUpdatingJira, setIsUpdatingJira] = useState(false);
 
   // Alert state for notifications and errors
   const [alert, setAlert] = useState<{
@@ -197,6 +231,32 @@ export function OrganizationSettingsModal({
             setDomains(data.domains);
           } else {
             setDomains([]); // Ensure domains is an empty array if not present
+          }
+
+          // Initialize recommendation settings from organization data
+          setRecommendationThreshold(data.recommendationThreshold ?? 0.5);
+          setTicketCreationDelay(data.ticketCreationDelay ?? 7);
+          setNotificationThreshold(data.notificationThreshold ?? 0.7);
+          setNotificationEmail(data.email ?? "");
+
+          // Initialize Jira settings from organization data
+          if (data.jiraConfig) {
+            setJiraHost(data.jiraConfig.host ?? "");
+            setJiraUsername(data.jiraConfig.username ?? "");
+            // Always keep API token state empty, but track if there's an existing one
+            setJiraApiToken("");
+            setHasExistingJiraToken(!!data.jiraConfig.apiToken); // Set flag if there's any token (including "HIDDEN")
+            setJiraProjectKey(data.jiraConfig.projectKey ?? "");
+            setJiraIssueType(data.jiraConfig.issueType ?? "Task");
+            setJiraEnabled(data.jiraConfig.enabled ?? false);
+          } else {
+            setJiraHost("");
+            setJiraUsername("");
+            setJiraApiToken("");
+            setHasExistingJiraToken(false); // No existing token
+            setJiraProjectKey("");
+            setJiraIssueType("Task");
+            setJiraEnabled(false);
           }
         } catch (err) {
           setError(err instanceof Error ? err.message : "An error occurred");
@@ -602,6 +662,140 @@ export function OrganizationSettingsModal({
     }
   };
 
+  // Handle recommendation settings update
+  const handleUpdateRecommendationSettings = async () => {
+    if (!isCurrentUserAdminOrSubadmin) return;
+
+    setIsUpdatingRecommendations(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/edit`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            recommendationThreshold,
+            ticketCreationDelay,
+            notificationThreshold,
+            email: notificationEmail,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setAlert({
+          title: "Success",
+          description: "Recommendation settings updated successfully",
+          variant: "default",
+          open: true,
+        });
+      } else {
+        throw new Error(
+          data.error || "Failed to update recommendation settings"
+        );
+      }
+    } catch (err) {
+      setAlert({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An error occurred",
+        variant: "destructive",
+        open: true,
+      });
+      console.error("Error updating recommendation settings:", err);
+    } finally {
+      setIsUpdatingRecommendations(false);
+    }
+  };
+
+  // Handle Jira settings update
+  const handleUpdateJiraSettings = async () => {
+    if (!isCurrentUserAdminOrSubadmin) return;
+
+    // Validate required fields when Jira is enabled
+    if (jiraEnabled) {
+      // Use the flag to check if there's an existing token
+      const hasNewApiToken = jiraApiToken.trim() !== "";
+
+      if (
+        !jiraHost.trim() ||
+        !jiraUsername.trim() ||
+        !jiraProjectKey.trim() ||
+        (!hasExistingJiraToken && !hasNewApiToken)
+      ) {
+        setAlert({
+          title: "Validation Error",
+          description:
+            "All Jira fields (Host, Username, API Token, Project Key) are required when Jira integration is enabled.",
+          variant: "destructive",
+          open: true,
+        });
+        return;
+      }
+    }
+
+    setIsUpdatingJira(true);
+    try {
+      // Build jiraConfig object - only include apiToken if user has entered a new value
+      const jiraConfig: {
+        host: string;
+        username: string;
+        projectKey: string;
+        issueType: string;
+        enabled: boolean;
+        apiToken?: string;
+      } = {
+        host: jiraHost,
+        username: jiraUsername,
+        projectKey: jiraProjectKey,
+        issueType: jiraIssueType,
+        enabled: jiraEnabled,
+      };
+
+      // Only include apiToken if the user has entered a value (not empty)
+      if (jiraApiToken.trim() !== "") {
+        jiraConfig.apiToken = jiraApiToken;
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/api/organization/${organization.identifier}/edit`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            jiraConfig,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setAlert({
+          title: "Success",
+          description: "Jira settings updated successfully",
+          variant: "default",
+          open: true,
+        });
+      } else {
+        throw new Error(data.error || "Failed to update Jira settings");
+      }
+    } catch (err) {
+      setAlert({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An error occurred",
+        variant: "destructive",
+        open: true,
+      });
+      console.error("Error updating Jira settings:", err);
+    } finally {
+      setIsUpdatingJira(false);
+    }
+  };
+
   // Table columns
   const columns: ColumnDef<Member>[] = [
     {
@@ -891,6 +1085,253 @@ export function OrganizationSettingsModal({
     );
   };
 
+  // Add recommendation settings UI (only for Enterprise plan)
+  const renderRecommendationSettings = () => {
+    if (organization.plan !== "Enterprise") {
+      return null;
+    }
+
+    return (
+      <div className="space-y-4 mt-6">
+        <h3 className="text-lg font-medium">Recommendation Settings</h3>
+        <p className="text-sm text-muted-foreground">
+          Configure AI recommendations and ticket creation settings for your
+          organization.
+        </p>
+
+        {/* Recommendation Settings */}
+        <div className="space-y-4 border rounded-md p-4">
+          <h4 className="text-md font-medium">Recommendation Configuration</h4>
+
+          <div className="grid gap-4">
+            <div className="grid gap-1">
+              <Label htmlFor="recommendation-threshold">
+                Recommendation Threshold (
+                {Math.round(recommendationThreshold * 100)}%)
+              </Label>
+              <input
+                type="range"
+                id="recommendation-threshold"
+                min="0"
+                max="1"
+                step="0.05"
+                value={recommendationThreshold}
+                onChange={(e) =>
+                  setRecommendationThreshold(parseFloat(e.target.value))
+                }
+                disabled={!isCurrentUserAdminOrSubadmin}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Threshold of negative feedback score for AI recommendation to be
+                made (10% - 100%)
+              </p>
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="ticket-creation-delay">
+                Ticket Creation Delay (days)
+              </Label>
+              <Input
+                id="ticket-creation-delay"
+                type="number"
+                min="1"
+                max="365"
+                value={ticketCreationDelay}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 1;
+                  setTicketCreationDelay(Math.min(365, Math.max(1, value)));
+                }}
+                disabled={!isCurrentUserAdminOrSubadmin}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Delay in days since the last one before creating a new ticket
+                for insights (1-365 days)
+              </p>
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="notification-threshold">
+                Notification Threshold (
+                {Math.round(notificationThreshold * 100)}%)
+              </Label>
+              <input
+                type="range"
+                id="notification-threshold"
+                min="0"
+                max="1"
+                step="0.05"
+                value={notificationThreshold}
+                onChange={(e) =>
+                  setNotificationThreshold(parseFloat(e.target.value))
+                }
+                disabled={!isCurrentUserAdminOrSubadmin}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Threshold of negative feedback score for sending notifications
+                (10% - 100%)
+              </p>
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="notification-email">Notification Email</Label>
+              <Input
+                id="notification-email"
+                type="email"
+                placeholder="notifications@example.com"
+                value={notificationEmail}
+                onChange={(e) => setNotificationEmail(e.target.value)}
+                disabled={!isCurrentUserAdminOrSubadmin}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Email address for receiving notifications
+              </p>
+            </div>
+
+            {isCurrentUserAdminOrSubadmin && (
+              <Button
+                onClick={handleUpdateRecommendationSettings}
+                disabled={isUpdatingRecommendations}
+                className="w-fit"
+              >
+                {isUpdatingRecommendations ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update Recommendation Settings"
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Jira Settings */}
+        <div className="space-y-4 border rounded-md p-4">
+          <h4 className="text-md font-medium">Jira Integration</h4>
+
+          <div className="grid gap-4">
+            <div className="grid gap-1">
+              <Label htmlFor="jira-enabled">Integration Status</Label>
+              <Select
+                value={jiraEnabled ? "enabled" : "disabled"}
+                onValueChange={(value) => setJiraEnabled(value === "enabled")}
+                disabled={!isCurrentUserAdminOrSubadmin}
+              >
+                <SelectTrigger id="jira-enabled">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="enabled">Enabled</SelectItem>
+                  <SelectItem value="disabled">Disabled</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Enable or disable Jira integration for this organization
+              </p>
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="jira-host">Jira Host</Label>
+              <Input
+                id="jira-host"
+                type="url"
+                placeholder="https://your-domain.atlassian.net"
+                value={jiraHost}
+                onChange={(e) => setJiraHost(e.target.value)}
+                disabled={!isCurrentUserAdminOrSubadmin}
+              />
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="jira-username">Jira Username</Label>
+              <Input
+                id="jira-username"
+                type="email"
+                placeholder="your-email@domain.com"
+                value={jiraUsername}
+                onChange={(e) => setJiraUsername(e.target.value)}
+                disabled={!isCurrentUserAdminOrSubadmin}
+              />
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="jira-api-token">API Token</Label>
+              <Input
+                id="jira-api-token"
+                type="password"
+                placeholder={
+                  hasExistingJiraToken
+                    ? "Hidden API Key - Leave empty to keep current"
+                    : "Your Jira API token"
+                }
+                value={jiraApiToken}
+                onChange={(e) => setJiraApiToken(e.target.value)}
+                disabled={!isCurrentUserAdminOrSubadmin}
+              />
+              <p className="text-xs text-muted-foreground">
+                {hasExistingJiraToken
+                  ? "API token is configured and hidden for security. Enter a new value to update it, or leave empty to keep current."
+                  : "Generate an API token from your Jira account settings"}
+              </p>
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="jira-project-key">Project Key</Label>
+              <Input
+                id="jira-project-key"
+                placeholder="PROJ"
+                value={jiraProjectKey}
+                onChange={(e) => setJiraProjectKey(e.target.value)}
+                disabled={!isCurrentUserAdminOrSubadmin}
+              />
+              <p className="text-xs text-muted-foreground">
+                The key of the Jira project where tickets will be created
+              </p>
+            </div>
+
+            <div className="grid gap-1">
+              <Label htmlFor="jira-issue-type">Issue Type</Label>
+              <Input
+                id="jira-issue-type"
+                placeholder="Task"
+                value={jiraIssueType}
+                onChange={(e) => setJiraIssueType(e.target.value)}
+                disabled={true}
+                readOnly
+              />
+              <p className="text-xs text-muted-foreground">
+                Issue type is fixed as &quot;Task&quot; for all Jira
+                integrations
+              </p>
+            </div>
+
+            {isCurrentUserAdminOrSubadmin && (
+              <Button
+                onClick={handleUpdateJiraSettings}
+                disabled={isUpdatingJira}
+                className="w-fit"
+              >
+                {isUpdatingJira ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update Jira Settings"
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" // Added padding here for small screens
@@ -1116,6 +1557,8 @@ export function OrganizationSettingsModal({
                 {renderPlanWithUpgradeButton()}
 
                 {renderDomainSection()}
+
+                {renderRecommendationSettings()}
               </div>
 
               <div className="space-y-2">
@@ -1146,7 +1589,8 @@ export function OrganizationSettingsModal({
                         Quit Organization
                       </h4>
                       <p className="text-sm text-red-600/80 dark:text-red-400/80 mt-1 mb-3">
-                        You will lose access to this organization's resources.
+                        You will lose access to this organization&apos;s
+                        resources.
                       </p>
                       <Button
                         variant="destructive"
