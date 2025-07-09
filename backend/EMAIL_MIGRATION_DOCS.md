@@ -69,10 +69,10 @@ Updated `.env` file format:
 
 ```env
 # Before (incorrect)
-RESEND_API_KEY = re_MBatwXzs_Njme3krYHJoemFLAYtdv9zcN
+RESEND_API_KEY =
 
 # After (correct)
-RESEND_API_KEY=re_MBatwXzs_Njme3krYHJoemFLAYtdv9zcN
+RESEND_API_KEY=
 ```
 
 ### 5. Testing
