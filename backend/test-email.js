@@ -7,7 +7,7 @@ dotenv.config();
 
 // Test email functionality
 const testEmailIntegration = async () => {
-  console.log("Testing SendGrid email integration...");
+  console.log("Testing Resend email integration...");
 
   try {
     // Test basic email sending

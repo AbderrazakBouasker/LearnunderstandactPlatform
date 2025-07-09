@@ -1,8 +1,16 @@
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 import logger from "../logger.js";
 
-// Initialize SendGrid with API key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Initialize Resend with API key
+let resend = null;
+if (
+  process.env.RESEND_API_KEY &&
+  process.env.RESEND_API_KEY !== "your_actual_resend_api_key_here"
+) {
+  resend = new Resend(process.env.RESEND_API_KEY);
+} else {
+  logger.warn("Resend API key not configured properly");
+}
 
 // Email template for cluster notifications
 const createClusterNotificationEmail = (
@@ -161,12 +169,9 @@ export const sendClusterNotificationEmail = async (
   sentimentPercentage
 ) => {
   try {
-    if (
-      !process.env.SENDGRID_API_KEY ||
-      process.env.SENDGRID_API_KEY === "your_actual_sendgrid_api_key_here"
-    ) {
+    if (!resend) {
       logger.warn(
-        "SendGrid API key not configured properly, skipping email notification"
+        "Resend API key not configured properly, skipping email notification"
       );
       return false;
     }
@@ -188,9 +193,9 @@ export const sendClusterNotificationEmail = async (
       sentimentPercentage
     );
 
-    const msg = {
+    const emailData = {
+      from: process.env.FROM_EMAIL || "notifications@luaplatform.com",
       to: organizationEmail,
-      from: process.env.FROM_EMAIL || "notifications@luaplatform.com", // Add this to your .env file
       subject: `🚨 High Sentiment Alert: ${
         clusterData.clusterLabel
       } (${sentimentPercentage.toFixed(1)}% negative)`,
@@ -198,7 +203,7 @@ export const sendClusterNotificationEmail = async (
       html,
     };
 
-    await sgMail.send(msg);
+    await resend.emails.send(emailData);
 
     logger.info("Cluster notification email sent successfully", {
       to: organizationEmail,
@@ -223,28 +228,25 @@ export const sendClusterNotificationEmail = async (
 // Send test email (for debugging)
 export const sendTestEmail = async (toEmail) => {
   try {
-    if (
-      !process.env.SENDGRID_API_KEY ||
-      process.env.SENDGRID_API_KEY === "your_actual_sendgrid_api_key_here"
-    ) {
-      throw new Error("SendGrid API key not configured properly");
+    if (!resend) {
+      throw new Error("Resend API key not configured properly");
     }
 
-    const msg = {
-      to: toEmail,
+    const emailData = {
       from: process.env.FROM_EMAIL || "notifications@luaplatform.com",
+      to: toEmail,
       subject: "LUA Platform - Test Email",
-      text: "This is a test email from LUA Platform to verify SendGrid integration.",
+      text: "This is a test email from LUA Platform to verify Resend integration.",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #667eea;">LUA Platform Test Email</h1>
-          <p>This is a test email to verify that SendGrid integration is working correctly.</p>
+          <p>This is a test email to verify that Resend integration is working correctly.</p>
           <p>If you receive this email, the integration is successful!</p>
         </div>
       `,
     };
 
-    await sgMail.send(msg);
+    await resend.emails.send(emailData);
 
     logger.info("Test email sent successfully", { to: toEmail });
     return true;
