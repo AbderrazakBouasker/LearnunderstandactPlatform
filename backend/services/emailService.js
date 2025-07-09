@@ -12,6 +12,24 @@ if (
   logger.warn("Resend API key not configured properly");
 }
 
+// Track last email sent time to implement delay
+let lastEmailSentTime = 0;
+const EMAIL_DELAY_MS = 1500; // 1.5 seconds
+
+// Helper function to add delay between emails
+const waitForEmailDelay = async () => {
+  const now = Date.now();
+  const timeSinceLastEmail = now - lastEmailSentTime;
+
+  if (timeSinceLastEmail < EMAIL_DELAY_MS) {
+    const delayNeeded = EMAIL_DELAY_MS - timeSinceLastEmail;
+    logger.info(`Waiting ${delayNeeded}ms before sending next email`);
+    await new Promise((resolve) => setTimeout(resolve, delayNeeded));
+  }
+
+  lastEmailSentTime = Date.now();
+};
+
 // Email template for cluster notifications
 const createClusterNotificationEmail = (
   organizationName,
@@ -187,6 +205,9 @@ export const sendClusterNotificationEmail = async (
       return false;
     }
 
+    // Wait for delay before sending email
+    await waitForEmailDelay();
+
     const { html, text } = createClusterNotificationEmail(
       organizationName,
       clusterData,
@@ -203,13 +224,15 @@ export const sendClusterNotificationEmail = async (
       html,
     };
 
-    await resend.emails.send(emailData);
+    // Send email asynchronously
+    const emailResult = await resend.emails.send(emailData);
 
     logger.info("Cluster notification email sent successfully", {
       to: organizationEmail,
       organizationName,
       clusterLabel: clusterData.clusterLabel,
       sentimentPercentage,
+      emailId: emailResult?.id,
     });
 
     return true;
@@ -232,6 +255,9 @@ export const sendTestEmail = async (toEmail) => {
       throw new Error("Resend API key not configured properly");
     }
 
+    // Wait for delay before sending email
+    await waitForEmailDelay();
+
     const emailData = {
       from: process.env.FROM_EMAIL || "notifications@luaplatform.com",
       to: toEmail,
@@ -246,9 +272,13 @@ export const sendTestEmail = async (toEmail) => {
       `,
     };
 
-    await resend.emails.send(emailData);
+    // Send email asynchronously
+    const emailResult = await resend.emails.send(emailData);
 
-    logger.info("Test email sent successfully", { to: toEmail });
+    logger.info("Test email sent successfully", {
+      to: toEmail,
+      emailId: emailResult?.id,
+    });
     return true;
   } catch (error) {
     logger.error("Error sending test email", {
@@ -259,7 +289,68 @@ export const sendTestEmail = async (toEmail) => {
   }
 };
 
+// Send multiple emails with delay between each
+export const sendBatchEmails = async (emailBatch) => {
+  const results = [];
+
+  for (let i = 0; i < emailBatch.length; i++) {
+    const emailConfig = emailBatch[i];
+
+    try {
+      let result;
+
+      if (emailConfig.type === "test") {
+        result = await sendTestEmail(emailConfig.to);
+      } else if (emailConfig.type === "cluster-notification") {
+        result = await sendClusterNotificationEmail(
+          emailConfig.to,
+          emailConfig.organizationName,
+          emailConfig.clusterData,
+          emailConfig.sentimentPercentage
+        );
+      }
+
+      results.push({
+        index: i,
+        success: result,
+        to: emailConfig.to,
+        type: emailConfig.type,
+      });
+
+      logger.info(`Batch email ${i + 1}/${emailBatch.length} processed`, {
+        to: emailConfig.to,
+        type: emailConfig.type,
+        success: result,
+      });
+    } catch (error) {
+      logger.error(`Error processing batch email ${i + 1}`, {
+        error: error.message,
+        to: emailConfig.to,
+        type: emailConfig.type,
+      });
+
+      results.push({
+        index: i,
+        success: false,
+        to: emailConfig.to,
+        type: emailConfig.type,
+        error: error.message,
+      });
+    }
+  }
+
+  const successCount = results.filter((r) => r.success).length;
+  logger.info(`Batch email sending completed`, {
+    total: emailBatch.length,
+    successful: successCount,
+    failed: emailBatch.length - successCount,
+  });
+
+  return results;
+};
+
 export default {
   sendClusterNotificationEmail,
   sendTestEmail,
+  sendBatchEmails,
 };
