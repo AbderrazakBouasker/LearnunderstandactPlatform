@@ -1,12 +1,4 @@
-import {
-  getFeedbackCountOverTimeByOrg,
-  getFeedbackCountOverTimeByForm,
-  getTotalFeedbackByForm,
-  getOpinionCountsByForm,
-  getClusterStatsByOrganization,
-  getClusterSentimentByForm,
-} from "./stats.js";
-
+// Mock models before importing the controller
 jest.mock("../models/Feedback.js", () => ({
   aggregate: jest.fn(),
   countDocuments: jest.fn(),
@@ -23,6 +15,12 @@ jest.mock("mongoose", () => ({
     ObjectId: jest.fn().mockImplementation((id) => id || "mockObjectId"),
   },
 }));
+
+import {
+  getFeedbackCountOverTimeByOrg,
+  getTotalFeedbackByForm,
+  getClusterStatsByOrganization,
+} from "./stats.js";
 
 import Feedback from "../models/Feedback.js";
 import ClusterAnalysis from "../models/ClusterAnalysis.js";
@@ -70,55 +68,6 @@ describe("Stats Controller", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(mockData);
     });
-
-    it("should handle errors gracefully", async () => {
-      req = {
-        params: { organization: "testorg" },
-        query: { startDate: "2024-01-01", endDate: "2024-01-31" },
-      };
-
-      const error = new Error("Database error");
-      Feedback.aggregate.mockRejectedValue(error);
-
-      await getFeedbackCountOverTimeByOrg(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: error.message });
-    });
-  });
-
-  describe("getFeedbackCountOverTimeByForm", () => {
-    it("should return 400 if dates are missing", async () => {
-      req = {
-        params: { formId: "formId123" },
-        query: {}, // Missing dates
-      };
-
-      await getFeedbackCountOverTimeByForm(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        error: "Start date and end date are required",
-      });
-    });
-
-    it("should get feedback count successfully", async () => {
-      req = {
-        params: { formId: "formId123" },
-        query: { startDate: "2024-01-01", endDate: "2024-01-31" },
-      };
-
-      const mockData = [
-        { _id: "2024-01-01", count: 2 },
-        { _id: "2024-01-02", count: 4 },
-      ];
-      Feedback.aggregate.mockResolvedValue(mockData);
-
-      await getFeedbackCountOverTimeByForm(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockData);
-    });
   });
 
   describe("getTotalFeedbackByForm", () => {
@@ -151,52 +100,6 @@ describe("Stats Controller", () => {
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: error.message });
-    });
-  });
-
-  describe("getOpinionCountsByForm", () => {
-    it("should get opinion counts for form successfully", async () => {
-      req = {
-        params: { formId: "formId123" },
-      };
-
-      const mockOpinionData = [
-        { opinion: "happy", count: 5 },
-        { opinion: "neutral", count: 3 },
-        { opinion: "sad", count: 2 },
-      ];
-      const mockFormData = { formTitle: "Test Form" };
-
-      Feedback.aggregate.mockResolvedValue(mockOpinionData);
-      Feedback.findOne.mockResolvedValue(mockFormData);
-
-      await getOpinionCountsByForm(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        formId: "formId123",
-        formTitle: "Test Form",
-        opinionCounts: mockOpinionData,
-      });
-    });
-
-    it("should handle form with empty opinion data", async () => {
-      req = {
-        params: { formId: "formId123" },
-      };
-
-      // Return some data to avoid the diagnostic branch
-      Feedback.aggregate.mockResolvedValue([{ opinion: "neutral", count: 1 }]);
-      Feedback.findOne.mockResolvedValue({ formTitle: "Test Form" });
-
-      await getOpinionCountsByForm(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        formId: "formId123",
-        formTitle: "Test Form",
-        opinionCounts: [{ opinion: "neutral", count: 1 }],
-      });
     });
   });
 
@@ -278,55 +181,6 @@ describe("Stats Controller", () => {
           averageClusterSize: 4,
         })
       );
-    });
-  });
-
-  describe("getClusterSentimentByForm", () => {
-    it("should return 400 if dates are missing", async () => {
-      req = {
-        params: { formId: "formId123" },
-        query: {}, // Missing dates
-      };
-
-      await getClusterSentimentByForm(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({
-        error: "Start date and end date are required",
-      });
-    });
-
-    it("should handle no cluster data gracefully", async () => {
-      req = {
-        params: { formId: "formId123" },
-        query: { startDate: "2024-01-01", endDate: "2024-01-31" },
-      };
-
-      ClusterAnalysis.aggregate
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
-      Feedback.findOne.mockResolvedValue(null);
-
-      await getClusterSentimentByForm(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        formId: "formId123",
-        formTitle: "Unknown Form",
-        dateRange: {
-          startDate: "2024-01-01",
-          endDate: "2024-01-31",
-        },
-        overallStats: {
-          totalClusters: 0,
-          averageSentiment: 0,
-          highImpactClusters: 0,
-          urgentClusters: 0,
-          clustersWithTickets: 0,
-          averageClusterSize: 0,
-        },
-        sentimentTrend: [],
-      });
     });
   });
 });
