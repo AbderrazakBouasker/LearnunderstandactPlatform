@@ -50,7 +50,7 @@
   "scripts": {
     "dev": "nodemon --import ./instrumentation.js index.js",
     "start": "node --import ./instrumentation.js index.js",
-    "test": "jest ./controller ./middleware",
+    "test": "STRIPE_SECRET_KEY=sk_test_fake_key npx jest ./controller ./middleware",
     "test:api": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config=./tests/jest.config.js ./tests"
   },
   "jest": {
