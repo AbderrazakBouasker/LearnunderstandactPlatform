@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { FormImportModal } from "@/components/form-import-modal";
 
 export function FormsForm({
   action,
@@ -114,6 +115,8 @@ export function FormsForm({
     value: "",
     options: [] as string[],
   });
+
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const addField = () => {
     if (newField.label.trim() === "") {
@@ -225,6 +228,35 @@ export function FormsForm({
     }
   };
 
+  const handleImport = (importedData: {
+    title: string;
+    description: string;
+    opinion: string[];
+    fields: {
+      label: string;
+      type: string;
+      value: string | string[];
+      options?: string[];
+    }[];
+  }) => {
+    // Determine the template based on opinion array length
+    let template: "3-point" | "5-point" | "7-point" = "5-point";
+    if (importedData.opinion.length === 3) {
+      template = "3-point";
+    } else if (importedData.opinion.length === 7) {
+      template = "7-point";
+    }
+
+    setSelectedTemplate(template);
+    setFormData((prev) => ({
+      ...prev,
+      title: importedData.title,
+      description: importedData.description,
+      opinion: importedData.opinion,
+      fields: importedData.fields,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -329,24 +361,38 @@ export function FormsForm({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>
-          {action === "create"
-            ? "Create a new Form"
-            : action === "edit"
-            ? "Edit the Form"
-            : action === "view"
-            ? "Form Details"
-            : null}
-        </DialogTitle>
-        <DialogDescription>
-          {action === "create"
-            ? "Create a new Form here. Click save when you're done."
-            : action === "edit"
-            ? "Edit the Form here. Click save when you're done."
-            : action === "view"
-            ? "View the form details."
-            : null}
-        </DialogDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <DialogTitle>
+              {action === "create"
+                ? "Create a new Form"
+                : action === "edit"
+                ? "Edit the Form"
+                : action === "view"
+                ? "Form Details"
+                : null}
+            </DialogTitle>
+            <DialogDescription>
+              {action === "create"
+                ? "Create a new Form here. Click save when you're done."
+                : action === "edit"
+                ? "Edit the Form here. Click save when you're done."
+                : action === "view"
+                ? "View the form details."
+                : null}
+            </DialogDescription>
+          </div>
+          {action === "create" && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setImportModalOpen(true)}
+              className="ml-4"
+            >
+              Import Form
+            </Button>
+          )}
+        </div>
       </DialogHeader>
 
       <form onSubmit={handleSubmit}>
@@ -628,6 +674,13 @@ export function FormsForm({
           </DialogFooter>
         )}
       </form>
+
+      {/* Import Modal */}
+      <FormImportModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
+        onImport={handleImport}
+      />
     </>
   );
 }
