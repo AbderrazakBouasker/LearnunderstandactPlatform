@@ -39,6 +39,42 @@ export function FormImportModal({
   const [parsedData, setParsedData] = useState<FormData | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Valid opinion templates
+  const opinionTemplates = {
+    "5-point": [
+      "very dissatisfied",
+      "dissatisfied",
+      "neutral",
+      "satisfied",
+      "very satisfied",
+    ],
+    "7-point": [
+      "very dissatisfied",
+      "dissatisfied",
+      "somewhat dissatisfied",
+      "neutral",
+      "somewhat satisfied",
+      "satisfied",
+      "very satisfied",
+    ],
+    "3-point": ["dissatisfied", "neutral", "satisfied"],
+  };
+
+  // Valid field types
+  const validFieldTypes = [
+    "text",
+    "number",
+    "email",
+    "date",
+    "time",
+    "textarea",
+    "tel",
+    "url",
+    "color",
+    "checkbox",
+    "radio",
+  ];
+
   const showAlert = (
     title: string,
     description: string,
@@ -70,10 +106,35 @@ export function FormImportModal({
         throw new Error("Fields must be an array");
       }
 
-      // Validate field structure
+      // Validate opinion array against valid templates
+      const isValidOpinion = Object.values(opinionTemplates).some(
+        (template) =>
+          template.length === parsed.opinion.length &&
+          template.every((value, index) => value === parsed.opinion[index])
+      );
+
+      if (!isValidOpinion) {
+        const validTemplatesStr = Object.entries(opinionTemplates)
+          .map(([key, values]) => `${key}: [${values.join(", ")}]`)
+          .join("; ");
+        throw new Error(
+          `Opinion array must match one of the valid templates: ${validTemplatesStr}`
+        );
+      }
+
+      // Validate field structure and types
       for (const field of parsed.fields) {
         if (!field.label || !field.type) {
           throw new Error("Each field must have label and type");
+        }
+
+        // Validate field type
+        if (!validFieldTypes.includes(field.type)) {
+          throw new Error(
+            `Invalid field type "${
+              field.type
+            }". Valid types are: ${validFieldTypes.join(", ")}`
+          );
         }
       }
 
@@ -224,6 +285,11 @@ export function FormImportModal({
       "label": "Name",
       "type": "text",
       "value": ""
+    },
+    {
+      "label": "Email",
+      "type": "email",
+      "value": ""
     }
   ]
 }'
@@ -273,11 +339,23 @@ export function FormImportModal({
                   <strong>Description:</strong> {parsedData.description}
                 </p>
                 <p>
-                  <strong>Opinion Options:</strong> {parsedData.opinion.length}{" "}
-                  options
+                  <strong>Opinion Template:</strong>{" "}
+                  {parsedData.opinion.length === 3
+                    ? "3-point scale"
+                    : parsedData.opinion.length === 5
+                    ? "5-point scale"
+                    : parsedData.opinion.length === 7
+                    ? "7-point scale"
+                    : `${parsedData.opinion.length} options`}{" "}
+                  ({parsedData.opinion.join(", ")})
                 </p>
                 <p>
                   <strong>Fields:</strong> {parsedData.fields.length} fields
+                  {parsedData.fields.length > 0 && (
+                    <span className="ml-1">
+                      ({parsedData.fields.map((f) => f.type).join(", ")})
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
