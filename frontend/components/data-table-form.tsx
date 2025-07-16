@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/table";
 // import { FormDetailModal } from "@/components/form-detail-modal";
 // import { FormFeedbackModal } from "@/components/form-feedback-modal";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { CreateFormModal } from "./create-form-modal";
 import { LinkCopyModal } from "@/components/link-copy-modal";
@@ -387,9 +387,11 @@ export function DataTableForm({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Dialog open={linkModalOpen} onOpenChange={setLinkModalOpen}>
-              <LinkCopyModal formId={form._id} />
-            </Dialog>
+            <LinkCopyModal
+              formId={form._id}
+              open={linkModalOpen}
+              onOpenChange={setLinkModalOpen}
+            />
           </>
         );
       },
