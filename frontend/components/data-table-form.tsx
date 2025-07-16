@@ -46,6 +46,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { CreateFormModal } from "./create-form-modal";
 import { LinkCopyModal } from "@/components/link-copy-modal";
+import { FormExportModal } from "@/components/form-export-modal";
 export type Form = {
   _id: string;
   title: string;
@@ -102,6 +103,7 @@ export function DataTableForm({
   const [alertTitle, setAlertTitle] = React.useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = React.useState(false);
   const [viewDialogOpen, setViewDialogOpen] = React.useState(false);
+  const [exportModalOpen, setExportModalOpen] = React.useState(false);
   const [selectedForm, setSelectedForm] = React.useState<Form | null>(null);
 
   const handleAlert = (alertInfo: {
@@ -121,6 +123,7 @@ export function DataTableForm({
     if (alertInfo.variant === "default" && alertInfo.title === "Success") {
       setEditDialogOpen(false);
       setViewDialogOpen(false);
+      setExportModalOpen(false);
     }
   };
 
@@ -348,6 +351,14 @@ export function DataTableForm({
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setLinkModalOpen(true)}>
                   Embed Form Link
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setSelectedForm(form);
+                    setExportModalOpen(true);
+                  }}
+                >
+                  Export Form
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => {
@@ -641,6 +652,15 @@ export function DataTableForm({
           />
         )}
       </Dialog>
+
+      {/* Export Modal */}
+      {selectedForm && (
+        <FormExportModal
+          form={selectedForm}
+          open={exportModalOpen}
+          onOpenChange={setExportModalOpen}
+        />
+      )}
 
       {isAlert && (
         <div className="fixed bottom-10 left-250 right-0 flex items-center justify-center p-0">
