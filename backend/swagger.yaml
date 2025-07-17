@@ -17,6 +17,14 @@ components:
           type: array
           items:
             type: string
+          default:
+            [
+              "very dissatisfied",
+              "dissatisfied",
+              "neutral",
+              "satisfied",
+              "very satisfied",
+            ]
         fields:
           type: array
           items:
@@ -26,9 +34,29 @@ components:
                 type: string
               type:
                 type: string
-                enum: ["text", "number", "date", "email", "textarea", "file"]
+                enum:
+                  [
+                    "text",
+                    "number",
+                    "tel",
+                    "date",
+                    "time",
+                    "email",
+                    "textarea",
+                    "file",
+                    "checkbox",
+                    "radio",
+                    "color",
+                  ]
               value:
                 type: string
+        organization:
+          type: string
+      required:
+        - title
+        - description
+        - opinion
+        - organization
     FormOutput:
       allOf:
         - $ref: "#/components/schemas/Form"
@@ -138,6 +166,12 @@ components:
     Feedback:
       type: object
       properties:
+        formId:
+          type: string
+        formTitle:
+          type: string
+        formDescription:
+          type: string
         opinion:
           type: string
         fields:
@@ -149,6 +183,14 @@ components:
                 type: string
               value:
                 type: string
+        organization:
+          type: string
+      required:
+        - formId
+        - formTitle
+        - formDescription
+        - opinion
+        - organization
     FeedbackOutput:
       allOf:
         - $ref: "#/components/schemas/Feedback"
@@ -176,7 +218,7 @@ securitySchemes:
     bearerFormat: JWT
 
 paths:
-  /api/forms/create:
+  /api/form/create:
     post:
       summary: Create a new form
       tags: [Forms]
@@ -208,7 +250,7 @@ paths:
         500:
           description: Internal server error
 
-  /api/forms:
+  /api/form:
     get:
       summary: Get all forms
       tags: [Forms]
@@ -238,7 +280,7 @@ paths:
         500:
           description: Internal server error
 
-  /api/forms/{id}:
+  /api/form/{id}:
     get:
       summary: Get a form by ID
       tags: [Forms]
@@ -273,7 +315,7 @@ paths:
         500:
           description: Internal server error
 
-  /api/forms/{id}/edit:
+  /api/form/{id}/edit:
     patch:
       summary: Update a form by ID
       tags: [Forms]
@@ -314,7 +356,7 @@ paths:
         500:
           description: Internal server error
 
-  /api/forms/{id}/delete:
+  /api/form/{id}/delete:
     delete:
       summary: Delete a form by ID
       tags: [Forms]
@@ -344,6 +386,43 @@ paths:
           description: Not Authorized - Missing token
         404:
           description: Form not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/form/organization/{organization}:
+    get:
+      summary: Get all forms for an organization
+      tags: [Forms]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: organization
+          schema:
+            type: string
+          required: true
+          description: Organization ID
+      responses:
+        200:
+          description: List of forms for the organization
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FormOutput"
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Forms not found
         429:
           description: Rate limit exceeded
         500:
@@ -681,7 +760,7 @@ paths:
         500:
           description: Internal server error
 
-  /api/feedbacks/create:
+  /api/feedback/{id}:
     post:
       summary: Create a new feedback
       tags: [Feedbacks]
@@ -733,38 +812,6 @@ paths:
           description: Rate limit exceeded
         500:
           description: Internal server error
-
-  /api/feedbacks:
-    get:
-      summary: Get all feedbacks
-      tags: [Feedbacks]
-      security:
-        - bearerAuth: []
-      x-rate-limit:
-        limit: 100
-        window: 1m
-        description: Rate limit of 100 requests per 1 minutes
-      responses:
-        200:
-          description: Successfully retrieved feedbacks
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/FeedbackOutput"
-        204:
-          description: No content
-        401:
-          description: "Token has expired or Invalid token"
-        403:
-          description: Not Authorized - Missing token
-        429:
-          description: Rate limit exceeded
-        500:
-          description: Internal server error
-
-  /api/feedbacks/{id}:
     get:
       summary: Get feedback by ID
       tags: [Feedbacks]
@@ -799,7 +846,37 @@ paths:
         500:
           description: Internal server error
 
-  /api/feedbacks/form/{id}:
+  /api/feedback:
+    get:
+      summary: Get all feedbacks
+      tags: [Feedbacks]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      responses:
+        200:
+          description: Successfully retrieved feedbacks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedbackOutput"
+        204:
+          description: No content
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/feedback/form/{id}:
     get:
       summary: Get feedback by Form ID
       tags: [Feedbacks]
@@ -836,7 +913,42 @@ paths:
         500:
           description: Internal server error
 
-  /api/feedbacks/{id}/delete:
+  /api/feedback/organization/{organization}:
+    get:
+      summary: Get feedbacks by organization
+      tags: [Feedbacks]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: organization
+          schema:
+            type: string
+          required: true
+          description: Organization ID
+      responses:
+        200:
+          description: Successfully retrieved feedbacks for organization
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedbackOutput"
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/feedback/{id}/delete:
     delete:
       summary: Delete feedback by ID
       tags: [Feedbacks]
