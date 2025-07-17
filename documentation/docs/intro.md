@@ -25,3 +25,22 @@ The goal of LUA is to offer an intelligent solution that facilitates decision-ma
 4. **Intelligent recommendation system** to suggest actions based on feedback analysis.
 
 5. **Decision automation** by integrating LUA with third-party tools (Jira, Trello, Slack, Microsoft Teams) to assign tasks to relevant teams.
+
+## Architecture & Infrastructure
+
+The LUA Platform is built using modern containerization and observability technologies:
+
+- **Docker-based microservices** for scalable deployment
+- **Comprehensive monitoring stack** with Grafana, Loki, Tempo, and Mimir
+- **OpenTelemetry instrumentation** for full observability
+- **Production-ready infrastructure** with security hardening and performance optimization
+
+For detailed infrastructure information, see the [Infrastructure Documentation](./infrastructure/overview).
+
+## Getting Started
+
+1. [Setup](./setup) - Initial platform setup and configuration
+2. [Infrastructure](./infrastructure/overview) - Docker containers and monitoring
+3. [APIs](./apis/user) - API endpoints and integration
+4. [Middleware](./middleware) - Authentication and request handling
+5. [Testing](./tests/unittest) - Testing strategies and implementation

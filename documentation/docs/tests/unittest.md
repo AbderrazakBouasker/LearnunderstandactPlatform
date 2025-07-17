@@ -13,12 +13,69 @@ Unit tests are essential components of our testing strategy, designed to verify 
 Our test suite covers several critical areas of the application:
 
 ### API Controllers
-- **Auth Controller**: Tests for user registration and login functionality
+
+- **Auth Controller**: Tests for user registration, login, and logout functionality
+
+  - User registration with unique email/username validation
+  - Organization identifier validation and creation
+  - Password hashing and authentication
+  - JWT token generation and management
+  - Error handling and logging for authentication failures
+
 - **Users Controller**: Tests for user management operations
+
+  - User profile retrieval and authentication
+  - User profile updates with password verification
+  - Organization membership management
+  - Input validation and error handling
+  - Secure data filtering (password exclusion from responses)
+
 - **Forms Controller**: Tests for form CRUD operations
+
+  - Form creation with field validation
+  - Form retrieval by ID and organization
+  - Form updates and field management
+  - Form deletion and authorization checks
+  - Organization domain integration
+
 - **Feedbacks Controller**: Tests for feedback submission and retrieval
 
+  - Feedback creation with form validation
+  - AI-powered sentiment analysis integration
+  - Clustering and embedding generation
+  - File upload handling for feedback attachments
+  - Insight generation from feedback data
+
+- **Insight Controller**: Tests for AI-driven feedback analysis
+
+  - Insight retrieval by organization and form
+  - Clustering analysis for feedback patterns
+  - Sentiment analysis and trend identification
+  - Error handling for AI service integration
+
+- **Organization Controller**: Tests for organization management
+
+  - Organization creation and validation
+  - Member management and role assignment
+  - Email service integration testing
+  - Configuration management (Jira, email settings)
+  - Domain management and access control
+
+- **Stats Controller**: Tests for analytics and reporting
+
+  - Feedback count aggregation over time
+  - Opinion distribution analysis
+  - Cluster statistics and sentiment tracking
+  - Performance metrics and data visualization support
+
+- **Stripe Controller**: Tests for payment processing
+  - Payment intent creation for different tiers
+  - Stripe integration and error handling
+  - Subscription tier validation
+  - Secure payment metadata handling
+
 ### Middleware
+
 - **Authentication Middleware**: Tests for JWT token validation
 - **Rate Limiter**: Tests for request rate limiting functionality
 
@@ -66,6 +123,7 @@ Tests are configured using Jest as the testing framework. The configuration can 
 ### Continuous Integration
 
 Tests are automatically run in our CI pipeline:
+
 - On every push to any branch
 - On pull requests before merging
 - Tests must pass before deployment is allowed
@@ -75,14 +133,14 @@ Tests are automatically run in our CI pipeline:
 Each test file follows a consistent structure:
 
 ```javascript
-describe('Component Name', () => {
+describe("Component Name", () => {
   // Setup and teardown
   beforeEach(() => {
     // Test setup
   });
 
-  describe('Method/Function Name', () => {
-    it('should do something specific', async () => {
+  describe("Method/Function Name", () => {
+    it("should do something specific", async () => {
       // Test case
     });
   });
@@ -100,9 +158,9 @@ We use Jest's mocking capabilities to isolate components:
 Example of mocked dependencies:
 
 ```javascript
-jest.mock('../models/User.js');
-jest.mock('../logger.js');
-jest.mock('jsonwebtoken');
+jest.mock("../models/User.js");
+jest.mock("../logger.js");
+jest.mock("jsonwebtoken");
 ```
 
 ## Best Practices
@@ -119,15 +177,19 @@ jest.mock('jsonwebtoken');
 ### Testing API Endpoints
 
 ```javascript
-it('should handle successful request', async () => {
-  const req = { body: { /* test data */ } };
+it("should handle successful request", async () => {
+  const req = {
+    body: {
+      /* test data */
+    },
+  };
   const res = {
     status: jest.fn().mockReturnThis(),
-    json: jest.fn()
+    json: jest.fn(),
   };
-  
+
   await endpoint(req, res);
-  
+
   expect(res.status).toHaveBeenCalledWith(200);
   expect(res.json).toHaveBeenCalledWith(expectedData);
 });
@@ -136,12 +198,12 @@ it('should handle successful request', async () => {
 ### Testing Error Handling
 
 ```javascript
-it('should handle errors appropriately', async () => {
-  const error = new Error('Test error');
+it("should handle errors appropriately", async () => {
+  const error = new Error("Test error");
   someFunction.mockRejectedValue(error);
-  
+
   await endpoint(req, res);
-  
+
   expect(res.status).toHaveBeenCalledWith(500);
   expect(logger.error).toHaveBeenCalled();
 });
@@ -152,6 +214,7 @@ it('should handle errors appropriately', async () => {
 To debug tests:
 
 1. Use the `debug` script in package.json:
+
 ```bash
 npm run test:debug
 ```

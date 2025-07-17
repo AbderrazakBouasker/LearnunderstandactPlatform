@@ -114,12 +114,12 @@ The logging middleware uses the application's central logger configuration. No a
 
 ## Authentication Middleware
 
-The authentication middleware verifies JWT tokens and protects routes that require authentication.
+The authentication middleware verifies JWT tokens from HTTP-only cookies and protects routes that require authentication.
 
 ### Features
 
-- JWT token verification
-- Bearer token support
+- JWT token verification from HTTP-only cookies
+- Automatic cookie-based authentication
 - Detailed error handling for different token issues
 - Automatic logging of authentication attempts
 
@@ -139,12 +139,27 @@ router.use(verifyToken);
 
 ### Error Responses
 
-| Scenario      | Status Code | Response                      |
-| ------------- | ----------- | ----------------------------- |
-| No token      | 403         | "Not Authorized"              |
-| Expired token | 401         | ( error: "Token has expired") |
-| Invalid token | 401         | ( error: "Invalid token" )    |
-| Server error  | 500         | ( error: "Error message" )    |
+| Scenario      | Status Code | Response                         |
+| ------------- | ----------- | -------------------------------- |
+| No token      | 403         | "Not Authorized"                 |
+| Expired token | 401         | `{"error": "Token has expired"}` |
+| Invalid token | 401         | `{"error": "Invalid token"}`     |
+| Server error  | 500         | `{"error": "Error message"}`     |
+
+### Authentication Flow
+
+1. User logs in via `/api/auth/login` endpoint
+2. Server sets an HTTP-only cookie named `jwt` with the authentication token
+3. Browser automatically includes the cookie in subsequent requests
+4. Middleware extracts and verifies the token from the cookie
+5. If valid, the request proceeds; if invalid, an appropriate error is returned
+
+### Security Features
+
+- HTTP-only cookies prevent client-side JavaScript access
+- Cookies are automatically included in requests by the browser
+- Token verification includes expiration checking
+- Detailed logging of authentication attempts and failures
 
 ## Rate Limiter
 
@@ -202,7 +217,9 @@ REDIS_PASSWORD=your-redis-password
 
    - Keep JWT secrets secure and rotate regularly
    - Use environment variables for sensitive configuration
+   - HTTP-only cookies provide better security than Bearer tokens
    - Implement token refresh mechanisms
+   - Consider secure cookie flags (secure, sameSite) in production
 
 2. **Rate Limiting**
 

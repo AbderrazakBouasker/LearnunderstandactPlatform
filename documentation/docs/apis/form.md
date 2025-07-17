@@ -21,7 +21,7 @@ This endpoint allows you to create a new feedback form. This is a secured endpoi
 - **URL**: `/api/forms/create`
 - **Method**: `POST`
 - **Tags**: Forms
-- **Authentication**: Bearer Token (JWT)
+- **Authentication**: HTTP-only Cookie (JWT)
 - **Rate Limit**: 100 requests per minute
 
 ### Request Body
@@ -50,26 +50,27 @@ This endpoint allows you to create a new feedback form. This is a secured endpoi
 ```
 
 **Notes:**
+
 - The `opinion` field is optional. If not specified, it defaults to `["unhappy", "neutral", "happy"]`.
 - The `type` field can be one of: "text", "number", "date", "email", "textarea", "file".
 - The `value` field is optional and can contain a default value.
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 201 | Form created successfully | Form object |
-| 401 | Token has expired or Invalid token | Error message |
-| 403 | Not Authorized - Missing token | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                        | Response Body |
+| ----------- | ---------------------------------- | ------------- |
+| 201         | Form created successfully          | Form object   |
+| 401         | Token has expired or Invalid token | Error message |
+| 403         | Not Authorized - Missing token     | Error message |
+| 429         | Rate limit exceeded                | Error message |
+| 500         | Internal server error              | Error message |
 
 ### Example Request
 
 ```bash
 curl -X POST \
   'http://backend/api/forms/create' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' \
+  -c cookies.txt -b cookies.txt \
   -H 'Content-Type: application/json' \
   -d '{
     "title": "Product Quality Survey",
@@ -99,9 +100,7 @@ curl -X POST \
 {
   "title": "Product Quality Survey",
   "description": "Please give us your opinion about the quality of the product",
-  "opinion": [
-    "very unhappy", "unhappy", "neutral", "happy", "very happy"
-  ],
+  "opinion": ["very unhappy", "unhappy", "neutral", "happy", "very happy"],
   "fields": [
     {
       "label": "First Name",
@@ -138,26 +137,26 @@ This endpoint retrieves all forms created by the authenticated user. This is a s
 - **URL**: `/api/forms`
 - **Method**: `GET`
 - **Tags**: Forms
-- **Authentication**: Bearer Token (JWT)
+- **Authentication**: HTTP-only Cookie (JWT)
 - **Rate Limit**: 100 requests per minute
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 200 | Forms retrieved successfully | Array of Form objects |
-| 204 | No forms found | No content |
-| 401 | Token has expired or Invalid token | Error message |
-| 403 | Not Authorized - Missing token | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                        | Response Body         |
+| ----------- | ---------------------------------- | --------------------- |
+| 200         | Forms retrieved successfully       | Array of Form objects |
+| 204         | No forms found                     | No content            |
+| 401         | Token has expired or Invalid token | Error message         |
+| 403         | Not Authorized - Missing token     | Error message         |
+| 429         | Rate limit exceeded                | Error message         |
+| 500         | Internal server error              | Error message         |
 
 ### Example Request
 
 ```bash
 curl -X GET \
   'http://backend/api/forms' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  -c cookies.txt -b cookies.txt
 ```
 
 ### Example Response
@@ -167,11 +166,7 @@ curl -X GET \
   {
     "title": "Product Quality Survey",
     "description": "Please give us your opinion about the quality of the product",
-    "opinion": [
-      "unhappy",
-      "neutral",
-      "happy"
-    ],
+    "opinion": ["unhappy", "neutral", "happy"],
     "fields": [
       {
         "label": "First Name",
@@ -189,7 +184,7 @@ curl -X GET \
     "createdAt": "2025-03-16T14:08:55.226Z",
     "updatedAt": "2025-03-16T14:08:55.226Z",
     "__v": 0
-  },
+  }
   // Additional forms...
 ]
 ```
@@ -205,32 +200,32 @@ This endpoint retrieves a specific form by its ID. This is a secured endpoint th
 - **URL**: `/api/forms/{id}`
 - **Method**: `GET`
 - **Tags**: Forms
-- **Authentication**: Bearer Token (JWT)
+- **Authentication**: HTTP-only Cookie (JWT)
 - **Rate Limit**: 100 requests per minute
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| id | string | Yes | The unique identifier of the form |
+| Parameter | Type   | Required | Description                       |
+| --------- | ------ | -------- | --------------------------------- |
+| id        | string | Yes      | The unique identifier of the form |
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 200 | Form retrieved successfully | Form object |
-| 401 | Token has expired or Invalid token | Error message |
-| 403 | Not Authorized - Missing token | Error message |
-| 404 | Form not found | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                        | Response Body |
+| ----------- | ---------------------------------- | ------------- |
+| 200         | Form retrieved successfully        | Form object   |
+| 401         | Token has expired or Invalid token | Error message |
+| 403         | Not Authorized - Missing token     | Error message |
+| 404         | Form not found                     | Error message |
+| 429         | Rate limit exceeded                | Error message |
+| 500         | Internal server error              | Error message |
 
 ### Example Request
 
 ```bash
 curl -X GET \
   'http://backend/api/forms/67d6db77fcfdc0d95911b483' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  -c cookies.txt -b cookies.txt
 ```
 
 ### Example Response
@@ -239,11 +234,7 @@ curl -X GET \
 {
   "title": "Product Quality Survey",
   "description": "Please give us your opinion about the quality of the product",
-  "opinion": [
-    "unhappy",
-    "neutral",
-    "happy"
-  ],
+  "opinion": ["unhappy", "neutral", "happy"],
   "fields": [
     {
       "label": "First Name",
@@ -275,41 +266,42 @@ This endpoint allows you to update an existing form by its ID. This is a secured
 - **URL**: `/api/forms/{id}/edit`
 - **Method**: `PATCH`
 - **Tags**: Forms
-- **Authentication**: Bearer Token (JWT)
+- **Authentication**: HTTP-only Cookie (JWT)
 - **Rate Limit**: 100 requests per minute
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| id | string | Yes | The unique identifier of the form to update |
+| Parameter | Type   | Required | Description                                 |
+| --------- | ------ | -------- | ------------------------------------------- |
+| id        | string | Yes      | The unique identifier of the form to update |
 
 ### Request Body
 
 Same as for the Create Form endpoint. You can update any fields of the form.
 
 **Important Notes:**
+
 - If `title`, `description`, or `opinion` are not specified in the request, their existing values will remain unchanged.
 - If the `fields` array is not specified in the request, all existing fields will be completely removed from the form.
 - To update or keep fields, you must include the entire fields array with all desired fields in the request.
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 200 | Form updated successfully | Updated Form object |
-| 401 | Token has expired or Invalid token | Error message |
-| 403 | Not Authorized - Missing token | Error message |
-| 404 | Form not found | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                        | Response Body       |
+| ----------- | ---------------------------------- | ------------------- |
+| 200         | Form updated successfully          | Updated Form object |
+| 401         | Token has expired or Invalid token | Error message       |
+| 403         | Not Authorized - Missing token     | Error message       |
+| 404         | Form not found                     | Error message       |
+| 429         | Rate limit exceeded                | Error message       |
+| 500         | Internal server error              | Error message       |
 
 ### Example Request
 
 ```bash
 curl -X PATCH \
   'http://backend/api/forms/67d6db77fcfdc0d95911b483/edit' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' \
+  -c cookies.txt -b cookies.txt \
   -H 'Content-Type: application/json' \
   -d '{
     "title": "Updated Product Quality Survey",
@@ -323,13 +315,7 @@ curl -X PATCH \
 {
   "title": "Updated Product Quality Survey",
   "description": "Please give us your opinion about the quality of the product",
-  "opinion": [
-    "terrible",
-    "poor",
-    "average",
-    "good",
-    "excellent"
-  ],
+  "opinion": ["terrible", "poor", "average", "good", "excellent"],
   "_id": "67d6db77fcfdc0d95911b483",
   "createdAt": "2025-03-16T14:08:55.226Z",
   "updatedAt": "2025-03-16T14:10:22.114Z",
@@ -348,32 +334,32 @@ This endpoint allows you to delete a form by its ID. This is a secured endpoint 
 - **URL**: `/api/forms/{id}/delete`
 - **Method**: `DELETE`
 - **Tags**: Forms
-- **Authentication**: Bearer Token (JWT)
+- **Authentication**: HTTP-only Cookie (JWT)
 - **Rate Limit**: 100 requests per minute
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| id | string | Yes | The unique identifier of the form to delete |
+| Parameter | Type   | Required | Description                                 |
+| --------- | ------ | -------- | ------------------------------------------- |
+| id        | string | Yes      | The unique identifier of the form to delete |
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 200 | Form deleted successfully | Deleted Form object |
-| 401 | Token has expired or Invalid token | Error message |
-| 403 | Not Authorized - Missing token | Error message |
-| 404 | Form not found | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                        | Response Body       |
+| ----------- | ---------------------------------- | ------------------- |
+| 200         | Form deleted successfully          | Deleted Form object |
+| 401         | Token has expired or Invalid token | Error message       |
+| 403         | Not Authorized - Missing token     | Error message       |
+| 404         | Form not found                     | Error message       |
+| 429         | Rate limit exceeded                | Error message       |
+| 500         | Internal server error              | Error message       |
 
 ### Example Request
 
 ```bash
 curl -X DELETE \
   'http://backend/api/forms/67d6db77fcfdc0d95911b483/delete' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  -c cookies.txt -b cookies.txt
 ```
 
 ### Example Response
@@ -382,13 +368,7 @@ curl -X DELETE \
 {
   "title": "Updated Product Quality Survey",
   "description": "Please give us your opinion about the quality of the product",
-  "opinion": [
-    "terrible",
-    "poor",
-    "average",
-    "good",
-    "excellent"
-  ],
+  "opinion": ["terrible", "poor", "average", "good", "excellent"],
   "fields": [
     {
       "label": "First Name",
@@ -411,26 +391,27 @@ curl -X DELETE \
 
 ## Authentication Requirements
 
-All Form API endpoints require the JWT token to be included in the Authorization header:
+All Form API endpoints require authentication via HTTP-only cookies. After logging in, the JWT token is automatically included in subsequent requests through cookies.
 
-```
-Authorization: Bearer <your-jwt-token>
-```
+### How Authentication Works
 
-This token is obtained through the [login endpoint](/docs/apis/authorization#login-endpoint) in the Authentication API.
+1. **Login**: Use the [login endpoint](/docs/apis/authorization#login-endpoint) to authenticate
+2. **Cookie Set**: Server sets an HTTP-only `jwt` cookie
+3. **Automatic Authentication**: Browser automatically includes the cookie in API requests
+4. **No Manual Headers**: No need to manually set Authorization headers
 
 ## Form Fields
 
 Forms can have various field types:
 
-| Type | Description |
-|------|-------------|
-| text | A single-line text input |
-| number | A numeric input field |
-| date | A date picker field |
-| email | An email address input field |
+| Type     | Description                  |
+| -------- | ---------------------------- |
+| text     | A single-line text input     |
+| number   | A numeric input field        |
+| date     | A date picker field          |
+| email    | An email address input field |
 | textarea | A multi-line text input area |
-| file | A file upload field |
+| file     | A file upload field          |
 
 ## Opinion Options
 

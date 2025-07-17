@@ -28,17 +28,21 @@ Located in `tests/helpers.js`, these utilities simplify common testing operation
 ```javascript
 // Common auth operations
 export const loginUser = async (credentials) => {
-  return await request(testApp).post('/api/auth/login').send(credentials);
+  return await request(testApp).post("/api/auth/login").send(credentials);
 };
 
 export const registerUser = async (userData) => {
-  return await request(testApp).post('/api/auth/register').send(userData);
+  return await request(testApp).post("/api/auth/register").send(userData);
 };
 
 // Log verification helpers
 export const verifyLogCalls = {
-  error: (message, attributes) => { /* ... */ },
-  noBusinessErrors: () => { /* ... */ },
+  error: (message, attributes) => {
+    /* ... */
+  },
+  noBusinessErrors: () => {
+    /* ... */
+  },
   // ... other verification methods
 };
 ```
@@ -73,23 +77,23 @@ sudo docker exec -it backend npm run test:api -- auth.test.js
 ### Basic Test Pattern
 
 ```javascript
-describe('API Endpoint', () => {
+describe("API Endpoint", () => {
   let token;
   let userId;
-  
+
   beforeEach(async () => {
     // Setup: register and login user
     await registerUser(testUser);
     const loginRes = await loginUser(credentials);
     token = loginRes.body.token;
   });
-  
-  it('should perform expected operation', async () => {
+
+  it("should perform expected operation", async () => {
     const res = await request(testApp)
-      .post('/api/endpoint')
-      .set('Authorization', `Bearer ${token}`)
+      .post("/api/endpoint")
+      .set("Authorization", `Bearer ${token}`)
       .send(payload);
-      
+
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchExpectedStructure();
   });
@@ -98,27 +102,56 @@ describe('API Endpoint', () => {
 
 ## Test Categories
 
-### Authentication Tests
-- User registration
-- User login
-- Token validation
-- Authorization checks
+### Authentication Tests (`auth.test.js`)
 
-### Form Management Tests
-- Form creation
-- Form retrieval
-- Form updates
+- User registration with validation
+- User login with credentials
+- Logout functionality
+- Duplicate email handling
+- Invalid password rejection
+
+### Form Management Tests (`form.test.js`)
+
+- Form creation with authentication
+- Form retrieval (authenticated and public)
+- Form updates and editing
 - Form deletion
+- Organization-specific forms
+- Form validation and error handling
 
-### Feedback Tests
-- Feedback submission
-- Feedback retrieval
-- Form-specific feedback
+### Feedback Tests (`feedback.test.js`)
 
-### User Management Tests
+- Feedback submission to forms
+- Feedback retrieval with authentication
+- Form-specific feedback queries
+- Feedback validation and error cases
+- Missing field validation
+
+### User Management Tests (`user.test.js`)
+
 - User profile retrieval
-- User updates
-- Authorization levels
+- User profile updates with password verification
+- Current user information (`/me` endpoint)
+- Organization membership management
+- Username and email uniqueness validation
+
+### Organization Tests (`organization.test.js`)
+
+- Organization creation and management
+- Organization member addition/removal
+- Role management within organizations
+- Organization settings and thresholds
+- JIRA integration configuration
+- Test email functionality
+
+### Insight and Analytics Tests (`insight.test.js`)
+
+- Insight generation from feedback
+- Sentiment analysis results
+- Keyword extraction
+- Organization-specific insights
+- Form-based insight queries
+- Cluster analysis and recommendations
 
 ## Logging Verification
 
@@ -129,8 +162,8 @@ The `verifyLogCalls` helper provides methods to check logging behavior:
 verifyLogCalls.noBusinessErrors();
 
 // Verify specific error was logged
-verifyLogCalls.error('Expected error message', {
-  expectedAttribute: 'value'
+verifyLogCalls.error("Expected error message", {
+  expectedAttribute: "value",
 });
 ```
 
@@ -162,19 +195,18 @@ beforeEach(async () => {
 ### Protected Route Testing
 
 ```javascript
-describe('Protected Endpoint', () => {
-  it('should require authentication', async () => {
-    const res = await request(testApp)
-      .get('/api/protected-route');
-      
+describe("Protected Endpoint", () => {
+  it("should require authentication", async () => {
+    const res = await request(testApp).get("/api/protected-route");
+
     expect(res.statusCode).toBe(403);
   });
-  
-  it('should reject invalid token', async () => {
+
+  it("should reject invalid token", async () => {
     const res = await request(testApp)
-      .get('/api/protected-route')
-      .set('Authorization', 'Bearer invalid-token');
-      
+      .get("/api/protected-route")
+      .set("Authorization", "Bearer invalid-token");
+
     expect(res.statusCode).toBe(401);
   });
 });
@@ -183,15 +215,17 @@ describe('Protected Endpoint', () => {
 ### Data Validation Testing
 
 ```javascript
-it('should validate required fields', async () => {
-  const invalidData = { /* missing required fields */ };
-  
+it("should validate required fields", async () => {
+  const invalidData = {
+    /* missing required fields */
+  };
+
   const res = await request(testApp)
-    .post('/api/endpoint')
-    .set('Authorization', `Bearer ${token}`)
+    .post("/api/endpoint")
+    .set("Authorization", `Bearer ${token}`)
     .send(invalidData);
-    
+
   expect(res.statusCode).toBe(400);
-  expect(res.body).toHaveProperty('error');
+  expect(res.body).toHaveProperty("error");
 });
 ```

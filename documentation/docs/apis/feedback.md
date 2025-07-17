@@ -26,9 +26,9 @@ This endpoint allows end users to submit feedback for a specific form. This endp
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| id | string | Yes | The ID of the form for which feedback is being submitted |
+| Parameter | Type   | Required | Description                                              |
+| --------- | ------ | -------- | -------------------------------------------------------- |
+| id        | string | Yes      | The ID of the form for which feedback is being submitted |
 
 ### Request Body
 
@@ -55,19 +55,20 @@ The request body uses `multipart/form-data` to support file uploads:
 ```
 
 **Notes:**
+
 - The `opinion` field should match one of the opinion options defined in the form.
 - The `fields` array should contain objects that match the fields defined in the form.
 - For file type fields, the value represents the file name.
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 201 | Feedback created successfully | Feedback object |
-| 400 | Missing field or invalid type | Error message |
-| 404 | Form not found | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                   | Response Body   |
+| ----------- | ----------------------------- | --------------- |
+| 201         | Feedback created successfully | Feedback object |
+| 400         | Missing field or invalid type | Error message   |
+| 404         | Form not found                | Error message   |
+| 429         | Rate limit exceeded           | Error message   |
+| 500         | Internal server error         | Error message   |
 
 ### Example Request
 
@@ -123,26 +124,26 @@ This endpoint retrieves all feedback submissions across all forms. This is a sec
 - **URL**: `/api/feedbacks`
 - **Method**: `GET`
 - **Tags**: Feedbacks
-- **Authentication**: Bearer Token (JWT)
+- **Authentication**: HTTP-only Cookie (JWT)
 - **Rate Limit**: 100 requests per minute
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 200 | Feedbacks retrieved successfully | Array of Feedback objects |
-| 204 | No feedbacks found | No content |
-| 401 | Token has expired or Invalid token | Error message |
-| 403 | Not Authorized - Missing token | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                        | Response Body             |
+| ----------- | ---------------------------------- | ------------------------- |
+| 200         | Feedbacks retrieved successfully   | Array of Feedback objects |
+| 204         | No feedbacks found                 | No content                |
+| 401         | Token has expired or Invalid token | Error message             |
+| 403         | Not Authorized - Missing token     | Error message             |
+| 429         | Rate limit exceeded                | Error message             |
+| 500         | Internal server error              | Error message             |
 
 ### Example Request
 
 ```bash
 curl -X GET \
   'http://backend/api/feedbacks' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  -c cookies.txt -b cookies.txt
 ```
 
 ### Example Response
@@ -170,7 +171,7 @@ curl -X GET \
     "createdAt": "2025-03-16T14:37:15.242Z",
     "updatedAt": "2025-03-16T14:37:15.242Z",
     "__v": 0
-  },
+  }
   // Additional feedbacks...
 ]
 ```
@@ -186,32 +187,32 @@ This endpoint retrieves a specific feedback submission by its ID. This is a secu
 - **URL**: `/api/feedbacks/{id}`
 - **Method**: `GET`
 - **Tags**: Feedbacks
-- **Authentication**: Bearer Token (JWT)
+- **Authentication**: HTTP-only Cookie (JWT)
 - **Rate Limit**: 100 requests per minute
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| id | string | Yes | The unique identifier of the feedback |
+| Parameter | Type   | Required | Description                           |
+| --------- | ------ | -------- | ------------------------------------- |
+| id        | string | Yes      | The unique identifier of the feedback |
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 200 | Feedback retrieved successfully | Feedback object |
-| 401 | Token has expired or Invalid token | Error message |
-| 403 | Not Authorized - Missing token | Error message |
-| 404 | Feedback not found | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                        | Response Body   |
+| ----------- | ---------------------------------- | --------------- |
+| 200         | Feedback retrieved successfully    | Feedback object |
+| 401         | Token has expired or Invalid token | Error message   |
+| 403         | Not Authorized - Missing token     | Error message   |
+| 404         | Feedback not found                 | Error message   |
+| 429         | Rate limit exceeded                | Error message   |
+| 500         | Internal server error              | Error message   |
 
 ### Example Request
 
 ```bash
 curl -X GET \
   'http://backend/api/feedbacks/67d6e21bfcfdc0d95911b499' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  -c cookies.txt -b cookies.txt
 ```
 
 ### Example Response
@@ -257,32 +258,32 @@ This endpoint retrieves all feedback submissions for a specific form. This is a 
 - **URL**: `/api/feedbacks/form/{id}`
 - **Method**: `GET`
 - **Tags**: Feedbacks
-- **Authentication**: Bearer Token (JWT)
+- **Authentication**: HTTP-only Cookie (JWT)
 - **Rate Limit**: 100 requests per minute
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| id | string | Yes | The ID of the form for which to retrieve feedbacks |
+| Parameter | Type   | Required | Description                                        |
+| --------- | ------ | -------- | -------------------------------------------------- |
+| id        | string | Yes      | The ID of the form for which to retrieve feedbacks |
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 200 | Feedbacks retrieved successfully | Array of Feedback objects |
-| 204 | No feedbacks found | No content |
-| 401 | Token has expired or Invalid token | Error message |
-| 403 | Not Authorized - Missing token | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                        | Response Body             |
+| ----------- | ---------------------------------- | ------------------------- |
+| 200         | Feedbacks retrieved successfully   | Array of Feedback objects |
+| 204         | No feedbacks found                 | No content                |
+| 401         | Token has expired or Invalid token | Error message             |
+| 403         | Not Authorized - Missing token     | Error message             |
+| 429         | Rate limit exceeded                | Error message             |
+| 500         | Internal server error              | Error message             |
 
 ### Example Request
 
 ```bash
 curl -X GET \
   'http://backend/api/feedbacks/form/67d6db77fcfdc0d95911b483' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  -c cookies.txt -b cookies.txt
 ```
 
 ### Example Response
@@ -310,7 +311,7 @@ curl -X GET \
     "createdAt": "2025-03-16T14:37:15.242Z",
     "updatedAt": "2025-03-16T14:37:15.242Z",
     "__v": 0
-  },
+  }
   // Additional feedbacks for the same form...
 ]
 ```
@@ -326,32 +327,32 @@ This endpoint allows you to delete a feedback submission by its ID. This is a se
 - **URL**: `/api/feedbacks/{id}/delete`
 - **Method**: `DELETE`
 - **Tags**: Feedbacks
-- **Authentication**: Bearer Token (JWT)
+- **Authentication**: HTTP-only Cookie (JWT)
 - **Rate Limit**: 100 requests per minute
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| id | string | Yes | The unique identifier of the feedback to delete |
+| Parameter | Type   | Required | Description                                     |
+| --------- | ------ | -------- | ----------------------------------------------- |
+| id        | string | Yes      | The unique identifier of the feedback to delete |
 
 ### Responses
 
-| Status Code | Description | Response Body |
-|-------------|-------------|--------------|
-| 200 | Feedback deleted successfully | Deleted Feedback object |
-| 401 | Token has expired or Invalid token | Error message |
-| 403 | Not Authorized - Missing token | Error message |
-| 404 | Feedback not found | Error message |
-| 429 | Rate limit exceeded | Error message |
-| 500 | Internal server error | Error message |
+| Status Code | Description                        | Response Body           |
+| ----------- | ---------------------------------- | ----------------------- |
+| 200         | Feedback deleted successfully      | Deleted Feedback object |
+| 401         | Token has expired or Invalid token | Error message           |
+| 403         | Not Authorized - Missing token     | Error message           |
+| 404         | Feedback not found                 | Error message           |
+| 429         | Rate limit exceeded                | Error message           |
+| 500         | Internal server error              | Error message           |
 
 ### Example Request
 
 ```bash
 curl -X DELETE \
   'http://backend/api/feedbacks/67d6e21bfcfdc0d95911b499/delete' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  -c cookies.txt -b cookies.txt
 ```
 
 ### Example Response
@@ -388,13 +389,14 @@ curl -X DELETE \
 
 ## Authentication Requirements
 
-All Feedback API endpoints except for creating a feedback require the JWT token to be included in the Authorization header:
+All Feedback API endpoints except for creating a feedback require authentication via HTTP-only cookies. After logging in, the JWT token is automatically included in subsequent requests through cookies.
 
-```
-Authorization: Bearer <your-jwt-token>
-```
+### How Authentication Works
 
-This token is obtained through the [login endpoint](/docs/apis/authorization#login-endpoint) in the Authentication API.
+1. **Login**: Use the [login endpoint](/docs/apis/authorization#login-endpoint) to authenticate
+2. **Cookie Set**: Server sets an HTTP-only `jwt` cookie
+3. **Automatic Authentication**: Browser automatically includes the cookie in API requests
+4. **No Manual Headers**: No need to manually set Authorization headers
 
 ## File Upload
 
