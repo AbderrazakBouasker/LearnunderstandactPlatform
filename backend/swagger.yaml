@@ -211,6 +211,144 @@ components:
               type: string
               format: date-time
 
+    Insight:
+      type: object
+      properties:
+        feedbackId:
+          type: string
+        formId:
+          type: string
+        organization:
+          type: string
+        formTitle:
+          type: string
+        formDescription:
+          type: string
+        sentiment:
+          type: string
+          enum:
+            [
+              "very dissatisfied",
+              "dissatisfied",
+              "neutral",
+              "satisfied",
+              "very satisfied",
+            ]
+        feedbackDescription:
+          type: string
+        keywords:
+          type: array
+          items:
+            type: string
+        embedding:
+          type: array
+          items:
+            type: number
+      required:
+        - feedbackId
+        - formId
+        - organization
+        - formTitle
+        - formDescription
+        - sentiment
+        - feedbackDescription
+        - keywords
+
+    InsightOutput:
+      allOf:
+        - $ref: "#/components/schemas/Insight"
+        - type: object
+          properties:
+            _id:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    ClusterAnalysis:
+      type: object
+      properties:
+        formId:
+          type: string
+        organization:
+          type: string
+        clusterLabel:
+          type: string
+        clusterSummary:
+          type: string
+        insightIds:
+          type: array
+          items:
+            type: string
+        sentimentPercentage:
+          type: number
+          minimum: 0
+          maximum: 100
+        clusterSize:
+          type: number
+        recommendation:
+          type: string
+        impact:
+          type: string
+          enum: ["high", "medium", "low"]
+        urgency:
+          type: string
+          enum: ["immediate", "soon", "later"]
+        ticketCreated:
+          type: boolean
+          default: false
+        lastTicketDate:
+          type: string
+          format: date-time
+        jiraTicketId:
+          type: string
+        jiraTicketUrl:
+          type: string
+        jiraTicketStatus:
+          type: string
+        emailNotificationSent:
+          type: boolean
+          default: false
+        emailNotificationDate:
+          type: string
+          format: date-time
+        embeddings:
+          type: array
+          items:
+            type: number
+      required:
+        - formId
+        - organization
+        - clusterLabel
+        - clusterSummary
+        - sentimentPercentage
+        - clusterSize
+
+    ClusterAnalysisOutput:
+      allOf:
+        - $ref: "#/components/schemas/ClusterAnalysis"
+        - type: object
+          properties:
+            _id:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    PaymentIntent:
+      type: object
+      properties:
+        clientSecret:
+          type: string
+      required:
+        - clientSecret
+
 securitySchemes:
   bearerAuth:
     type: http
@@ -1455,3 +1593,666 @@ paths:
           description: Rate limit exceeded
         500:
           description: Internal server error
+
+  # Stats Endpoints
+  /api/stats/{organization}/feedback-count:
+    get:
+      summary: Get feedback count over time for an organization
+      tags: [Stats]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: organization
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          required: true
+          description: Start date for the feedback count
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          required: true
+          description: End date for the feedback count
+      responses:
+        200:
+          description: Successfully retrieved feedback count over time
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                      description: Date in YYYY-MM-DD format
+                    count:
+                      type: number
+                      description: Number of feedbacks on that date
+        400:
+          description: Start date and end date are required
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/stats/form/{formId}/feedback-count:
+    get:
+      summary: Get feedback count over time for a specific form
+      tags: [Stats]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: formId
+          schema:
+            type: string
+          required: true
+          description: Form ID
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          required: true
+          description: Start date for the feedback count
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          required: true
+          description: End date for the feedback count
+      responses:
+        200:
+          description: Successfully retrieved feedback count over time for form
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                      description: Date in YYYY-MM-DD format
+                    count:
+                      type: number
+                      description: Number of feedbacks on that date
+        400:
+          description: Start date and end date are required
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/stats/{organization}/feedback-total-by-form:
+    get:
+      summary: Get total feedback count grouped by form for an organization
+      tags: [Stats]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: organization
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      responses:
+        200:
+          description: Successfully retrieved total feedback by form
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                      description: Form ID
+                    formTitle:
+                      type: string
+                      description: Form title
+                    count:
+                      type: number
+                      description: Total number of feedbacks for this form
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/stats/form/{formId}/opinion-counts:
+    get:
+      summary: Get the count of opinions for a specific form
+      tags: [Stats]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: formId
+          schema:
+            type: string
+          required: true
+          description: Form ID
+      responses:
+        200:
+          description: Successfully retrieved opinion counts for form
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  formId:
+                    type: string
+                  formTitle:
+                    type: string
+                  opinionCounts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        opinion:
+                          type: string
+                        count:
+                          type: number
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/stats/{organization}/cluster-stats:
+    get:
+      summary: Get cluster statistics for an organization
+      tags: [Stats]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: organization
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      responses:
+        200:
+          description: Successfully retrieved cluster statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalClusters:
+                    type: number
+                  formsWithClusters:
+                    type: number
+                  clustersWithTickets:
+                    type: number
+                  highImpactClusters:
+                    type: number
+                  urgentClusters:
+                    type: number
+                  averageSentimentPercentage:
+                    type: number
+                  averageClusterSize:
+                    type: number
+        404:
+          description: No cluster analyses found for organization
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/stats/form/{formId}/cluster-sentiment:
+    get:
+      summary: Get cluster sentiment tracking by form over time
+      tags: [Stats]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: formId
+          schema:
+            type: string
+          required: true
+          description: Form ID
+      responses:
+        200:
+          description: Successfully retrieved cluster sentiment tracking
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClusterAnalysisOutput"
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  # Insight Endpoints
+  /api/insight:
+    get:
+      summary: Get all insights
+      tags: [Insights]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      responses:
+        200:
+          description: Successfully retrieved all insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InsightOutput"
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/insight/{id}:
+    get:
+      summary: Get insight by ID
+      tags: [Insights]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Insight ID
+      responses:
+        200:
+          description: Successfully retrieved insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightOutput"
+        404:
+          description: Insight not found
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/insight/{id}/delete:
+    delete:
+      summary: Delete insight by ID
+      tags: [Insights]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Insight ID
+      responses:
+        200:
+          description: Insight deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightOutput"
+        404:
+          description: Insight not found
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/insight/feedback/{feedbackId}:
+    get:
+      summary: Get insights by feedback ID
+      tags: [Insights]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: feedbackId
+          schema:
+            type: string
+          required: true
+          description: Feedback ID
+      responses:
+        200:
+          description: Successfully retrieved insights for feedback
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InsightOutput"
+        404:
+          description: No insights found for feedback
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/insight/organization/{organization}:
+    get:
+      summary: Get insights by organization
+      tags: [Insights]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: organization
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      responses:
+        200:
+          description: Successfully retrieved insights for organization
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InsightOutput"
+        404:
+          description: No insights found for organization
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/insight/form/{formId}:
+    get:
+      summary: Get insights by form ID
+      tags: [Insights]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: formId
+          schema:
+            type: string
+          required: true
+          description: Form ID
+      responses:
+        200:
+          description: Successfully retrieved insights for form
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InsightOutput"
+        404:
+          description: No insights found for form
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  # Cluster Endpoints
+  /api/cluster/form/{formId}/cluster:
+    post:
+      summary: Cluster insights by form
+      tags: [Clustering]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: formId
+          schema:
+            type: string
+          required: true
+          description: Form ID
+      responses:
+        200:
+          description: Successfully clustered insights
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  formId:
+                    type: string
+                  totalInsights:
+                    type: number
+                  clusters:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ClusterAnalysisOutput"
+        400:
+          description: Invalid form ID or insufficient insights
+        404:
+          description: Form not found
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/cluster/form/{formId}:
+    get:
+      summary: Get cluster analysis by form
+      tags: [Clustering]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: formId
+          schema:
+            type: string
+          required: true
+          description: Form ID
+      responses:
+        200:
+          description: Successfully retrieved cluster analysis for form
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClusterAnalysisOutput"
+        404:
+          description: No cluster analysis found for form
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/cluster/organization/{organization}:
+    get:
+      summary: Get cluster analysis by organization
+      tags: [Clustering]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: organization
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      responses:
+        200:
+          description: Successfully retrieved cluster analysis for organization
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClusterAnalysisOutput"
+        404:
+          description: No cluster analysis found for organization
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  # Stripe Endpoints
+  /api/stripe/create-payment-intent:
+    post:
+      summary: Create a payment intent for subscription
+      tags: [Stripe]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Username of the user
+                identifier:
+                  type: string
+                  description: Organization identifier
+                tier:
+                  type: string
+                  enum: ["pro", "enterprise"]
+                  description: Subscription tier
+              required:
+                - username
+                - identifier
+                - tier
+      responses:
+        200:
+          description: Payment intent created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentIntent"
+        400:
+          description: Invalid tier or missing required fields
+        500:
+          description: Payment intent failed or Stripe not configured
