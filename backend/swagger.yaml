@@ -935,3 +935,411 @@ paths:
           description: Rate limit exceeded
         500:
           description: Internal server error
+
+  /api/organization/create:
+    post:
+      summary: Create a new organization
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                identifier:
+                  type: string
+                members:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      user:
+                        type: string
+                      role:
+                        type: string
+              required:
+                - identifier
+      responses:
+        201:
+          description: Organization created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        400:
+          description: Organization identifier is required
+        409:
+          description: Organization with this identifier already exists
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization/identifier/{identifier}:
+    get:
+      summary: Get organization by identifier
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: identifier
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      responses:
+        200:
+          description: Successfully retrieved organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Organization not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization/{identifier}/edit:
+    patch:
+      summary: Update organization
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: identifier
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                members:
+                  type: array
+                  items:
+                    type: object
+                plan:
+                  type: string
+                  enum: ["Free", "Pro", "Enterprise"]
+                domains:
+                  type: array
+                  items:
+                    type: string
+                email:
+                  type: string
+                recommendationThreshold:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                ticketCreationDelay:
+                  type: number
+                  minimum: 1
+                  maximum: 365
+                notificationThreshold:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                jiraConfig:
+                  type: object
+      responses:
+        200:
+          description: Organization updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Organization not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization/{identifier}/delete:
+    delete:
+      summary: Delete organization
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: identifier
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      responses:
+        200:
+          description: Organization deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Organization Deleted Successfully"
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Organization not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization/{identifier}/member/add/username:
+    post:
+      summary: Add member to organization by username
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: identifier
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+              required:
+                - username
+      responses:
+        200:
+          description: Member added successfully
+        400:
+          description: Username is required or User already in organization
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Organization not found or User not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization/{identifier}/member/add/email:
+    post:
+      summary: Add member to organization by email
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: identifier
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required:
+                - email
+      responses:
+        200:
+          description: Member added successfully
+        400:
+          description: Email is required or User already in organization
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Organization not found or User not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization/{identifier}/member/remove:
+    post:
+      summary: Remove member from organization
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: identifier
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+              required:
+                - userId
+      responses:
+        200:
+          description: Member removed successfully
+        400:
+          description: User ID is required or User not in organization
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Organization not found or User not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization/{identifier}/member/change-role:
+    post:
+      summary: Change member role in organization
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: identifier
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                newRole:
+                  type: string
+                  enum: ["admin", "subadmin", "user"]
+              required:
+                - userId
+                - newRole
+      responses:
+        200:
+          description: Member role changed successfully
+        400:
+          description: User ID and new role are required or User not in organization
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Organization not found or User not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization/{identifier}/test-email:
+    post:
+      summary: Send test email to organization
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: identifier
+          schema:
+            type: string
+          required: true
+          description: Organization identifier
+      responses:
+        200:
+          description: Test email sent successfully
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Organization not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
