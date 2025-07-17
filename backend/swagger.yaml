@@ -31,7 +31,7 @@ components:
                 type: string
     FormOutput:
       allOf:
-        - $ref: '#/components/schemas/Form'
+        - $ref: "#/components/schemas/Form"
         - type: object
           properties:
             _id:
@@ -47,10 +47,88 @@ components:
       properties:
         _id:
           type: string
+        username:
+          type: string
         email:
           type: string
         role:
           type: string
+          enum: ["user", "admin", "subadmin"]
+          default: "user"
+        organization:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Organization:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        identifier:
+          type: string
+        plan:
+          type: string
+          enum: ["Free", "Pro", "Enterprise"]
+          default: "Free"
+        members:
+          type: array
+          items:
+            type: object
+            properties:
+              user:
+                type: string
+              role:
+                type: string
+                enum: ["admin", "subadmin", "user"]
+        domains:
+          type: array
+          items:
+            type: string
+        email:
+          type: string
+        recommendationThreshold:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.5
+        ticketCreationDelay:
+          type: number
+          minimum: 1
+          maximum: 365
+          default: 7
+        notificationThreshold:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.7
+        jiraConfig:
+          type: object
+          properties:
+            host:
+              type: string
+            username:
+              type: string
+            apiToken:
+              type: string
+            projectKey:
+              type: string
+            issueType:
+              type: string
+              default: "Task"
+            enabled:
+              type: boolean
+              default: false
+            supportsPriority:
+              type: boolean
+              default: true
         createdAt:
           type: string
           format: date-time
@@ -73,7 +151,7 @@ components:
                 type: string
     FeedbackOutput:
       allOf:
-        - $ref: '#/components/schemas/Feedback'
+        - $ref: "#/components/schemas/Feedback"
         - type: object
           properties:
             _id:
@@ -113,16 +191,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Form'
+              $ref: "#/components/schemas/Form"
       responses:
         201:
           description: Form created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FormOutput'
+                $ref: "#/components/schemas/FormOutput"
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         429:
@@ -148,11 +226,11 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FormOutput'
+                  $ref: "#/components/schemas/FormOutput"
         204:
           description: No content
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         429:
@@ -183,9 +261,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FormOutput'
+                $ref: "#/components/schemas/FormOutput"
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         404:
@@ -217,16 +295,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Form'
+              $ref: "#/components/schemas/Form"
       responses:
         200:
           description: Form updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FormOutput'
+                $ref: "#/components/schemas/FormOutput"
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         404:
@@ -259,9 +337,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FormOutput'
+                $ref: "#/components/schemas/FormOutput"
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         404:
@@ -294,15 +372,203 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: "#/components/schemas/User"
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         429:
           description: Rate limit exceeded
         500:
           description: Server error
+    post:
+      summary: Update a user
+      tags: [User]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 10
+        window: 1m
+        description: Rate limit of 10 requests per 1 minutes
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The user ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                currentPassword:
+                  type: string
+              required:
+                - currentPassword
+      responses:
+        200:
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User updated successfully"
+        400:
+          description: Username already exists or Email already exists
+        401:
+          description: Current password is incorrect or Token has expired or Invalid token
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: User not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/user/me:
+    get:
+      summary: Get current user information
+      tags: [User]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      responses:
+        200:
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: User not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/user/{id}/addtoorganization:
+    post:
+      summary: Add user to organization
+      tags: [User]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The user ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                organizationIdentifier:
+                  type: string
+              required:
+                - organizationIdentifier
+      responses:
+        200:
+          description: User added to organization successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User added to organization successfully"
+        400:
+          description: Organization identifier is required or User already in this organization
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: User not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/user/{id}/deletefromorganization:
+    post:
+      summary: Remove user from organization
+      tags: [User]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: The user ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                organizationIdentifier:
+                  type: string
+              required:
+                - organizationIdentifier
+      responses:
+        200:
+          description: User removed from organization successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User removed from organization successfully"
+        400:
+          description: Organization identifier is required or User not in this organization
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: User not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
 
   /api/auth/register:
     post:
@@ -319,10 +585,24 @@ paths:
             schema:
               type: object
               properties:
+                username:
+                  type: string
                 email:
                   type: string
                 password:
                   type: string
+                role:
+                  type: string
+                  enum: ["user", "admin", "subadmin"]
+                  default: "user"
+                organization:
+                  type: string
+                organizationName:
+                  type: string
+              required:
+                - username
+                - email
+                - password
 
       responses:
         200:
@@ -330,9 +610,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: "#/components/schemas/User"
         409:
-          description: User already exists
+          description: User already exists or Organization already exists
         429:
           description: Rate limit exceeded
         500:
@@ -365,14 +645,37 @@ paths:
               schema:
                 type: object
                 properties:
-                  token:
+                  message:
                     type: string
-                  user:
-                    $ref: '#/components/schemas/User'
+                    example: "Logged in successfully"
         400:
           description: Invalid credentials
         404:
           description: User not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/auth/logout:
+    post:
+      summary: Log out a user
+      tags: [Auth]
+      x-rate-limit:
+        limit: 10
+        window: 1m
+        description: Rate limit of 10 requests per 1 minutes
+      responses:
+        200:
+          description: User logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out successfully"
         429:
           description: Rate limit exceeded
         500:
@@ -421,7 +724,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FeedbackOutput'
+                $ref: "#/components/schemas/FeedbackOutput"
         404:
           description: Form not found
         400:
@@ -449,11 +752,11 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FeedbackOutput'
+                  $ref: "#/components/schemas/FeedbackOutput"
         204:
           description: No content
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         429:
@@ -484,9 +787,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FeedbackOutput'
+                $ref: "#/components/schemas/FeedbackOutput"
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         404:
@@ -521,11 +824,11 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FeedbackOutput'
+                  $ref: "#/components/schemas/FeedbackOutput"
         204:
           description: No content
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         429:
@@ -556,13 +859,78 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FeedbackOutput'
+                $ref: "#/components/schemas/FeedbackOutput"
         401:
-          description: 'Token has expired or Invalid token'
+          description: "Token has expired or Invalid token"
         403:
           description: Not Authorized - Missing token
         404:
           description: Feedback not found
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization:
+    get:
+      summary: Get all organizations
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      responses:
+        200:
+          description: Successfully retrieved organizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+        204:
+          description: No content
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        429:
+          description: Rate limit exceeded
+        500:
+          description: Internal server error
+
+  /api/organization/{id}:
+    get:
+      summary: Get organization by ID
+      tags: [Organization]
+      security:
+        - bearerAuth: []
+      x-rate-limit:
+        limit: 100
+        window: 1m
+        description: Rate limit of 100 requests per 1 minutes
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Organization ID
+      responses:
+        200:
+          description: Successfully retrieved organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        401:
+          description: "Token has expired or Invalid token"
+        403:
+          description: Not Authorized - Missing token
+        404:
+          description: Organization not found
         429:
           description: Rate limit exceeded
         500:
