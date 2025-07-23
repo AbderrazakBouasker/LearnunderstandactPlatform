@@ -23,6 +23,28 @@ git clone https://github.com/AbderrazakBouasker/LearnunderstandactPlatform.git
 cd LearnunderstandactPlatform
 ```
 
+## Initial Setup
+
+Before starting the services, you need to perform some initial setup steps:
+
+1. Create the Docker network:
+
+```bash
+sudo docker network create luaplatform-network
+```
+
+2. Create the environment configuration file from the example:
+
+```bash
+cp .env-example .env
+```
+
+3. Add the frontend hostname to your hosts file:
+
+```bash
+echo "127.0.0.1 luapp" | sudo tee -a /etc/hosts
+```
+
 ## Starting the Backend
 
 The backend services are containerized using Docker for easy setup and deployment.
@@ -53,7 +75,29 @@ http://localhost:5000
 http://localhost:5000/api-docs
 ```
 
-This interactive documentation allows you to explore and test the available API endpoints.
+This interactive documentation allows you to explore the available API endpoints.
+
+## Starting the Frontend
+
+To run the frontend application:
+
+1. Navigate to the frontend directory:
+
+```bash
+cd ../frontend
+```
+
+2. Start the frontend Docker containers:
+
+```bash
+sudo docker compose up
+```
+
+3. The frontend should now be running and accessible at:
+
+```
+http://luapp
+```
 
 ## Starting the Documentation Site
 
@@ -91,7 +135,15 @@ The project is organized into the following main directories:
 - `documentation/` - Contains this documentation site
 - `frontend/` - Contains the web client application
 
+## Service URLs
+
+Once everything is running, you can access the different components at:
+
+- **Frontend Application**: http://luapp
+- **Backend API**: http://localhost:5000
+- **API Documentation**: http://localhost:5000/api-docs
+- **Documentation Site**: http://localhost:3000
+
 ## Next Steps
 
 Now that you have the LUA Platform up and running, you can explore the [API documentation](/docs/apis) to understand how to interact with the backend services.
-
